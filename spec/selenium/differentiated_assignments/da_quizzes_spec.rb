@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/../helpers/assignments_common')
-require File.expand_path(File.dirname(__FILE__) + '/../helpers/differentiated_assignments')
+require_relative "../helpers/assignments_common"
+require_relative "../helpers/differentiated_assignments"
 
 describe "interaction with differentiated quizzes" do
   include_context "in-process server selenium tests"
@@ -26,7 +26,7 @@ describe "interaction with differentiated quizzes" do
   include AssignmentsCommon
 
   context "Student" do
-    before(:each) do
+    before do
       course_with_student_logged_in
       da_setup
       @da_quiz = create_da_quiz
@@ -40,6 +40,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes/"
         expect(f(".ig-empty-msg")).to include_text("No quizzes available")
       end
+
       it "shows quizzes with an override" do
         create_section_override_for_assignment(@da_quiz.assignment)
         get "/courses/#{@course.id}/assignments"
@@ -47,6 +48,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes"
         expect(f("#assignment-quizzes")).to include_text(@da_quiz.title)
       end
+
       it "shows quizzes with a graded submission" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -65,11 +67,13 @@ describe "interaction with differentiated quizzes" do
         expect(f("#flash_message_holder")).to include_text("You do not have access to the requested quiz.")
         expect(driver.current_url).to match %r{/courses/\d+/quizzes}
       end
+
       it "shows the quiz page with an override" do
         create_section_override_for_assignment(@da_quiz.assignment)
         get "/courses/#{@course.id}/quizzes/#{@da_quiz.id}"
         expect(driver.current_url).to match %r{/courses/\d+/quizzes/#{@da_quiz.id}}
       end
+
       it "shows the quiz page with a graded submission" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -77,6 +81,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes/#{@da_quiz.id}"
         expect(driver.current_url).to match %r{/courses/\d+/quizzes/#{@da_quiz.id}}
       end
+
       it "shows previous submissions on inaccessible quizzes" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -92,6 +97,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes/#{@da_quiz.id}/submissions/#{@da_quiz.quiz_submissions.first!.id}"
         expect(f("#flash_message_holder")).to include_text("This quiz will no longer count towards your grade.")
       end
+
       it "does not allow you the quiz to be taken if visibility has been revoked" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -110,6 +116,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/grades"
         expect(f("#assignments")).to include_text(@da_quiz.title)
       end
+
       it "shows a quiz with a grade" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -117,6 +124,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/grades"
         expect(f("#assignments")).to include_text(@da_quiz.title)
       end
+
       it "does not show an inaccessible quiz" do
         create_section_override_for_assignment(@da_quiz.assignment, course_section: @section1)
         get "/courses/#{@course.id}/grades"
@@ -124,8 +132,9 @@ describe "interaction with differentiated quizzes" do
       end
     end
   end
+
   context "Observer with student" do
-    before(:each) do
+    before do
       observer_setup
       da_setup
       @da_quiz = create_da_quiz
@@ -139,6 +148,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes/"
         expect(f(".ig-empty-msg")).to include_text("No quizzes available")
       end
+
       it "shows quizzes with an override" do
         create_section_override_for_assignment(@da_quiz.assignment)
         get "/courses/#{@course.id}/assignments"
@@ -146,6 +156,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes"
         expect(f("#assignment-quizzes")).to include_text(@da_quiz.title)
       end
+
       it "shows quizzes with a graded submission" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -164,11 +175,13 @@ describe "interaction with differentiated quizzes" do
         expect(f("#flash_message_holder")).to include_text("You do not have access to the requested quiz.")
         expect(driver.current_url).to match %r{/courses/\d+/quizzes}
       end
+
       it "shows the quiz page with an override" do
         create_section_override_for_assignment(@da_quiz.assignment)
         get "/courses/#{@course.id}/quizzes/#{@da_quiz.id}"
         expect(driver.current_url).to match %r{/courses/\d+/quizzes/#{@da_quiz.id}}
       end
+
       it "shows the quiz page with a graded submission" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -176,6 +189,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/quizzes/#{@da_quiz.id}"
         expect(driver.current_url).to match %r{/courses/\d+/quizzes/#{@da_quiz.id}}
       end
+
       it "shows previous submissions on inaccessible quizzes" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -199,6 +213,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/grades"
         expect(f("#assignments")).to include_text(@da_quiz.title)
       end
+
       it "shows a quiz with a graded submission" do
         @teacher = User.create!
         @course.enroll_teacher(@teacher)
@@ -206,6 +221,7 @@ describe "interaction with differentiated quizzes" do
         get "/courses/#{@course.id}/grades"
         expect(f("#assignments")).to include_text(@da_quiz.title)
       end
+
       it "does not show an inaccessible quiz" do
         create_section_override_for_assignment(@da_quiz.assignment, course_section: @section1)
         get "/courses/#{@course.id}/grades"

@@ -18,13 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
+require "spec_helper"
 
 describe LiveEvents::AsyncWorker do
   let(:put_records_return) { [] }
   let(:stream_client) { double(stream_name: stream_name, put_records: OpenStruct.new(records: [], error_code: nil, error_message: nil)) }
-  let(:stream_name) { 'stream_name_x' }
-  let(:event_name) { 'event_name' }
+  let(:stream_name) { "stream_name_x" }
+  let(:event_name) { "event_name" }
   let(:event) do
     {
       event_name: event_name,
@@ -41,33 +41,19 @@ describe LiveEvents::AsyncWorker do
   end
   let(:attributes) do
     {
-      event_name: 'event1'
+      event_name: "event1"
     }
   end
 
-  class LELogger
-    def info(data)
-      data
-    end
-
-    def error(data)
-      data
-    end
-
-    def debug(data)
-      data
-    end
-  end
-
-  before(:each) do
+  before do
     LiveEvents.max_queue_size = -> { 100 }
     LiveEvents.statsd = nil
-    LiveEvents.logger = LELogger.new
+    allow(LiveEvents).to receive(:logger).and_return(double(info: nil, error: nil, debug: nil))
     @worker = LiveEvents::AsyncWorker.new(false, stream_client: stream_client, stream_name: stream_name)
     allow(@worker).to receive(:at_exit)
   end
 
-  after(:each) do
+  after do
     LiveEvents.statsd = nil
   end
 
@@ -120,16 +106,16 @@ describe LiveEvents::AsyncWorker do
       expect(@worker.push(event, partition_key)).to be false
     end
 
-    context 'with error putting to kinesis' do
+    context "with error putting to kinesis" do
       it "writes errors to logger" do
         results = OpenStruct.new(records: [
-                                   OpenStruct.new(error_code: 'failure', error_message: 'failure message')
+                                   OpenStruct.new(error_code: "failure", error_message: "failure message")
                                  ])
         allow(stream_client).to receive(:put_records).once.and_return(results)
         statsd_double = double
         LiveEvents.statsd = statsd_double
         expect(statsd_double).to receive(:time).and_yield
-        expect(statsd_double).to receive(:increment).with('live_events.events.send_errors', any_args)
+        expect(statsd_double).to receive(:increment).with("live_events.events.send_errors", any_args)
         @worker.start!
 
         4.times { @worker.push event, partition_key }

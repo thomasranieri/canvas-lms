@@ -17,18 +17,22 @@
  */
 
 import {AlertManagerContext} from '@canvas/alerts/react/AlertManager'
+import closedCaptionLanguages from '@canvas/util/closedCaptionLanguages'
 import {ComposeActionButtons} from '../../components/ComposeActionButtons/ComposeActionButtons'
 import {Conversation} from '../../../graphql/Conversation'
 import HeaderInputs from './HeaderInputs'
 import I18n from 'i18n!conversations_2'
+import {Modal} from '@instructure/ui-modal'
 import ModalBody from './ModalBody'
 import ModalHeader from './ModalHeader'
 import ModalSpinner from './ModalSpinner'
 import PropTypes from 'prop-types'
 import React, {useContext, useState} from 'react'
+import {Responsive} from '@instructure/ui-responsive'
+import {responsiveQuerySizes} from '../../../util/utils'
 import {uploadFiles} from '@canvas/upload-file'
-
-import {Modal} from '@instructure/ui-modal'
+import UploadMedia from '@instructure/canvas-media'
+import {MediaCaptureStrings, SelectStrings, UploadMediaStrings} from '../../../util/constants'
 
 const ComposeModalContainer = props => {
   const {setOnFailure, setOnSuccess} = useContext(AlertManagerContext)
@@ -39,7 +43,25 @@ const ComposeModalContainer = props => {
   const [body, setBody] = useState('')
   const [bodyMessages, setBodyMessages] = useState([])
   const [sendIndividualMessages, setSendIndividualMessages] = useState(false)
+  const [userNote, setUserNote] = useState(false)
   const [selectedContext, setSelectedContext] = useState()
+  const [selectedIds, setSelectedIds] = useState([])
+  const [mediaUploadOpen, setMediaUploadOpen] = useState(false)
+  const [uploadingMediaFile, setUploadingMediaFile] = useState(false)
+  const [mediaUploadFile, setMediaUploadFile] = useState(null)
+
+  const onMediaUploadComplete = (err, data) => {
+    if (err) {
+      setOnFailure(I18n.t('There was an error uploading the media.'))
+    } else {
+      setUploadingMediaFile(false)
+      setMediaUploadFile(data)
+    }
+  }
+
+  const onRemoveMedia = () => {
+    setMediaUploadFile(null)
+  }
 
   const fileUploadUrl = attachmentFolderId => {
     return `/api/v1/folders/${attachmentFolderId}/files`
@@ -101,12 +123,20 @@ const ComposeModalContainer = props => {
     }
   }
 
+  const onUserNoteChange = () => {
+    setUserNote(prev => !prev)
+  }
+
   const onSendIndividualMessagesChange = () => {
     setSendIndividualMessages(prev => !prev)
   }
 
   const onContextSelect = id => {
     setSelectedContext(id)
+  }
+
+  const onSelectedIdsChange = ids => {
+    setSelectedIds(ids)
   }
 
   const validMessageFields = () => {
@@ -124,9 +154,26 @@ const ComposeModalContainer = props => {
         variables: {
           attachmentIds: attachments.map(a => a.id),
           body,
+          userNote,
           includedMessages: props.pastConversation?.conversationMessagesConnection.nodes.map(
             c => c._id
-          )
+          ),
+          mediaCommentId: mediaUploadFile?.mediaObject?.media_object?.media_id,
+          mediaCommentType: mediaUploadFile?.mediaObject?.media_object?.media_type
+        }
+      })
+    } else if (props.isForward) {
+      await props.addConversationMessage({
+        variables: {
+          attachmentIds: attachments.map(a => a.id),
+          body,
+          includedMessages: props.pastConversation?.conversationMessagesConnection.nodes.map(
+            c => c._id
+          ),
+          recipients: selectedIds.map(rec => rec?._id || rec.id),
+          mediaCommentId: mediaUploadFile?.mediaObject?.media_object?.media_id,
+          mediaCommentType: mediaUploadFile?.mediaObject?.media_object?.media_type,
+          contextCode: ENV.CONVERSATIONS.ACCOUNT_CONTEXT_CODE
         }
       })
     } else {
@@ -134,10 +181,13 @@ const ComposeModalContainer = props => {
         variables: {
           attachmentIds: attachments.map(a => a.id),
           body,
+          userNote,
           contextCode: selectedContext,
-          recipients: ['5'], // TODO: replace this with selected users
+          recipients: selectedIds.map(rec => rec?._id || rec.id),
           subject,
-          groupConversation: !sendIndividualMessages
+          groupConversation: !sendIndividualMessages,
+          mediaCommentId: mediaUploadFile?.mediaObject?.media_object?.media_id,
+          mediaCommentType: mediaUploadFile?.mediaObject?.media_object?.media_type
         }
       })
     }
@@ -151,70 +201,118 @@ const ComposeModalContainer = props => {
     setBody(null)
     setBodyMessages([])
     setSelectedContext(null)
+    setSelectedIds([])
     props.setSendingMessage(false)
     setSubject(null)
     setSendIndividualMessages(false)
+    setMediaUploadFile(null)
   }
 
   return (
     <>
-      <Modal
-        open={props.open}
-        onDismiss={props.onDismiss}
-        size="medium"
-        label={I18n.t('Compose Message')}
-        shouldCloseOnDocumentClick={false}
-        onExited={resetState}
-      >
-        <ModalHeader onDismiss={props.onDismiss} />
-        <ModalBody
-          attachments={[...attachments, ...attachmentsToUpload]}
-          bodyMessages={bodyMessages}
-          onBodyChange={onBodyChange}
-          pastMessages={props.pastConversation?.conversationMessagesConnection.nodes}
-          removeAttachment={removeAttachment}
-          replaceAttachment={replaceAttachment}
-        >
-          <HeaderInputs
-            contextName={props.pastConversation?.contextName}
-            courses={props.courses}
-            isReply={props.isReply}
-            onContextSelect={onContextSelect}
-            onSendIndividualMessagesChange={onSendIndividualMessagesChange}
-            onSubjectChange={onSubjectChange}
-            sendIndividualMessages={sendIndividualMessages}
-            subject={props.isReply ? props.pastConversation?.subject : subject}
-          />
-        </ModalBody>
-        <Modal.Footer>
-          <ComposeActionButtons
-            onAttachmentUpload={addAttachment}
-            onMediaUpload={() => {}}
-            onCancel={props.onDismiss}
-            onSend={() => {
-              if (!validMessageFields()) {
-                return
-              }
+      <Responsive
+        match="media"
+        query={responsiveQuerySizes({mobile: true, desktop: true})}
+        props={{
+          mobile: {
+            modalSize: 'fullscreen',
+            dataTestId: 'compose-modal-mobile'
+          },
+          desktop: {
+            modalSize: 'medium',
+            dataTestId: 'compose-modal-desktop'
+          }
+        }}
+        render={responsiveProps => (
+          <Modal
+            open={props.open}
+            onDismiss={props.onDismiss}
+            size={responsiveProps.modalSize}
+            label={I18n.t('Compose Message')}
+            shouldCloseOnDocumentClick={false}
+            onExited={resetState}
+            data-testid={responsiveProps.dataTestId}
+          >
+            <ModalHeader onDismiss={props.onDismiss} />
+            <ModalBody
+              attachments={[...attachments, ...attachmentsToUpload]}
+              bodyMessages={bodyMessages}
+              onBodyChange={onBodyChange}
+              pastMessages={props.pastConversation?.conversationMessagesConnection.nodes}
+              removeAttachment={removeAttachment}
+              replaceAttachment={replaceAttachment}
+            >
+              <HeaderInputs
+                contextName={props.pastConversation?.contextName}
+                courses={props.courses}
+                isReply={props.isReply}
+                isForward={props.isForward}
+                onContextSelect={onContextSelect}
+                onSelectedIdsChange={onSelectedIdsChange}
+                onUserNoteChange={onUserNoteChange}
+                onSendIndividualMessagesChange={onSendIndividualMessagesChange}
+                onSubjectChange={onSubjectChange}
+                userNote={userNote}
+                sendIndividualMessages={sendIndividualMessages}
+                subject={
+                  props.isReply || props.isForward ? props.pastConversation?.subject : subject
+                }
+                mediaAttachmentTitle={mediaUploadFile?.uploadedFile.name}
+                onRemoveMediaComment={onRemoveMedia}
+              />
+            </ModalBody>
+            <Modal.Footer>
+              <ComposeActionButtons
+                onAttachmentUpload={addAttachment}
+                onMediaUpload={() => setMediaUploadOpen(true)}
+                onCancel={props.onDismiss}
+                onSend={() => {
+                  if (!validMessageFields()) {
+                    return
+                  }
 
-              if (!attachmentsToUpload.length) {
-                sendMessage()
-              }
-              props.setSendingMessage(true)
-            }}
-            isSending={false}
-          />
-        </Modal.Footer>
-      </Modal>
+                  if (!attachmentsToUpload.length) {
+                    sendMessage()
+                  }
+                  props.setSendingMessage(true)
+                }}
+                isSending={false}
+                hasMediaComment={!!mediaUploadFile}
+              />
+            </Modal.Footer>
+          </Modal>
+        )}
+      />
+      <UploadMedia
+        onStartUpload={() => setUploadingMediaFile(true)}
+        onUploadComplete={onMediaUploadComplete}
+        onDismiss={() => setMediaUploadOpen(false)}
+        open={mediaUploadOpen}
+        tabs={{embed: false, record: true, upload: true}}
+        uploadMediaTranslations={{
+          UploadMediaStrings: UploadMediaStrings(),
+          MediaCaptureStrings: MediaCaptureStrings(),
+          SelectStrings: SelectStrings()
+        }}
+        liveRegion={() => document.getElementById('flash_screenreader_holder')}
+        languages={Object.keys(closedCaptionLanguages).map(key => {
+          return {id: key, label: closedCaptionLanguages[key]}
+        })}
+        rcsConfig={{
+          contextId: ENV.current_user_id,
+          contextType: 'user'
+        }}
+      />
       <ModalSpinner
         label={I18n.t('Sending Message')}
         message={I18n.t('Sending Message')}
-        open={props.sendingMessage && !attachmentsToUpload.length}
+        open={props.sendingMessage && !attachmentsToUpload.length && !uploadingMediaFile}
       />
       <ModalSpinner
         label={I18n.t('Uploading Files')}
-        message={I18n.t('Please wait while we upload attachments')}
+        message={I18n.t('Please wait while we upload attachments and media')}
         onExited={() => sendMessage()}
-        open={props.sendingMessage && !!attachmentsToUpload.length}
+        open={props.sendingMessage && !!attachmentsToUpload.length && uploadingMediaFile}
       />
     </>
   )
@@ -227,6 +325,7 @@ ComposeModalContainer.propTypes = {
   courses: PropTypes.object,
   createConversation: PropTypes.func,
   isReply: PropTypes.bool,
+  isForward: PropTypes.bool,
   onDismiss: PropTypes.func,
   open: PropTypes.bool,
   pastConversation: Conversation.shape,

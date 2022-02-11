@@ -203,11 +203,18 @@ describe('Upload data actions', () => {
   })
 
   describe('uploadToButtonsAndIconsFolder', () => {
-    let baseState, svg
+    let baseState, svg, getContextOriginal
 
     beforeEach(() => {
+      getContextOriginal = HTMLCanvasElement.prototype.getContext
+      HTMLCanvasElement.prototype.getContext = () => ({})
+
       baseState = setupState({contextId: 101, contextType: 'course'})
       svg = {name: 'button.svg', domElement: buildSvg(DEFAULT_SETTINGS)}
+    })
+
+    afterEach(() => {
+      HTMLCanvasElement.prototype.getContext = getContextOriginal
     })
 
     it('dispatches a preflightUpload with the proper parentFolderId set', () => {
@@ -216,14 +223,15 @@ describe('Upload data actions', () => {
       const fileMetaProps = {
         file: {name: svg.name, type: 'image/svg+xml'},
         name: svg.name,
-        parentFolderId: 2,
-        onDuplicate: undefined
+        parentFolderId: 2
       }
 
       const canvasProps = {
         host: 'http://host:port',
         contextId: 101,
-        contextType: 'course'
+        contextType: 'course',
+        onDuplicate: undefined,
+        category: 'buttons_and_icons'
       }
 
       return store.dispatch(actions.uploadToButtonsAndIconsFolder(svg)).then(() => {
@@ -263,13 +271,14 @@ describe('Upload data actions', () => {
               type: 'image/svg+xml'
             },
             name: 'button.svg',
-            onDuplicate: 'overwrite',
             parentFolderId: 2
           },
           {
+            category: 'buttons_and_icons',
             contextId: 101,
             contextType: 'course',
-            host: 'http://host:port'
+            host: 'http://host:port',
+            onDuplicate: 'overwrite'
           }
         ])
       })
@@ -435,6 +444,76 @@ describe('Upload data actions', () => {
       if (Bridge.insertLink.restore) {
         Bridge.insertLink.restore()
       }
+    })
+
+    describe('when the file is svg', () => {
+      let fileText
+
+      const file = () => ({
+        slice: () => ({
+          text: async () => fileText
+        }),
+        type: 'image/svg'
+      })
+
+      const fileProps = () => ({
+        domObject: file()
+      })
+
+      const subject = () => store.dispatch(actions.uploadPreflight('files', fileProps()))
+
+      describe('when the file is a button & icon svg', () => {
+        beforeEach(() => {
+          fileText = 'something something image/svg+xml-buttons-and-icons'
+        })
+
+        it('sets the category to "buttons_and_icons"', () => {
+          subject().then(() => {
+            sinon.assert.calledWith(successStore.preflightUpload, {
+              category: 'buttons_and_icons'
+            })
+          })
+        })
+      })
+
+      describe('when the file is a button & icon svg', () => {
+        beforeEach(() => {
+          fileText = 'something something not buttons & icons'
+        })
+
+        it('sets the category to "buttons_and_icons"', () => {
+          subject().then(() => {
+            sinon.assert.calledWith(successStore.preflightUpload, {
+              category: undefined
+            })
+          })
+        })
+      })
+    })
+
+    describe('when the file is not an svg', () => {
+      let fileText
+
+      const file = () => ({
+        slice: () => ({
+          text: async () => fileText
+        }),
+        type: 'image/png'
+      })
+
+      const fileProps = () => ({
+        domObject: file()
+      })
+
+      const subject = () => store.dispatch(actions.uploadPreflight('files', fileProps()))
+
+      it('sets the category to "buttons_and_icons"', () => {
+        subject().then(() => {
+          sinon.assert.calledWith(successStore.preflightUpload, {
+            category: undefined
+          })
+        })
+      })
     })
 
     it('follows chain preflight -> upload -> complete', () => {

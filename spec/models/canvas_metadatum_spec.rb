@@ -18,21 +18,19 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe CanvasMetadatum do
   describe "getting" do
-    it 'gets the default value as a hash' do
-      expect(CanvasMetadatum.get('some_key', { state: 23 })[:state]).to eq 23
+    it "gets the default value as a hash" do
+      expect(CanvasMetadatum.get("some_key", { state: 23 })[:state]).to eq 23
     end
 
-    it 'will not accept other forms of argument' do
-      expect { CanvasMetadatum.get('some_key', 'some value') }.to raise_error(CanvasMetadatum::MetadataArgumentError)
+    it "will not accept other forms of argument" do
+      expect { CanvasMetadatum.get("some_key", "some value") }.to raise_error(CanvasMetadatum::MetadataArgumentError)
     end
 
-    it 'returns set values' do
-      CanvasMetadatum.set('some_key', { int_val: 23, string_val: "asdf", array_val: [2, 4, 8, 16], hash_val: { nested: "string_value" } })
-      payload = CanvasMetadatum.get('some_key')
+    it "returns set values" do
+      CanvasMetadatum.set("some_key", { int_val: 23, string_val: "asdf", array_val: [2, 4, 8, 16], hash_val: { nested: "string_value" } })
+      payload = CanvasMetadatum.get("some_key")
       expect(payload[:int_val]).to eq(23)
       expect(payload[:string_val]).to eq("asdf")
       expect(payload[:array_val]).to eq([2, 4, 8, 16])

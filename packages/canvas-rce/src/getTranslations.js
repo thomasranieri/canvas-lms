@@ -56,6 +56,9 @@ export default function getTranslations(locale) {
           case 'en-AU-x-unimelb':
             p = import('./translations/locales/en-AU-x-unimelb')
             break
+          case 'en-GB-x-ukhe':
+            p = import('./translations/locales/en-GB-x-ukhe')
+            break
           case 'en-AU':
             p = import('./translations/locales/en_AU')
             break
@@ -70,6 +73,9 @@ export default function getTranslations(locale) {
             break
           case 'es':
             p = import('./translations/locales/es')
+            break
+          case 'es-ES':
+            p = import('./translations/locales/es_ES')
             break
           case 'fa-IR':
             p = import('./translations/locales/fa_IR')
@@ -155,8 +161,17 @@ export default function getTranslations(locale) {
           case 'uk-UA':
             p = import('./translations/locales/uk_UA')
             break
+          case 'vi':
+            p = import('./translations/locales/vi')
+            break
           case 'zh':
             p = import('./translations/locales/zh')
+            break
+          case 'zh-Hans':
+            p = import('./translations/locales/zh-Hans')
+            break
+          case 'zh-Hant':
+            p = import('./translations/locales/zh-Hant')
             break
           case 'zh-HK':
             p = import('./translations/locales/zh_HK')
@@ -184,11 +199,13 @@ export function getLocaleList() {
     'el',
     'en',
     'en-AU-x-unimelb',
+    'en-GB-x-ukhe',
     'en-AU',
     'en-CA',
     'en-CY',
     'en-GB',
     'es',
+    'es-ES',
     'fa-IR',
     'fi',
     'fr',
@@ -217,7 +234,10 @@ export function getLocaleList() {
     'th',
     'tr',
     'uk-UA',
+    'vi',
     'zh',
+    'zh-Hans',
+    'zh-Hant',
     'zh-HK'
   ]
 }

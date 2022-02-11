@@ -26,11 +26,16 @@ module Types
     implements Interfaces::TimestampInterface
     implements Interfaces::LegacyIDInterface
 
-    alias section object
+    alias_method :section, :object
 
     global_id_field :id
 
     field :name, String, null: false
+
+    field :user_count, Int, null: false
+    def user_count
+      object.enrollments.not_fake.active_or_pending_by_date_ignoring_access.distinct.count(:user_id)
+    end
 
     field :sis_id, String, null: true
     def sis_id

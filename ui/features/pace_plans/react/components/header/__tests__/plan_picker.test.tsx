@@ -22,8 +22,8 @@ import {act, render, screen} from '@testing-library/react'
 import {PlanPicker} from '../plan_picker'
 import {
   COURSE,
+  ENROLLMENT_1,
   ENROLLMENT_2,
-  SECTION_1,
   SORTED_ENROLLMENTS,
   SORTED_SECTIONS
 } from '../../../__tests__/fixtures'
@@ -36,8 +36,13 @@ const defaultProps = {
   sections: SORTED_SECTIONS,
   selectedContextId: COURSE.id,
   selectedContextType: 'Course' as const,
-  setSelectedPlanContext: selectPlanContextFn
+  setSelectedPlanContext: selectPlanContextFn,
+  changeCount: 0
 }
+
+afterEach(() => {
+  jest.clearAllMocks()
+})
 
 describe('PlanPicker', () => {
   it('renders a drop-down with all plan types represented', () => {
@@ -50,11 +55,12 @@ describe('PlanPicker', () => {
     act(() => picker.click())
     expect(screen.getByRole('menuitem', {name: 'Course Pace Plan'})).toBeInTheDocument()
 
-    const sections = screen.getByRole('button', {name: 'Sections'})
-    expect(sections).toBeInTheDocument()
-    act(() => sections.click())
-    expect(screen.getByRole('menuitem', {name: 'Hackers'})).toBeInTheDocument()
-    expect(screen.getByRole('menuitem', {name: 'Mercenaries'})).toBeInTheDocument()
+    // Commented out since we're not implementing this feature yet
+    // const sections = screen.getByRole('button', {name: 'Sections'})
+    // expect(sections).toBeInTheDocument()
+    // act(() => sections.click())
+    // expect(screen.getByRole('menuitem', {name: 'Hackers'})).toBeInTheDocument()
+    // expect(screen.getByRole('menuitem', {name: 'Mercenaries'})).toBeInTheDocument()
 
     const students = screen.getByRole('button', {name: 'Students'})
     expect(students).toBeInTheDocument()
@@ -71,10 +77,11 @@ describe('PlanPicker', () => {
     act(() => screen.getByRole('menuitem', {name: 'Course Pace Plan'}).click())
     expect(selectPlanContextFn).toHaveBeenCalledWith('Course', COURSE.id)
 
-    act(() => picker.click())
-    act(() => screen.getByRole('button', {name: 'Sections'}).click())
-    act(() => screen.getByRole('menuitem', {name: 'Hackers'}).click())
-    expect(selectPlanContextFn).toHaveBeenCalledWith('Section', SECTION_1.id)
+    // Commented out since we're not implementing this feature yet
+    // act(() => picker.click())
+    // act(() => screen.getByRole('button', {name: 'Sections'}).click())
+    // act(() => screen.getByRole('menuitem', {name: 'Hackers'}).click())
+    // expect(selectPlanContextFn).toHaveBeenCalledWith('Section', SECTION_1.id)
 
     act(() => picker.click())
     act(() => screen.getByRole('button', {name: 'Students'}).click())
@@ -86,11 +93,63 @@ describe('PlanPicker', () => {
     const {getByLabelText} = render(
       <PlanPicker
         {...defaultProps}
-        selectedContextType="Section"
-        selectedContextId={SECTION_1.id}
+        selectedContextType="Enrollment"
+        selectedContextId={ENROLLMENT_1.id}
       />
     )
     const picker = getByLabelText('Pace Plans') as HTMLInputElement
-    expect(picker.value).toBe('Hackers')
+    expect(picker.value).toBe('Henry Dorsett Case')
+  })
+
+  describe('warning modal', () => {
+    it('is displayed if context changes with unpublished changes', () => {
+      const {getByText, getByLabelText} = render(<PlanPicker {...defaultProps} changeCount={1} />)
+      const picker = getByLabelText('Pace Plans') as HTMLInputElement
+
+      act(() => picker.click())
+      act(() => screen.getByRole('button', {name: 'Students'}).click())
+      act(() => screen.getByRole('menuitem', {name: 'Molly Millions'}).click())
+      expect(
+        getByText(/You have unpublished changes to your Course Pace Plan./)
+      ).toBeInTheDocument()
+    })
+
+    it('aborts context change on cancel', () => {
+      const {getByDisplayValue, getByText, getByLabelText} = render(
+        <PlanPicker {...defaultProps} changeCount={1} />
+      )
+      const picker = getByLabelText('Pace Plans') as HTMLInputElement
+
+      act(() => picker.click())
+      act(() => screen.getByRole('button', {name: 'Students'}).click())
+      act(() => screen.getByRole('menuitem', {name: 'Molly Millions'}).click())
+      const cancelBtn = getByText('Keep Editing').closest('button')
+      act(() => cancelBtn?.click())
+      expect(getByDisplayValue('Course Pace Plan')).toBeInTheDocument()
+    })
+
+    it('cancels context change on "Keep Editing"', () => {
+      const {getByText, getByLabelText} = render(<PlanPicker {...defaultProps} changeCount={1} />)
+      const picker = getByLabelText('Pace Plans') as HTMLInputElement
+
+      act(() => picker.click())
+      act(() => screen.getByRole('button', {name: 'Students'}).click())
+      act(() => screen.getByRole('menuitem', {name: 'Molly Millions'}).click())
+      const cancelBtn = getByText('Keep Editing').closest('button')
+      act(() => cancelBtn?.click())
+      expect(selectPlanContextFn).not.toHaveBeenCalledWith('Molly Millions', '98')
+    })
+
+    it('changes context change on "Discard Changes"', () => {
+      const {getByText, getByLabelText} = render(<PlanPicker {...defaultProps} changeCount={1} />)
+      const picker = getByLabelText('Pace Plans') as HTMLInputElement
+
+      act(() => picker.click())
+      act(() => screen.getByRole('button', {name: 'Students'}).click())
+      act(() => screen.getByRole('menuitem', {name: 'Molly Millions'}).click())
+      const confirmBtn = getByText('Discard Changes').closest('button')
+      act(() => confirmBtn?.click())
+      expect(selectPlanContextFn).toHaveBeenCalledWith('Enrollment', '25')
+    })
   })
 })

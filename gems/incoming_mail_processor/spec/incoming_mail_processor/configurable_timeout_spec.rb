@@ -17,22 +17,25 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require 'spec_helper'
+require "spec_helper"
 
 describe IncomingMailProcessor::ConfigurableTimeout do
-  class TimeoutTester
-    include IncomingMailProcessor::ConfigurableTimeout
-    def default_timeout_duration
-      0.0001
-    end
+  let(:timeout_tester) do
+    Class.new do
+      include IncomingMailProcessor::ConfigurableTimeout
 
-    def foo(arg)
-      arg
+      def default_timeout_duration
+        0.0001
+      end
+
+      def foo(arg)
+        arg
+      end
     end
   end
 
   before do
-    @tester = TimeoutTester.new
+    @tester = timeout_tester.new
   end
 
   it "provides a default timeout" do

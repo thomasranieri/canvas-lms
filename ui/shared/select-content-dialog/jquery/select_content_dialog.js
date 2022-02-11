@@ -60,7 +60,7 @@ SelectContentDialog.deepLinkingListener = event => {
     event.data.messageType === 'LtiDeepLinkingResponse'
   ) {
     if (event.data.content_items.length > 1) {
-      processMultipleContentItems(event)
+      return processMultipleContentItems(event)
         .then(result => {
           const $dialog = $('#resource_selection_dialog')
           $dialog.off('dialogbeforeclose', SelectContentDialog.dialogCancelHandler)
@@ -85,7 +85,7 @@ SelectContentDialog.deepLinkingListener = event => {
           $dialog.dialog('close')
         })
     } else if (event.data.content_items.length === 1) {
-      processSingleContentItem(event)
+      return processSingleContentItem(event)
         .then(result => {
           const $dialog = $('#resource_selection_dialog')
           $dialog.off('dialogbeforeclose', SelectContentDialog.dialogCancelHandler)
@@ -109,16 +109,20 @@ SelectContentDialog.deepLinkingListener = event => {
           $dialog.dialog('close')
         })
     } else if (event.data.content_items.length === 0) {
-      const $selectContextContentDialog = $('#select_context_content_dialog')
-      const $resourceSelectionDialog = $('#resource_selection_dialog')
-
-      $resourceSelectionDialog.off('dialogbeforeclose', SelectContentDialog.dialogCancelHandler)
-      $(window).off('beforeunload', SelectContentDialog.beforeUnloadHandler)
-
-      $resourceSelectionDialog.dialog('close')
-      $selectContextContentDialog.dialog('close')
+      SelectContentDialog.closeAll()
     }
   }
+}
+
+SelectContentDialog.closeAll = function () {
+  const $selectContextContentDialog = $('#select_context_content_dialog')
+  const $resourceSelectionDialog = $('#resource_selection_dialog')
+
+  $resourceSelectionDialog.off('dialogbeforeclose', SelectContentDialog.dialogCancelHandler)
+  $(window).off('beforeunload', SelectContentDialog.beforeUnloadHandler)
+
+  $resourceSelectionDialog.dialog('close')
+  $selectContextContentDialog.dialog('close')
 }
 
 SelectContentDialog.attachDeepLinkingListner = function () {
@@ -151,7 +155,21 @@ SelectContentDialog.handleContentItemResult = function (result, tool) {
   $('#external_tool_create_url').val(result.url)
   $('#external_tool_create_title').val(result.title || tool.name)
   $('#external_tool_create_custom_params').val(JSON.stringify(result.custom))
+  if (result.iframe) {
+    $('#external_tool_create_iframe_width').val(result.iframe.width)
+    $('#external_tool_create_iframe_height').val(result.iframe.height)
+  }
+
   $('#context_external_tools_select .domain_message').hide()
+
+  // content item with an assignment_id means that an assignment was already
+  // created on the backend, so close this dialog without giving the user
+  // any chance to make changes that would be discarded
+  if (result.assignment_id) {
+    $('#external_tool_create_assignment_id').val(result.assignment_id)
+    $('#select_context_content_dialog .add_item_button').click()
+    SelectContentDialog.closeAll()
+  }
 }
 
 SelectContentDialog.Events = {
@@ -234,7 +252,7 @@ SelectContentDialog.Events = {
         $external_content_info_alerts.on('focus', function () {
           const iframeWidth = $iframe.outerWidth(true)
           const iframeHeight = $iframe.outerHeight(true)
-          $iframe.css('border', '2px solid #008EE2')
+          $iframe.css('border', '2px solid #0374B5')
           $(this).removeClass('screenreader-only')
           const alertHeight = $(this).outerHeight(true)
           $iframe
@@ -364,7 +382,10 @@ SelectContentDialog.extractContextExternalToolItemData = function () {
     'item[indent]': $('#content_tag_indent').val(),
     'item[url]': $('#external_tool_create_url').val(),
     'item[title]': $('#external_tool_create_title').val(),
-    'item[custom_params]': $('#external_tool_create_custom_params').val()
+    'item[custom_params]': $('#external_tool_create_custom_params').val(),
+    'item[assignment_id]': $('#external_tool_create_assignment_id').val(),
+    'item[iframe][width]': $('#external_tool_create_iframe_width').val(),
+    'item[iframe][height]': $('#external_tool_create_iframe_height').val()
   }
 }
 
@@ -372,6 +393,9 @@ SelectContentDialog.resetExternalToolFields = function () {
   $('#external_tool_create_url').val('')
   $('#external_tool_create_title').val('')
   $('#external_tool_create_custom_params').val('')
+  $('#external_tool_create_assignment_id').val('')
+  $('#external_tool_create_iframe_width').val('')
+  $('#external_tool_create_iframe_height').val('')
 }
 
 $(document).ready(function () {
@@ -608,16 +632,17 @@ $(document).ready(function () {
 
           if (item_data['item[type]'] == 'attachment') {
             BaseUploader.prototype.onUploadPosted = attachment => {
+              let file_matches = false
               // if the uploaded file replaced and existing file that already has a module item, don't create a new item
               const adding_to_module_id = $dialog.data().context_module_id
               if (
-                !Object.keys(ENV.MODULE_FILE_DETAILS).find(
-                  fdkey =>
-                    // there's module item with the id of the replaced file
-                    ENV.MODULE_FILE_DETAILS[fdkey].content_id == attachment.replacingFileId && // eslint-disable-line eqeqeq
-                    // and the module item is in the module we're working in
+                !Object.keys(ENV.MODULE_FILE_DETAILS).find(fdkey => {
+                  file_matches =
+                    ENV.MODULE_FILE_DETAILS[fdkey].content_id == attachment.replacingFileId &&
                     ENV.MODULE_FILE_DETAILS[fdkey].module_id == adding_to_module_id // eslint-disable-line eqeqeq
-                )
+                  if (file_matches) ENV.MODULE_FILE_DETAILS[fdkey].content_id = attachment.id
+                  return file_matches
+                })
               ) {
                 process_upload(attachment, false)
               }

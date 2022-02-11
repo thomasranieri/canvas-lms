@@ -17,11 +17,10 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require File.expand_path(File.dirname(__FILE__) + '/../../../spec_helper.rb')
 
 describe Auditors::ActiveRecord::Attributes do
   describe "treating a model like it has event stream attributes" do
-    before :each do
+    before do
       @model_type = Class.new(Hash) do
         include Auditors::ActiveRecord::Attributes
       end
@@ -29,16 +28,16 @@ describe Auditors::ActiveRecord::Attributes do
 
     it "transparently fetches values using parent interface" do
       model = @model_type.new
-      model['attr_one'] = 'parent_hash_one'
-      model['attr_two'] = 'parent_hash_two'
-      expect(model['attributes']['attr_one']).to eq("parent_hash_one")
-      expect(model['attributes'].fetch('attr_two')).to eq('parent_hash_two')
+      model["attr_one"] = "parent_hash_one"
+      model["attr_two"] = "parent_hash_two"
+      expect(model["attributes"]["attr_one"]).to eq("parent_hash_one")
+      expect(model["attributes"].fetch("attr_two")).to eq("parent_hash_two")
     end
 
     it "sets values through the attributes interface" do
       model = @model_type.new
-      model['attributes']['method_three'] = :four
-      expect(model['attributes'].fetch('method_three')).to eq(:four)
+      model["attributes"]["method_three"] = :four
+      expect(model["attributes"].fetch("method_three")).to eq(:four)
     end
   end
 end

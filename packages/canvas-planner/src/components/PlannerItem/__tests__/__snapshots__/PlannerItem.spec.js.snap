@@ -96,7 +96,8 @@ exports[`does not render end time if the same as start time 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -120,7 +121,7 @@ exports[`does not render end time if the same as start time 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -263,7 +264,8 @@ exports[`prefers to render feedback if it and the location are available 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -318,10 +320,13 @@ exports[`prefers to render feedback if it and the location are available 1`] = `
         className="PlannerItem-styles__feedbackAvatar"
       >
         <Avatar
+          color="default"
           data-fs-exclude={true}
           display="inline-block"
+          hasInverseColor={false}
           name="Dr. David Bowman"
           onImageLoaded={[Function]}
+          renderIcon={null}
           shape="circle"
           size="small"
           src="/avatar/is/here/"
@@ -441,7 +446,8 @@ exports[`renders Announcement correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -610,7 +616,8 @@ exports[`renders Announcement correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -758,7 +765,8 @@ exports[`renders Announcement correctly with just points 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -927,7 +935,8 @@ exports[`renders Announcement correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1075,7 +1084,8 @@ exports[`renders Assignment correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1244,7 +1254,8 @@ exports[`renders Assignment correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1392,7 +1403,8 @@ exports[`renders Assignment correctly with just points 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1561,7 +1573,8 @@ exports[`renders Assignment correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1709,7 +1722,8 @@ exports[`renders Calendar Event correctly with an all day date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1733,7 +1747,7 @@ exports[`renders Calendar Event correctly with an all day date 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -1875,7 +1889,8 @@ exports[`renders Calendar Event correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -1899,7 +1914,7 @@ exports[`renders Calendar Event correctly with everything 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -2062,7 +2077,8 @@ exports[`renders Calendar Event correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -2086,7 +2102,7 @@ exports[`renders Calendar Event correctly with just date 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -2228,7 +2244,8 @@ exports[`renders Calendar Event correctly with start and end time 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -2252,7 +2269,7 @@ exports[`renders Calendar Event correctly with start and end time 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -2395,7 +2412,8 @@ exports[`renders Calendar Event correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -2419,7 +2437,7 @@ exports[`renders Calendar Event correctly without right side content 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -2561,7 +2579,8 @@ exports[`renders Discussion correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -2730,7 +2749,8 @@ exports[`renders Discussion correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -2878,7 +2898,8 @@ exports[`renders Discussion correctly with just points 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3047,7 +3068,8 @@ exports[`renders Discussion correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3195,7 +3217,8 @@ exports[`renders Note correctly with Group 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3297,10 +3320,13 @@ exports[`renders Note correctly with everything 1`] = `
     }
   >
     <Avatar
+      color="default"
       data-fs-exclude={true}
       display="inline-block"
+      hasInverseColor={false}
       name="Jane"
       onImageLoaded={[Function]}
+      renderIcon={null}
       shape="circle"
       size="small"
       src="/picture/is/here"
@@ -3351,7 +3377,8 @@ exports[`renders Note correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3488,10 +3515,13 @@ exports[`renders Note correctly without Course 1`] = `
     }
   >
     <Avatar
+      color="default"
       data-fs-exclude={true}
       display="inline-block"
+      hasInverseColor={false}
       name="Jane"
       onImageLoaded={[Function]}
+      renderIcon={null}
       shape="circle"
       size="small"
       src="/picture/is/here"
@@ -3542,7 +3572,8 @@ exports[`renders Note correctly without Course 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3725,7 +3756,8 @@ exports[`renders Page correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -3894,7 +3926,8 @@ exports[`renders Page correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4042,7 +4075,8 @@ exports[`renders Page correctly with just points 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4211,7 +4245,8 @@ exports[`renders Page correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4359,7 +4394,8 @@ exports[`renders Quiz correctly with everything 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4528,7 +4564,8 @@ exports[`renders Quiz correctly with just date 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4676,7 +4713,8 @@ exports[`renders Quiz correctly with just points 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4845,7 +4883,8 @@ exports[`renders Quiz correctly without right side content 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -4993,7 +5032,8 @@ exports[`renders assignment peer reviews correctly 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5141,7 +5181,8 @@ exports[`renders correctly 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5310,7 +5351,8 @@ exports[`renders feedback anonymously according to the assignment settings 1`] =
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5365,10 +5407,13 @@ exports[`renders feedback anonymously according to the assignment settings 1`] =
         className="PlannerItem-styles__feedbackAvatar"
       >
         <Avatar
+          color="default"
           data-fs-exclude={true}
           display="inline-block"
+          hasInverseColor={false}
           name="?"
           onImageLoaded={[Function]}
+          renderIcon={null}
           shape="circle"
           size="small"
         />
@@ -5487,7 +5532,8 @@ exports[`renders feedback if available 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5542,10 +5588,13 @@ exports[`renders feedback if available 1`] = `
         className="PlannerItem-styles__feedbackAvatar"
       >
         <Avatar
+          color="default"
           data-fs-exclude={true}
           display="inline-block"
+          hasInverseColor={false}
           name="Boyd Crowder"
           onImageLoaded={[Function]}
+          renderIcon={null}
           shape="circle"
           size="small"
           src="/avatar/is/here/"
@@ -5665,7 +5714,8 @@ exports[`renders media feedback if available 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5720,10 +5770,13 @@ exports[`renders media feedback if available 1`] = `
         className="PlannerItem-styles__feedbackAvatar"
       >
         <Avatar
+          color="default"
           data-fs-exclude={true}
           display="inline-block"
+          hasInverseColor={false}
           name="Howard Stern"
           onImageLoaded={[Function]}
+          renderIcon={null}
           shape="circle"
           size="small"
           src="/avatar/is/here/"
@@ -5843,7 +5896,8 @@ exports[`renders the end time if available 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -5867,7 +5921,7 @@ exports[`renders the end time if available 1`] = `
             currentUser={
               Object {
                 "avatarUrl": "/picture/is/here",
-                "color": "#00AC18",
+                "color": "#0B874B",
                 "displayName": "Jane",
                 "id": "1",
               }
@@ -6010,7 +6064,8 @@ exports[`renders the location if available 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"
@@ -6124,10 +6179,13 @@ exports[`renders user-created Todo correctly 1`] = `
     }
   >
     <Avatar
+      color="default"
       data-fs-exclude={true}
       display="inline-block"
+      hasInverseColor={false}
       name="Jane"
       onImageLoaded={[Function]}
+      renderIcon={null}
       shape="circle"
       size="small"
       src="/picture/is/here"
@@ -6178,7 +6236,8 @@ exports[`renders user-created Todo correctly 1`] = `
                 "linkColor": undefined,
                 "linkHoverColor": undefined,
                 "mediumHeight": "normal",
-                "mediumPadding": "0",
+                "mediumPadding": undefined,
+                "mediumPaddingHorizontal": "0",
               }
             }
             type="button"

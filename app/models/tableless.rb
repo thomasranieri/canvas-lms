@@ -36,7 +36,7 @@ class Tableless < ActiveRecord::Base
     end
 
     def columns_hash
-      @columns_hash ||= Hash[columns.map { |c| [c.name, c] }]
+      @columns_hash ||= columns.index_by(&:name)
     end
 
     def column(name, sql_type = nil, default = nil, null = true)
@@ -45,7 +45,9 @@ class Tableless < ActiveRecord::Base
       columns << ActiveRecord::ConnectionAdapters::Column.new(*args)
     end
 
-    def table_exists?; false; end
+    def table_exists?
+      false
+    end
   end
 
   # Override the save method to prevent exceptions.
@@ -57,15 +59,19 @@ class Tableless < ActiveRecord::Base
     false
   end
 
-  def self.find_by_sql(*args); []; end
+  def self.find_by_sql(*)
+    []
+  end
 
-  def self.count_by_sql(*args); 0; end
+  def self.count_by_sql(*)
+    0
+  end
 
-  def self.delete_all(*args); end
+  def self.delete_all(*); end
 
-  def self.update_all(*args); end
+  def self.update_all(*); end
 
-  def self.execute_simple_calculation(*args); end
+  def self.execute_simple_calculation(*); end
 
-  def self.execute_grouped_calculation(*args); end
+  def self.execute_grouped_calculation(*); end
 end

@@ -18,6 +18,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 class PacePlanPresenter
+  include Rails.application.routes.url_helpers
+
   attr_reader :pace_plan
 
   def initialize(pace_plan)
@@ -70,6 +72,8 @@ class PacePlanPresenter
         root_account_id: ppmi.root_account_id,
         module_item_id: module_item.id,
         assignment_title: module_item.title,
+        points_possible: TextHelper.round_if_whole(module_item.try_rescue(:assignment).try_rescue(:points_possible)),
+        assignment_link: "#{course_url(pace_plan.course, only_path: true)}/modules/items/#{module_item.id}",
         position: module_item.position,
         module_item_type: module_item.content_type,
         published: module_item.published?
@@ -83,19 +87,24 @@ class PacePlanPresenter
 
   def context_type
     if pace_plan.user_id
-      'User'
+      "Enrollment"
     elsif pace_plan.course_section_id
-      'Section'
+      "Section"
     else
-      'Course'
+      "Course"
     end
   end
 
   def pace_plan_module_items
-    @pace_plan_module_items ||= pace_plan.pace_plan_module_items.joins(:module_item)
-                                         .preload(module_item: [:context_module])
-                                         .order('content_tags.position ASC')
-                                         .group_by { |ppmi| ppmi.module_item.context_module }
-                                         .sort_by { |context_module, _items| context_module.position }
+    @pace_plan_module_items ||= if pace_plan.persisted?
+                                  pace_plan.pace_plan_module_items.joins(:module_item)
+                                           .preload(module_item: [:context_module])
+                                           .order("content_tags.position ASC")
+                                else
+                                  pace_plan.pace_plan_module_items.sort do |a, b|
+                                    a.module_item.position <=> b.module_item.position
+                                  end
+                                end.group_by { |ppmi| ppmi.module_item.context_module }
+                                .sort_by { |context_module, _items| context_module.position }
   end
 end

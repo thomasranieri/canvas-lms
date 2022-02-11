@@ -19,11 +19,11 @@ import React from 'react'
 import {shallow, mount} from 'enzyme'
 import moment from 'moment-timezone'
 import MockDate from 'mockdate'
-import {PlannerItem} from '../index'
+import {PlannerItem_raw as PlannerItem} from '../index'
 
 const MY_TIMEZONE = 'America/Los_Angeles'
 const DEFAULT_DATE = moment.tz('2011-12-17T03:30:00', MY_TIMEZONE)
-const user = {id: '1', displayName: 'Jane', avatarUrl: '/picture/is/here', color: '#00AC18'}
+const user = {id: '1', displayName: 'Jane', avatarUrl: '/picture/is/here', color: '#0B874B'}
 
 function defaultProps(option = {}) {
   return {
@@ -545,6 +545,11 @@ it('disables the checkbox when toggleAPIPending is true', () => {
   expect(wrapper.find('Checkbox').prop('disabled')).toBe(true)
 })
 
+it('renders the checkbox as disabled when isObserving', () => {
+  const wrapper = shallow(<PlannerItem {...defaultProps()} isObserving />)
+  expect(wrapper.find('Checkbox').prop('disabled')).toBe(true)
+})
+
 it('registers itself as animatable', () => {
   const fakeRegister = jest.fn()
   const fakeDeregister = jest.fn()
@@ -866,5 +871,11 @@ describe('with isMissingItem', () => {
     const wrapper = shallow(<PlannerItem {...props} />)
     const dateText = wrapper.find('.PlannerItem-styles__due PresentationContent')
     expect(dateText.childAt(0).text()).toBe('Due: Dec 17, 2011 at 3:30 AM')
+  })
+
+  it('still renders even when there is no date', () => {
+    const wrapper = shallow(<PlannerItem {...props} date={null} />)
+    const dateText = wrapper.find('.PlannerItem-styles__due PresentationContent')
+    expect(dateText.children().length).toEqual(0)
   })
 })

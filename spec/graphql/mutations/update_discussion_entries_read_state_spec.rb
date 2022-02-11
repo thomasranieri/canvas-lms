@@ -18,8 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-require_relative '../graphql_spec_helper'
+require_relative "../graphql_spec_helper"
 
 RSpec.describe Mutations::UpdateDiscussionEntriesReadState do
   before(:once) do
@@ -60,18 +59,19 @@ RSpec.describe Mutations::UpdateDiscussionEntriesReadState do
     result.to_h.with_indifferent_access
   end
 
-  it 'updates the read state for the given entries' do
+  it "updates the read state for the given entries" do
+    expect(@topic.unread_count(@student)).to eq 0
     @entries.each do |entry|
       expect(entry.read?(@student)).to be true
     end
 
     result = run_mutation({ ids: @entries.map(&:id), read: false })
-
-    expect(result.dig('errors')).to be nil
-    updated_entries = result.dig('data', 'updateDiscussionEntriesReadState', 'discussionEntries')
+    expect(@topic.unread_count(@student)).to eq @entries.count
+    expect(result["errors"]).to be nil
+    updated_entries = result.dig("data", "updateDiscussionEntriesReadState", "discussionEntries")
 
     updated_entries.each do |entry|
-      expect(entry.dig('entryParticipant', 'read')).to be false
+      expect(entry.dig("entryParticipant", "read")).to be false
     end
 
     @entries.each do |entry|

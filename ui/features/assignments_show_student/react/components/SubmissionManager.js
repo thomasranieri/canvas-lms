@@ -186,16 +186,23 @@ export default class SubmissionManager extends Component {
   }
 
   getActiveSubmissionTypeFromProps() {
-    if (this.props.assignment.submissionTypes.length > 1) {
-      return this.props.submission?.submissionDraft?.activeSubmissionType || null
-    } else {
+    // use the draft's active type if one exists
+    if (this.props.submission?.submissionDraft != null) {
+      return this.props.submission?.submissionDraft.activeSubmissionType
+    }
+
+    // default to the assignment's submission type if there's only one
+    if (this.props.assignment.submissionTypes.length === 1) {
       return this.props.assignment.submissionTypes[0]
     }
+
+    // otherwise, don't stipulate an active submission type
+    return null
   }
 
-  updateActiveSubmissionType = activeSubmissionType => {
+  updateActiveSubmissionType = (activeSubmissionType, selectedExternalTool = null) => {
     const focusAttemptOnInit = this.props.assignment.submissionTypes.length > 1
-    this.setState({activeSubmissionType, focusAttemptOnInit})
+    this.setState({activeSubmissionType, focusAttemptOnInit, selectedExternalTool})
   }
 
   updateEditingDraft = editingDraft => {
@@ -214,7 +221,7 @@ export default class SubmissionManager extends Component {
   }
 
   updateCachedSubmissionDraft = (cache, newDraft) => {
-    const {assignment} = JSON.parse(
+    const {assignment, submission} = JSON.parse(
       JSON.stringify(
         cache.readQuery({
           query: STUDENT_VIEW_QUERY,
@@ -226,12 +233,14 @@ export default class SubmissionManager extends Component {
       )
     )
 
-    assignment.submissionsConnection.nodes[0].submissionDraft = newDraft
-
+    submission.submissionDraft = newDraft
     cache.writeQuery({
       query: STUDENT_VIEW_QUERY,
-      variables: {assignmentLid: this.props.assignment._id, submissionID: this.props.submission.id},
-      data: {assignment}
+      variables: {
+        assignmentLid: this.props.assignment._id,
+        submissionID: this.props.submission.id
+      },
+      data: {assignment, submission}
     })
   }
 
@@ -252,6 +261,15 @@ export default class SubmissionManager extends Component {
     this.setState({submittingAssignment: true})
 
     switch (this.state.activeSubmissionType) {
+      case 'basic_lti_launch':
+        if (this.props.submission.submissionDraft.ltiLaunchUrl) {
+          await this.submitToGraphql(submitMutation, {
+            resourceLinkLookupUuid: this.props.submission.submissionDraft.resourceLinkLookupUuid,
+            url: this.props.submission.submissionDraft.ltiLaunchUrl,
+            type: this.state.activeSubmissionType
+          })
+        }
+        break
       case 'media_recording':
         if (this.props.submission.submissionDraft.mediaObject?._id) {
           await this.submitToGraphql(submitMutation, {
@@ -324,16 +342,24 @@ export default class SubmissionManager extends Component {
       context.isLatestAttempt &&
       context.allowChangesToSubmission &&
       !this.props.assignment.lockInfo.isLocked &&
-      !this.shouldRenderNewAttempt(context)
+      !this.shouldRenderNewAttempt(context) &&
+      context.lastSubmittedSubmission?.gradingStatus !== 'excused'
     )
   }
 
-  handleDraftComplete(success) {
+  handleDraftComplete(success, body, context) {
+    if (!context.allowChangesToSubmission) {
+      return
+    }
     this.updateUploadingFiles(false)
+    const element = document.createElement('div')
+    element.insertAdjacentHTML('beforeend', body)
 
     if (success) {
-      this.setState({draftStatus: 'saved'})
-      this.context.setOnSuccess(I18n.t('Submission draft updated'))
+      if (!element.querySelector(`[data-placeholder-for]`)) {
+        this.setState({draftStatus: 'saved'})
+        this.context.setOnSuccess(I18n.t('Submission draft updated'))
+      }
     } else {
       this.setState({draftStatus: 'error'})
       this.context.setOnFailure(I18n.t('Error updating submission draft'))
@@ -375,12 +401,18 @@ export default class SubmissionManager extends Component {
     }, 4000)
   }
 
-  renderAttemptTab() {
+  renderAttemptTab(context) {
     return (
       <Mutation
         mutation={CREATE_SUBMISSION_DRAFT}
-        onCompleted={data => this.handleDraftComplete(!data.createSubmissionDraft.errors)}
-        onError={() => this.handleDraftComplete(false)}
+        onCompleted={data =>
+          this.handleDraftComplete(
+            !data.createSubmissionDraft.errors,
+            data.createSubmissionDraft.submissionDraft.body,
+            context
+          )
+        }
+        onError={() => this.handleDraftComplete(false, null, context)}
         update={this.updateSubmissionDraftCache}
       >
         {createSubmissionDraft => (
@@ -394,6 +426,10 @@ export default class SubmissionManager extends Component {
               onContentsChanged={() => {
                 this.setState({draftStatus: 'saving'})
               }}
+              selectedExternalTool={
+                this.state.selectedExternalTool ||
+                this.props.submission?.submissionDraft?.externalTool
+              }
               submission={this.props.submission}
               updateActiveSubmissionType={this.updateActiveSubmissionType}
               updateEditingDraft={this.updateEditingDraft}
@@ -538,6 +574,11 @@ export default class SubmissionManager extends Component {
       case 'student_annotation':
         activeTypeMeetsCriteria =
           this.props.submission?.submissionDraft?.meetsStudentAnnotationCriteria
+        break
+      case 'basic_lti_launch':
+        activeTypeMeetsCriteria =
+          this.props.submission?.submissionDraft?.meetsBasicLtiLaunchCriteria
+        break
     }
 
     return (
@@ -598,18 +639,22 @@ export default class SubmissionManager extends Component {
 
   render() {
     return (
-      <>
-        {this.state.submittingAssignment ? <LoadingIndicator /> : this.renderAttemptTab()}
-        <StudentViewContext.Consumer>
-          {context => (
+      <StudentViewContext.Consumer>
+        {context => (
+          <>
+            {this.state.submittingAssignment ? (
+              <LoadingIndicator />
+            ) : (
+              this.renderAttemptTab(context)
+            )}
             <>
               {this.renderSimilarityPledge(context)}
               {this.renderFooter(context)}
             </>
-          )}
-        </StudentViewContext.Consumer>
-        {this.state.showConfetti ? <Confetti /> : null}
-      </>
+            {this.state.showConfetti ? <Confetti /> : null}
+          </>
+        )}
+      </StudentViewContext.Consumer>
     )
   }
 }

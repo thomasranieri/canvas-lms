@@ -160,6 +160,60 @@ particular placement:
    </cartridge_basiclti_link>
 ```
 # Supported Substitutions
+## ResourceLink.id
+LTI - Custom parameter substitution: ResourceLink.id
+Returns the LTI value for the resource_link.id property
+Returns "$ResourceLink.id" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_id*  
+
+
+## ResourceLink.description
+LTI - Custom parameter substitution: ResourceLink.description
+Returns the LTI value for the resource_link.description property
+Returns "$ResourceLink.description" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_description*  
+
+
+## ResourceLink.title
+LTI - Custom parameter substitution: ResourceLink.title
+Returns the LTI value for the resource_link.title property
+Returns "$ResourceLink.title" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_title*  
+
+
+## ResourceLink.available.startDateTime
+LTI - Custom parameter substitution: ResourceLink.available.startDateTime
+Returns the ISO 8601 date and time when this resource is available for learners to access
+Returns "$ResourceLink.available.startDateTime" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_available_startdatetime*  
+
+
+## ResourceLink.available.endDateTime
+LTI - Custom parameter substitution: ResourceLink.available.endDateTime
+Returns the ISO 8601 date and time when this resource ceases to be available for learners to access
+Returns "$ResourceLink.available.endDateTime" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_available_enddatetime*  
+
+
+## ResourceLink.submission.endDateTime
+LTI - Custom parameter substitution: ResourceLink.submission.endDateTime
+Returns the ISO 8601 date and time when this resource stops accepting submissions.
+Returns "$ResourceLink.submission.endDateTime" otherwise.
+
+**Availability**: *always*  
+**Launch Parameter**: *resourcelink_submission_enddatetime*  
+
+
 ## com.instructure.User.observees
 If the current user is an observer in the launch
 context, this substitution returns a comma-separated
@@ -187,6 +241,15 @@ context of the tool launch is within a course.
 
 ```
 [ "Section 1", "Section 5", "TA Section"]
+```
+## com.instructure.RCS.app_host
+Returns the host of the rich content service for the current region.
+
+**Availability**: *always*  
+**Launch Parameter**: *com_instructure_rcs_app_host*  
+
+```
+"rich-content-iad.inscloudgate.net"
 ```
 ## com.instructure.Observee.sisIds
 returns all observee ids linked to this observer as an String separated by `,`.
@@ -244,6 +307,15 @@ the `ext_lti_assignment_id` send in various launches and webhooks.
 
 ```
 "9ae4170c-6b64-444d-9246-0b7dedd5f560"
+```
+## com.instructure.Assignment.description
+The LTI assignment description of an assignment.
+
+**Availability**: *always*  
+**Launch Parameter**: *com_instructure_assignment_description*  
+
+```
+"Example Description"
 ```
 ## com.instructure.Assignment.allowedFileExtensions
 A comma separated list of the file extensions that are allowed for submitting to this
@@ -435,6 +507,15 @@ returns the root account's sis source id for the current context.
 
 ```
 "sis_account_id_1234"
+```
+## Canvas.externalTool.global_id
+returns the global ID for the external tool that was launched. Only available for LTI 1.
+
+**Availability**: *always and when in an LTI 1*  
+
+
+```
+1234
 ```
 ## Canvas.externalTool.url
 returns the URL for the external tool that was launched. Only available for LTI 1.
@@ -1076,6 +1157,15 @@ Returns the assignment_id of the assignment that was launched.
 
 ```
 1234
+```
+## Canvas.assignment.description
+Returns the assignment_description of the assignment that was launched.
+
+**Availability**: *when launched as an assignment*  
+
+
+```
+"Example Description"
 ```
 ## com.instructure.Group.id
 Returns the Canvas id of the group the current user is in if launching

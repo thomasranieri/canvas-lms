@@ -45,6 +45,7 @@ const locale = {
   "announcements_a4b8ed4a": { "message": "Hirdetmények" },
   "apply_781a2546": { "message": "Alkalmazás" },
   "apps_54d24a47": { "message": "Alkalmazások" },
+  "arrows_464a3e54": { "message": "Nyilak" },
   "aspect_ratio_will_be_preserved_cb5fdfb8": {
     "message": "Képarány megtartása"
   },
@@ -56,10 +57,8 @@ const locale = {
   "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
     "message": "Van automatikusan mentett tartalom. Szeretné inkább azt betölteni?"
   },
-  "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-    "message": "Automatikusan megnyit egy beágyazott előnézetet. (Az előnézet csak mentés után jelenik meg.)"
-  },
   "available_folders_694d0436": { "message": "Elérhető mappák" },
+  "basic_554cdc0a": { "message": "Alap" },
   "c_2001_acme_inc_283f7f80": { "message": "(c) 2001 Acme Inc." },
   "cancel_caeb1e68": { "message": "Mégse" },
   "choose_caption_file_9c45bc4e": { "message": "Feliratfájl választása" },
@@ -125,14 +124,12 @@ const locale = {
   "default_numerical_ordered_list_48dd3548": {
     "message": "alapértelmezett sorszámozott lista"
   },
+  "delimiters_4db4840d": { "message": "Elválasztó jelek" },
   "describe_the_image_e65d2e32": { "message": "(A kép leírása)" },
   "describe_the_video_2fe8f46a": { "message": "(A videó leírása)" },
   "details_98a31b68": { "message": "Részletek" },
   "dimensions_45ddb7b7": { "message": "Méretek" },
   "directionality_26ae9e08": { "message": "Irányítottság" },
-  "disable_in_line_preview_2a675175": {
-    "message": "Letiltja a beágyazott előnézetet."
-  },
   "discussions_a5f96392": { "message": "Fórumok" },
   "discussions_index_6c36ced": { "message": "Fórumok indexe" },
   "display_options_315aba85": { "message": "Megjelenítési beállítások" },
@@ -203,6 +200,7 @@ const locale = {
     "message": "Ugrás a szerkesztő eszköztárhoz"
   },
   "grades_a61eba0a": { "message": "Értékelések" },
+  "greek_65c5b3f7": { "message": "Görög" },
   "group_documents_8bfd6ae6": { "message": "Csoport dokumentumok" },
   "group_files_4324f3df": { "message": "Csoportfájlok" },
   "group_files_82e5dcdb": { "message": "Csoportfájlok" },
@@ -254,6 +252,7 @@ const locale = {
   "locked_762f138b": { "message": "Zárolva" },
   "media_af190855": { "message": "Média" },
   "medium_5a8e9ead": { "message": "Közepes" },
+  "misc_3b692ea7": { "message": "Egyéb" },
   "miscellaneous_e9818229": { "message": "Egyéb" },
   "modules_c4325335": { "message": "Modulok" },
   "must_be_at_least_width_x_height_px_41dc825e": {
@@ -281,6 +280,7 @@ const locale = {
   "open_this_keyboard_shortcuts_dialog_9658b83a": {
     "message": "Nyissa meg a billentyűkombinációk párbeszédablakot"
   },
+  "operators_a2ef9a93": { "message": "Műveletek" },
   "options_3ab0ea65": { "message": "Beállítások" },
   "ordered_and_unordered_lists_cfadfc38": {
     "message": "Rendezett és Rendezetlen Listák"
@@ -294,6 +294,7 @@ const locale = {
   "pages_e5414c2c": { "message": "Oldalak" },
   "paragraph_5e5ad8eb": { "message": "Bekezdés" },
   "people_b4ebb13c": { "message": "Résztvevők" },
+  "percentage_34ab7c2c": { "message": "Százalék" },
   "posted_when_a578f5ab": { "message": "Közzétéve: { when }" },
   "preformatted_d0670862": { "message": "Előre formázott" },
   "preview_53003fd2": { "message": "Előnézet" },
@@ -309,6 +310,7 @@ const locale = {
   "record_upload_media_5fdce166": {
     "message": "Médiafájl rögzítése/feltöltése"
   },
+  "relationships_6602af70": { "message": "Kapcsolatok" },
   "remove_link_d1f2f4d0": { "message": "Link eltávolítása" },
   "restore_auto_save_deccd84b": {
     "message": "Visszaállítás automatikus mentésből?"
@@ -327,9 +329,6 @@ const locale = {
   "show_link_options_545338fd": { "message": "Linkbeállítások mutatása" },
   "show_video_options_6ed3721a": { "message": "Videóbeállítások mutatása" },
   "size_b30e1077": { "message": "Méret" },
-  "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-    "message": "A { file } mérete nagyobb, mint a megengedett legnagyobb fájl méret: { max } MB."
-  },
   "small_b070434a": { "message": "Kicsi" },
   "something_went_wrong_89195131": { "message": "Hiba történt!" },
   "something_went_wrong_and_i_don_t_know_what_to_show_e0c54ec8": {

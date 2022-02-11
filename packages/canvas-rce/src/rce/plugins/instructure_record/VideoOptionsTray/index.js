@@ -34,6 +34,7 @@ import {ClosedCaptionPanel} from '@instructure/canvas-media'
 import {
   CUSTOM,
   MIN_WIDTH_VIDEO,
+  MIN_PERCENTAGE,
   videoSizes,
   labelForImageSize,
   scaleToSize
@@ -57,8 +58,9 @@ export default function VideoOptionsTray(props) {
   const [subtitles, setSubtitles] = useState(videoOptions.tracks || [])
   const [minWidth] = useState(MIN_WIDTH_VIDEO)
   const [minHeight] = useState(Math.round((videoHeight / videoWidth) * MIN_WIDTH_VIDEO))
+  const [minPercentage] = useState(MIN_PERCENTAGE)
 
-  const dimensionsState = useDimensionsState(videoOptions, {minHeight, minWidth})
+  const dimensionsState = useDimensionsState(videoOptions, {minHeight, minWidth, minPercentage})
   function handleTitleTextChange(event) {
     setTitleText(event.target.value)
   }
@@ -129,8 +131,7 @@ export default function VideoOptionsTray(props) {
   const saveDisabled =
     displayAs === 'embed' &&
     (titleText === '' || (videoSize === CUSTOM && !dimensionsState.isValid))
-  //  yes I know ENV shouldn't be used in the sub-package, but it's temporary
-  const cc_in_rce_video_tray = !!ENV?.FEATURES?.cc_in_rce_video_tray
+
   return (
     <StoreProvider {...trayProps}>
       {contentProps => (
@@ -146,7 +147,7 @@ export default function VideoOptionsTray(props) {
           shouldCloseOnDocumentClick
           shouldContainFocus
           shouldReturnFocus
-          size={cc_in_rce_video_tray ? 'regular' : undefined}
+          size="regular"
         >
           <Flex direction="column" height={getTrayHeight()}>
             <Flex.Item as="header" padding="medium">
@@ -216,26 +217,25 @@ export default function VideoOptionsTray(props) {
                             disabled={displayAs !== 'embed'}
                             minHeight={minHeight}
                             minWidth={minWidth}
+                            minPercentage={minPercentage}
                           />
                         </View>
                       )}
                     </Flex.Item>
-                    {cc_in_rce_video_tray && (
-                      <Flex.Item padding="small">
-                        <FormFieldGroup description={formatMessage('Closed Captions/Subtitles')}>
-                          <ClosedCaptionPanel
-                            subtitles={subtitles.map(st => ({
-                              locale: st.locale,
-                              file: {name: st.language || st.locale} // this is an artifact of ClosedCaptionCreatorRow's inards
-                            }))}
-                            uploadMediaTranslations={Bridge.uploadMediaTranslations}
-                            languages={Bridge.languages}
-                            updateSubtitles={handleUpdateSubtitles}
-                            liveRegion={getLiveRegion}
-                          />
-                        </FormFieldGroup>
-                      </Flex.Item>
-                    )}
+                    <Flex.Item padding="small">
+                      <FormFieldGroup description={formatMessage('Closed Captions/Subtitles')}>
+                        <ClosedCaptionPanel
+                          subtitles={subtitles.map(st => ({
+                            locale: st.locale,
+                            file: {name: st.language || st.locale} // this is an artifact of ClosedCaptionCreatorRow's inards
+                          }))}
+                          uploadMediaTranslations={Bridge.uploadMediaTranslations}
+                          languages={Bridge.languages}
+                          updateSubtitles={handleUpdateSubtitles}
+                          liveRegion={getLiveRegion}
+                        />
+                      </FormFieldGroup>
+                    </Flex.Item>
                   </Flex>
                 </Flex.Item>
                 <Flex.Item

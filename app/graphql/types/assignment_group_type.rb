@@ -21,7 +21,7 @@ module Types
   class AssignmentGroupType < ApplicationObjectType
     graphql_name "AssignmentGroup"
 
-    alias assignment_group object
+    alias_method :assignment_group, :object
 
     implements GraphQL::Types::Relay::Node
     implements Interfaces::TimestampInterface
@@ -52,9 +52,9 @@ module Types
 
     implements Interfaces::AssignmentsConnectionInterface
     def assignments_connection(filter: {})
-      load_association(:context).then { |course|
+      load_association(:context).then do |course|
         super(course: course, filter: filter)
-      }
+      end
     end
 
     field :grades_connection, GradesType.connection_type, null: true do

@@ -19,7 +19,7 @@
 import _ from 'lodash'
 import {Action, Dispatch} from 'redux'
 import {ThunkAction} from 'redux-thunk'
-import equal from 'fast-deep-equal'
+import {deepEqual} from '@instructure/ui-utils'
 
 import {getPacePlan} from '../reducers/pace_plans'
 import {StoreState, PacePlan} from '../types'
@@ -27,15 +27,13 @@ import * as pacePlanAPI from '../api/pace_plan_api'
 import {actions as uiActions} from './ui'
 import {pacePlanActions} from './pace_plans'
 
-const updatePacePlan = async (
+const updatePacePlan = (
   dispatch: Dispatch<Action>,
   getState: () => StoreState,
   planBefore: PacePlan,
   shouldBlock: boolean,
   extraSaveParams = {}
 ) => {
-  await pacePlanAPI.waitForActionCompletion(() => getState().ui.planPublishing)
-
   const plan = getPacePlan(getState())
 
   if (planBefore.id && plan.id !== planBefore.id) {
@@ -62,14 +60,14 @@ const updatePacePlan = async (
         dispatch(uiActions.hideLoadingOverlay())
       }
       dispatch(uiActions.autoSaveCompleted()) // Update the UI state
-      dispatch(uiActions.setErrorMessage(''))
+      dispatch(uiActions.clearCategoryError('autosaving'))
     })
     .catch(error => {
       if (shouldBlock) {
         dispatch(uiActions.hideLoadingOverlay())
       }
       dispatch(uiActions.autoSaveCompleted())
-      dispatch(uiActions.setErrorMessage('There was an error saving your changes'))
+      dispatch(uiActions.setCategoryError('autosaving', error?.toString()))
       console.error(error) // eslint-disable-line no-console
     })
 }
@@ -101,13 +99,11 @@ export const createAutoSavingAction = (
     dispatch(action) // Dispatch the original action
 
     // Don't autosave if no changes have occured
-    if (equal(planBefore, getPacePlan(getState()))) {
+    if (deepEqual(planBefore, getPacePlan(getState()))) {
       return
     }
 
-    dispatch(pacePlanActions.setUnpublishedChanges(true))
     dispatch(uiActions.startAutoSave())
-    dispatch(pacePlanActions.setLinkedToParent(false))
 
     if (debounce) {
       return debouncedUpdatePacePlan(dispatch, getState, planBefore, shouldBlock, extraSaveParams)

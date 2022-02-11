@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-module Canvas::Oauth
+module Canvas::OAuth
   class RequestError < StandardError
     ERROR_MAP = {
       invalid_client_id: {
@@ -69,6 +69,7 @@ module Canvas::Oauth
     }.freeze
 
     def initialize(message)
+      super()
       @message = message
     end
 
@@ -98,9 +99,9 @@ module Canvas::Oauth
 
     def append_error(redirect)
       uri = URI.parse(redirect)
-      error_query = URI.decode_www_form(String(uri.query)) << ["error", to_render_data.with_indifferent_access.dig('json', 'error')]
+      error_query = URI.decode_www_form(String(uri.query)) << ["error", to_render_data.with_indifferent_access.dig("json", "error")]
       uri.query = URI.encode_www_form(error_query)
-      error_description_query = URI.decode_www_form(String(uri.query)) << ["error_description", to_render_data.with_indifferent_access.dig('json', 'error_description')]
+      error_description_query = URI.decode_www_form(String(uri.query)) << ["error_description", to_render_data.with_indifferent_access.dig("json", "error_description")]
       uri.query = URI.encode_www_form(error_description_query)
       uri.to_s
     end

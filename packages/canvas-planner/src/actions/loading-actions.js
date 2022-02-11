@@ -20,7 +20,11 @@ import {createActions, createAction} from 'redux-actions'
 import axios from 'axios'
 import buildURL from 'axios/lib/helpers/buildURL'
 import {asAxios, getPrefetchedXHR} from '@instructure/js-utils'
-import {getContextCodesFromState, transformApiToInternalItem} from '../utilities/apiUtils'
+import {
+  getContextCodesFromState,
+  transformApiToInternalItem,
+  observedUserId
+} from '../utilities/apiUtils'
 import {alert} from '../utilities/alertUtils'
 import formatMessage from '../format-message'
 import {itemsToDays} from '../utilities/daysUtils'
@@ -278,9 +282,16 @@ function getWayFutureItem(fromMoment) {
   // first item so we know what the most distant item is
   return (dispatch, getState) => {
     const state = getState()
-    const context_codes = state.singleCourse ? getContextCodesFromState(state) : undefined
+    const observed_user_id = observedUserId(state)
+    let context_codes
+    if (observed_user_id) {
+      context_codes = state.selectedObservee.contextCodes
+    } else {
+      context_codes = state.singleCourse ? getContextCodesFromState(state) : undefined
+    }
     const futureMoment = fromMoment.clone().add(1, 'year')
     const url = buildURL('/api/v1/planner/items', {
+      observed_user_id,
       context_codes,
       end_date: futureMoment.format(),
       order: 'desc',
@@ -302,9 +313,16 @@ function getWayFutureItem(fromMoment) {
 function getWayPastItem(fromMoment) {
   return (dispatch, getState) => {
     const state = getState()
-    const context_codes = state.singleCourse ? getContextCodesFromState(state) : undefined
+    const observed_user_id = observedUserId(state)
+    let context_codes
+    if (observed_user_id) {
+      context_codes = state.selectedObservee.contextCodes
+    } else {
+      context_codes = state.singleCourse ? getContextCodesFromState(state) : undefined
+    }
     const pastMoment = fromMoment.clone().add(-1, 'year')
     const url = buildURL('/api/v1/planner/items', {
+      observed_user_id,
       context_codes,
       start_date: pastMoment.format(),
       order: 'asc',
@@ -324,6 +342,7 @@ function getWayPastItem(fromMoment) {
       })
   }
 }
+
 // --------------------------------------------
 export function sendBasicFetchRequest(baseUrl, params = {}) {
   const url = buildURL(baseUrl, params)
@@ -362,6 +381,11 @@ function fetchParams(loadingOptions) {
     }
     if (loadingOptions.extraParams) {
       Object.assign(params, loadingOptions.extraParams)
+    }
+    const observeeId = observedUserId(loadingOptions.getState())
+    if (observeeId) {
+      params.observed_user_id = observeeId
+      params.context_codes = loadingOptions.getState().selectedObservee.contextCodes
     }
 
     return ['/api/v1/planner/items', {params}]

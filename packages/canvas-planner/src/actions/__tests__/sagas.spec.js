@@ -277,7 +277,7 @@ describe('loadAllOpportunitiesSaga', () => {
       call(sendBasicFetchRequest, '/api/v1/users/self/missing_submissions', {
         course_ids: undefined,
         include: ['planner_overrides'],
-        filter: ['submittable'],
+        filter: ['submittable', 'current_grading_period'],
         per_page: 100
       })
     )
@@ -337,5 +337,28 @@ describe('loadAllOpportunitiesSaga', () => {
     generator.next(initialState()) // select state
     generator.throw('some-error')
     expect(alertSpy).toHaveBeenCalled()
+  })
+
+  it('passes observed_user_id and course_ids to API call if observing', () => {
+    const overrides = {
+      currentUser: {
+        id: '3'
+      },
+      selectedObservee: {
+        id: '12',
+        contextCodes: ['course_1', 'course_569']
+      }
+    }
+    const generator = loadAllOpportunitiesSaga()
+    generator.next() // select state
+    expect(generator.next(initialState(overrides)).value).toEqual(
+      call(sendBasicFetchRequest, '/api/v1/users/self/missing_submissions', {
+        observed_user_id: '12',
+        course_ids: ['1', '569'],
+        include: ['planner_overrides'],
+        filter: ['submittable', 'current_grading_period'],
+        per_page: 100
+      })
+    )
   })
 })

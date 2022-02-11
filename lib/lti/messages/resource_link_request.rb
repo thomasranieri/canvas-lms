@@ -65,9 +65,28 @@ module Lti::Messages
     def add_resource_link_request_claims!
       resource_link = assignment_resource_link
       assignment = line_item_for_assignment&.assignment
-      @message.resource_link.id = resource_link&.resource_link_uuid || context_resource_link_id
+      @message.resource_link.id = launch_resource_link_id
       @message.resource_link.description = resource_link && assignment&.description
       @message.resource_link.title = resource_link && assignment&.title
+    end
+
+    def add_lti1p1_claims!
+      @message.lti1p1.resource_link_id = @assignment.lti_resource_link_id if include_lti1p1_resource_link_id_migration?
+      super
+    end
+
+    def include_lti1p1_claims?
+      super || include_lti1p1_resource_link_id_migration?
+    end
+
+    # @see https://www.imsglobal.org/spec/lti/v1p3/migr#remapping-parameters for more info on LTI 1.1 -> 1.3 migration
+    # parameters
+    def include_lti1p1_resource_link_id_migration?
+      @assignment && launch_resource_link_id != @assignment.lti_resource_link_id
+    end
+
+    def launch_resource_link_id
+      assignment_resource_link&.resource_link_uuid || context_resource_link_id
     end
 
     def unexpanded_custom_parameters
@@ -87,12 +106,12 @@ module Lti::Messages
       return if @assignment.nil?
 
       unless defined?(@assignment_resource_link)
-        launch_error = Lti::Ims::AdvantageErrors::InvalidLaunchError
+        launch_error = Lti::IMS::AdvantageErrors::InvalidLaunchError
         unless @assignment.external_tool?
-          raise launch_error.new(nil, api_message: 'Assignment not configured for external tool launches')
+          raise launch_error.new(nil, api_message: "Assignment not configured for external tool launches")
         end
         unless tool_from_tag(@assignment.external_tool_tag, @context) == @tool
-          raise launch_error.new(nil, api_message: 'Assignment not configured for launches with specified tool')
+          raise launch_error.new(nil, api_message: "Assignment not configured for launches with specified tool")
         end
 
         @assignment_resource_link = line_item_for_assignment&.resource_link
@@ -102,16 +121,14 @@ module Lti::Messages
     end
 
     def assignment_line_item_url
-      @assignment_line_item_url ||= begin
-        line_item = line_item_for_assignment
-        return if line_item.blank?
-
-        # assume @context is either Group or Course, per #include_assignment_and_grade_service_claims?
-        @expander.controller.lti_line_item_show_url(
-          course_id: @context.is_a?(Group) ? context.context_id : @context.id,
-          id: line_item.id
-        )
-      end
+      @assignment_line_item_url ||=
+        if (line_item = line_item_for_assignment).present?
+          # assume @context is either Group or Course, per #include_assignment_and_grade_service_claims?
+          @expander.controller.lti_line_item_show_url(
+            course_id: @context.is_a?(Group) ? context.context_id : @context.id,
+            id: line_item.id
+          )
+        end
     end
 
     def line_item_for_assignment

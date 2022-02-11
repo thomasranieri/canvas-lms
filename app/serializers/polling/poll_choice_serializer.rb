@@ -28,7 +28,7 @@ module Polling
     def_delegators :object, :poll
     def_delegators :@controller, :api_v1_poll_url
 
-    def filter(keys)
+    def filter(_keys)
       if is_teacher?
         student_keys + teacher_keys
       else
@@ -51,7 +51,7 @@ module Polling
     end
 
     def student_keys
-      keys = [:id, :text, :position]
+      keys = %i[id text position]
       keys << :is_correct if poll.closed_and_viewable_for?(current_user)
       keys
     end

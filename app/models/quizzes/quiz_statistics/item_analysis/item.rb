@@ -41,7 +41,7 @@ class Quizzes::QuizStatistics::ItemAnalysis::Item
     @answers = question[:answers]
                .each_with_index
                .sort_by { |answer, i| [-answer[:weight], i] }
-               .map { |answer, i| answer[:id] }
+               .map { |answer, _i| answer[:id] }
     @respondent_ids = []
     @respondent_map = Hash.new { |hash, key| hash[key] = [] }
     @scores = []
@@ -95,9 +95,9 @@ class Quizzes::QuizStatistics::ItemAnalysis::Item
   end
 
   def point_biserials
-    @answers.map { |answer|
+    @answers.map do |answer|
       point_biserial_for(answer)
-    }
+    end
   end
 
   def ratio_for(answer)
@@ -110,7 +110,7 @@ class Quizzes::QuizStatistics::ItemAnalysis::Item
   end
 
   def sort_key
-    [question[:position] || 10000, question_text, question[:id], -all_respondents.size]
+    [question[:position] || 10_000, question_text, question[:id], -all_respondents.size]
   end
 
   private

@@ -27,13 +27,13 @@
 module Factories
   def factory_with_protected_attributes(ar_klass, attrs, do_save = true)
     obj = ar_klass.respond_to?(:new) ? ar_klass.new : ar_klass.build
-    attrs.each { |k, v| obj.send("#{k}=", attrs[k]) }
+    attrs.each { |k, v| obj.send("#{k}=", v) }
     obj.save! if do_save
     obj
   end
 
   def update_with_protected_attributes!(ar_instance, attrs)
-    attrs.each { |k, v| ar_instance.send("#{k}=", attrs[k]) }
+    attrs.each { |k, v| ar_instance.send("#{k}=", v) }
     ar_instance.save!
   end
 
@@ -76,9 +76,9 @@ legit_global_methods = Object.private_methods
 Dir[File.dirname(__FILE__) + "/factories/**/*.rb"].sort.each { |f| require f }
 crap_factories = (Object.private_methods - legit_global_methods)
 if crap_factories.present?
-  $stderr.puts "\e[31mError: Don't create global factories/helpers"
-  $stderr.puts "Put #{crap_factories.map { |m| "`#{m}`" }.to_sentence} in the `Factories` module"
-  $stderr.puts "(or somewhere else appropriate)\e[0m"
+  warn "\e[31mError: Don't create global factories/helpers"
+  warn "Put #{crap_factories.map { |m| "`#{m}`" }.to_sentence} in the `Factories` module"
+  warn "(or somewhere else appropriate)\e[0m"
   $stderr.puts
   exit! 1
 end

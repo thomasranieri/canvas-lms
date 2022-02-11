@@ -17,6 +17,7 @@
  */
 
 import React from 'react'
+import ReactDOM from 'react-dom'
 import {arrayOf, bool, func, instanceOf, number, shape, string} from 'prop-types'
 import {ScreenReaderContent} from '@instructure/ui-a11y-content'
 import {Button} from '@instructure/ui-buttons'
@@ -37,7 +38,7 @@ function SecondaryDetailLine(props) {
   if (anonymous || unpublished) {
     return (
       <span className="Gradebook__ColumnHeaderDetailLine Gradebook__ColumnHeaderDetail--secondary">
-        <Text color="error" size="x-small" transform="uppercase" weight="bold">
+        <Text color="danger" size="x-small" transform="uppercase" weight="bold">
           {unpublished ? I18n.t('Unpublished') : I18n.t('Anonymous')}
         </Text>
       </span>
@@ -104,6 +105,24 @@ export default class AssignmentColumnHeader extends ColumnHeader {
   static propTypes = {
     ...ColumnHeader.propTypes,
 
+    allStudents: arrayOf(
+      shape({
+        id: string.isRequired,
+        isInactive: bool.isRequired,
+        isTestStudent: bool.isRequired,
+        name: string.isRequired,
+        sortableName: string.isRequired,
+        submission: shape({
+          excused: bool.isRequired,
+          latePolicyStatus: string,
+          postedAt: instanceOf(Date),
+          score: number,
+          submittedAt: instanceOf(Date),
+          workflowState: string.isRequired
+        }).isRequired
+      })
+    ).isRequired,
+
     assignment: shape({
       anonymizeStudents: bool.isRequired,
       courseId: string.isRequired,
@@ -120,6 +139,8 @@ export default class AssignmentColumnHeader extends ColumnHeader {
       isDisabled: bool.isRequired,
       onSelect: func.isRequired
     }).isRequired,
+
+    getCurrentlyShownStudents: func.isRequired,
 
     hideGradesAction: shape({
       hasGradesOrCommentsToHide: bool.isRequired,
@@ -149,24 +170,6 @@ export default class AssignmentColumnHeader extends ColumnHeader {
       settingKey: string.isRequired
     }).isRequired,
 
-    students: arrayOf(
-      shape({
-        id: string.isRequired,
-        isInactive: bool.isRequired,
-        isTestStudent: bool.isRequired,
-        name: string.isRequired,
-        sortableName: string.isRequired,
-        submission: shape({
-          excused: bool.isRequired,
-          latePolicyStatus: string,
-          postedAt: instanceOf(Date),
-          score: number,
-          submittedAt: instanceOf(Date),
-          workflowState: string.isRequired
-        }).isRequired
-      })
-    ).isRequired,
-
     submissionsLoaded: bool.isRequired,
 
     setDefaultGradeAction: shape({
@@ -185,7 +188,9 @@ export default class AssignmentColumnHeader extends ColumnHeader {
     }).isRequired,
 
     onMenuDismiss: func.isRequired,
-    showUnpostedMenuItem: bool.isRequired
+    showMessageStudentsWithObserversDialog: bool.isRequired,
+    showUnpostedMenuItem: bool.isRequired,
+    messageAttachmentUploadFolderId: string.isRequired
   }
 
   static defaultProps = {
@@ -263,23 +268,49 @@ export default class AssignmentColumnHeader extends ColumnHeader {
     this.props.enterGradesAsSetting.onSelect(values[0])
   }
 
+  // TODO(EVAL): This needs to be implemented in EVAL-2064.
+  handleSendMessageStudentsWho = () => {}
+
   showMessageStudentsWhoDialog = async () => {
     this.state.skipFocusOnClose = true
     this.setState({skipFocusOnClose: true})
-    const MessageStudentsWhoDialog = await AsyncComponents.loadMessageStudentsWhoDialog()
 
     const options = {
       assignment: this.props.assignment,
       students: this.activeStudentDetails()
     }
 
-    MessageStudentsWhoDialog.show(options, this.focusAtEnd)
+    if (this.props.showMessageStudentsWithObserversDialog) {
+      const mountPoint = document.querySelector(
+        "[data-component='MessageStudentsWithObserversModal']"
+      )
+      if (mountPoint != null) {
+        const MessageStudentsWhoDialog =
+          await AsyncComponents.loadMessageStudentsWithObserversDialog()
+
+        const props = {
+          ...options,
+          onClose: () => {
+            ReactDOM.unmountComponentAtNode(mountPoint)
+            this.focusAtEnd()
+          },
+          onSend: this.handleSendMessageStudentsWho,
+          messageAttachmentUploadFolderId: this.props.messageAttachmentUploadFolderId
+        }
+        ReactDOM.render(<MessageStudentsWhoDialog {...props} />, mountPoint)
+      }
+    } else {
+      const MessageStudentsWhoDialog = await AsyncComponents.loadMessageStudentsWhoDialog()
+
+      MessageStudentsWhoDialog.show(options, this.focusAtEnd)
+    }
   }
 
   activeStudentDetails() {
-    const activeStudents = this.props.students.filter(
-      student => !student.isInactive && !student.isTestStudent
-    )
+    const activeStudents = this.props
+      .getCurrentlyShownStudents()
+      .filter(student => !student.isInactive && !student.isTestStudent)
+
     return activeStudents.map(student => {
       const {excused, latePolicyStatus, score, submittedAt} = student.submission
       return {
@@ -479,7 +510,7 @@ export default class AssignmentColumnHeader extends ColumnHeader {
       return null
     }
 
-    const submissions = this.props.students.map(student => student.submission)
+    const submissions = this.props.allStudents.map(student => student.submission)
     const postableSubmissionsPresent = submissions.some(isPostable)
 
     // Assignment has at least one hidden submission that can be posted

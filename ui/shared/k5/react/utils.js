@@ -19,13 +19,11 @@
 import I18n from 'i18n!k5_utils'
 import moment from 'moment-timezone'
 import PropTypes from 'prop-types'
-import buildURL from 'axios/lib/helpers/buildURL'
 
 import {asJson, defaultFetchOptions} from '@instructure/js-utils'
 
 import doFetchApi from '@canvas/do-fetch-api-effect'
 import AssignmentGroupGradeCalculator from '@canvas/grading/AssignmentGroupGradeCalculator'
-import natcompare from '@canvas/util/natcompare'
 
 export const countByCourseId = arr =>
   arr.reduce((acc, {course_id}) => {
@@ -36,38 +34,23 @@ export const countByCourseId = arr =>
     return acc
   }, {})
 
-export const fetchGrades = (includeObservedUsers, userId = 'self') => {
-  const include = [
-    'total_scores',
-    'current_grading_period_scores',
-    'grading_periods',
-    'course_image'
-  ]
-  if (includeObservedUsers) {
-    include.push('observed_users')
-  }
-  const coursesURL = buildURL(`/api/v1/users/${userId}/courses`, {
-    enrollment_state: 'active',
-    include
+export const transformGrades = courses =>
+  courses.map(course => {
+    const hasGradingPeriods = course.has_grading_periods
+    const basicCourseInfo = {
+      courseId: course.id,
+      courseName: course.name,
+      courseImage: course.image_download_url,
+      courseColor: course.course_color,
+      finalGradesHidden: course.hide_final_grades,
+      gradingPeriods: hasGradingPeriods ? course.grading_periods : [],
+      hasGradingPeriods,
+      isHomeroom: course.homeroom_course,
+      enrollments: course.enrollments
+    }
+    return getCourseGrades(basicCourseInfo)
   })
-  return asJson(window.fetch(coursesURL, defaultFetchOptions)).then(courses =>
-    courses.map(course => {
-      const hasGradingPeriods = course.has_grading_periods
-      const basicCourseInfo = {
-        courseId: course.id,
-        courseName: course.name,
-        courseImage: course.image_download_url,
-        courseColor: course.course_color,
-        finalGradesHidden: course.hide_final_grades,
-        gradingPeriods: hasGradingPeriods ? course.grading_periods : [],
-        hasGradingPeriods,
-        isHomeroom: course.homeroom_course,
-        enrollments: course.enrollments
-      }
-      return getCourseGrades(basicCourseInfo)
-    })
-  )
-}
+
 export const getCourseGrades = (course, observedUserId) => {
   const hasGradingPeriods = course.hasGradingPeriods
   // Getting the observee enrollment if observedUserId is provided, as the observer enrollment
@@ -171,24 +154,38 @@ export const sendMessage = (recipientId, message, subject) =>
     body: {recipients: [recipientId], body: message, group_conversation: false, subject}
   })
 
+const getSubmission = (assignment, observedUserId) =>
+  observedUserId
+    ? assignment.submission?.find(s => s.user_id === observedUserId)
+    : assignment.submission
+
 /* Takes raw response from assignment_groups API and returns an array of objects with each
    assignment group's id, name, and total score. If gradingPeriodId is passed, only return
    totals for assignment groups which have assignments in the provided grading period. */
-export const getAssignmentGroupTotals = (data, gradingPeriodId) => {
+export const getAssignmentGroupTotals = (data, gradingPeriodId, observedUserId) => {
   if (gradingPeriodId) {
     data = data.filter(group =>
-      group.assignments?.some(a => a.submission?.grading_period_id === gradingPeriodId)
+      group.assignments?.some(a => {
+        const submission = getSubmission(a, observedUserId)
+        return submission?.grading_period_id === gradingPeriodId
+      })
     )
   }
   return data.map(group => {
+    const assignments = group.assignments.map(a => ({
+      ...a,
+      submission: getSubmission(a, observedUserId)
+    }))
     const groupScores = AssignmentGroupGradeCalculator.calculate(
-      group.assignments.map(a => ({
-        points_possible: a.points_possible,
-        assignment_id: a.id,
-        assignment_group_id: a.assignment_group_id,
-        ...a.submission
-      })),
-      group,
+      assignments.map(a => {
+        return {
+          points_possible: a.points_possible,
+          assignment_id: a.id,
+          assignment_group_id: a.assignment_group_id,
+          ...a.submission
+        }
+      }),
+      {...group, assignments},
       false
     )
     return {
@@ -207,27 +204,30 @@ export const getAssignmentGroupTotals = (data, gradingPeriodId) => {
 
 /* Takes raw response from assignment_groups API and returns an array of assignments with
    grade information, sorted by due date. */
-export const getAssignmentGrades = data =>
-  data
+export const getAssignmentGrades = (data, observedUserId) => {
+  return data
     .map(group =>
-      group.assignments.map(a => ({
-        id: a.id,
-        assignmentName: a.name,
-        url: a.html_url,
-        dueDate: a.due_at,
-        assignmentGroupName: group.name,
-        assignmentGroupId: group.id,
-        pointsPossible: a.points_possible,
-        gradingType: a.grading_type,
-        score: a.submission?.score,
-        grade: a.submission?.grade,
-        submissionDate: a.submission?.submitted_at,
-        unread: a.submission?.read_state === 'unread',
-        late: a.submission?.late,
-        excused: a.submission?.excused,
-        missing: a.submission?.missing,
-        hasComments: !!a.submission?.submission_comments?.length
-      }))
+      group.assignments.map(a => {
+        const submission = getSubmission(a, observedUserId)
+        return {
+          id: a.id,
+          assignmentName: a.name,
+          url: a.html_url,
+          dueDate: a.due_at,
+          assignmentGroupName: group.name,
+          assignmentGroupId: group.id,
+          pointsPossible: a.points_possible,
+          gradingType: a.grading_type,
+          score: submission?.score,
+          grade: submission?.grade,
+          submissionDate: submission?.submitted_at,
+          unread: submission?.read_state === 'unread',
+          late: submission?.late,
+          excused: submission?.excused,
+          missing: submission?.missing,
+          hasComments: !!submission?.submission_comments?.length
+        }
+      })
     )
     .flat(1)
     .sort((a, b) => {
@@ -235,11 +235,20 @@ export const getAssignmentGrades = data =>
       if (b.dueDate == null) return -1
       return moment(a.dueDate).diff(moment(b.dueDate))
     })
+}
 
 /* Formats course total score and grade (if applicable) into string from enrollments API
    response */
-export const getTotalGradeStringFromEnrollments = (enrollments, userId) => {
-  const grades = enrollments.find(({user_id}) => user_id === userId)?.grades
+export const getTotalGradeStringFromEnrollments = (enrollments, userId, observedUserId) => {
+  let grades
+  if (observedUserId) {
+    const enrollment = enrollments.find(
+      ({associated_user_id}) => associated_user_id === observedUserId
+    )
+    grades = enrollment?.observed_user?.enrollments[0]?.grades
+  } else {
+    grades = enrollments.find(({user_id}) => user_id === userId)?.grades
+  }
   if (grades?.current_score == null) {
     return I18n.t('n/a')
   }
@@ -301,7 +310,7 @@ export const transformAnnouncement = announcement => {
     title: announcement.title,
     message: announcement.message,
     url: announcement.html_url,
-    postedDate: new Date(announcement.posted_at),
+    postedDate: announcement.posted_at ? new Date(announcement.posted_at) : undefined,
     attachment
   }
 }
@@ -367,38 +376,6 @@ export const saveSelectedContexts = selected_contexts =>
     method: 'POST',
     params: {selected_contexts}
   }).then(data => data.json)
-
-export const parseObserverList = users =>
-  users.map(u => ({
-    id: u.id,
-    name: u.name,
-    avatarUrl: u.avatar_url
-  }))
-
-export const parseObservedUsersResponse = (enrollments, isOnlyObserver, currentUser) => {
-  const users = enrollments
-    .filter(e => e.observed_user)
-    .reduce((acc, e) => {
-      if (!acc.some(user => user.id === e.observed_user.id)) {
-        acc.push({
-          id: e.observed_user.id,
-          name: e.observed_user.name,
-          sortableName: e.observed_user.sortable_name,
-          avatarUrl: e.observed_user.avatar_url
-        })
-      }
-      return acc
-    }, [])
-    .sort((a, b) => natcompare.strings(a.sortableName, b.sortableName))
-  if (!isOnlyObserver) {
-    users.unshift({
-      id: currentUser.id,
-      name: currentUser.display_name,
-      avatarUrl: currentUser.avatar_image_url
-    })
-  }
-  return users
-}
 
 export const dropCourse = url =>
   doFetchApi({

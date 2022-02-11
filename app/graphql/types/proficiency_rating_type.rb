@@ -20,7 +20,7 @@
 
 module Types
   class ProficiencyRatingType < ApplicationObjectType
-    description 'Customized proficiency rating'
+    description "Customized proficiency rating"
 
     implements Interfaces::LegacyIDInterface
 
@@ -29,6 +29,8 @@ module Types
 
     field :mastery, Boolean, null: false
     def mastery
+      return object[:mastery] || false if object.is_a?(Hash)
+
       !!object.mastery
     end
 

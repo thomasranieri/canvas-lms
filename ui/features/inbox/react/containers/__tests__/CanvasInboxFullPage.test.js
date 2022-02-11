@@ -21,6 +21,7 @@ import CanvasInbox from '../CanvasInbox'
 import {ApolloProvider} from 'react-apollo'
 import React from 'react'
 import {render, fireEvent, waitFor} from '@testing-library/react'
+import {responsiveQuerySizes} from '../../../util/utils'
 import {mswClient} from '../../../../../shared/msw/mswClient'
 import {mswServer} from '../../../../../shared/msw/mswServer'
 import {handlers} from '../../../graphql/mswHandlers'
@@ -28,6 +29,11 @@ import waitForApolloLoading from '../../../util/waitForApolloLoading'
 import {graphql} from 'msw'
 import {ConversationParticipant} from '../../../graphql/ConversationParticipant'
 import {Conversation} from '../../../graphql/Conversation'
+
+jest.mock('../../../util/utils', () => ({
+  ...jest.requireActual('../../../util/utils'),
+  responsiveQuerySizes: jest.fn()
+}))
 
 describe('CanvasInbox Full Page', () => {
   const server = mswServer(handlers)
@@ -43,6 +49,21 @@ describe('CanvasInbox Full Page', () => {
         id: '9'
       }
     }
+
+    window.matchMedia = jest.fn().mockImplementation(() => {
+      return {
+        matches: true,
+        media: '',
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn()
+      }
+    })
+
+    // Repsonsive Query Mock Default
+    responsiveQuerySizes.mockImplementation(() => ({
+      desktop: {minWidth: '768px'}
+    }))
   })
 
   beforeEach(() => {
@@ -97,20 +118,18 @@ describe('CanvasInbox Full Page', () => {
   it('renders the conversation messages', async () => {
     const container = setup()
 
-    const conversation = await container.findByTestId('messageListItem-Checkbox')
+    const conversation = await container.findByTestId('conversationListItem-Checkbox')
     fireEvent.click(conversation)
 
-    expect(await container.findByText('Watch out for that Magneto guy')).toBeInTheDocument()
-    expect(
-      await container.findByText('Wolverine is not so bad when you get to know him')
-    ).toBeInTheDocument()
+    expect(await container.findByText('this is the first reply message')).toBeInTheDocument()
+    expect(await container.findByText('this is a reply all')).toBeInTheDocument()
+    expect(await container.findByText('testing 123')).toBeInTheDocument()
   })
 
   // TODO: will be fixed with VICE-2077
-  // eslint-disable-next-line jest/no-disabled-tests
-  it.skip('should change the read state of a message', async () => {
+  it.skip('should change the read state of a conversation', async () => {
     const container = setup()
-    const conversation = await container.findByTestId('messageListItem-Checkbox')
+    const conversation = await container.findByTestId('conversationListItem-Checkbox')
     fireEvent.click(conversation)
     await container.findByText('Watch out for that Magneto guy')
     expect(container.queryByTestId('unread-badge')).toBeTruthy()
@@ -124,7 +143,7 @@ describe('CanvasInbox Full Page', () => {
   it('Successfully star selected conversation', async () => {
     const {findAllByTestId, findByTestId, getByText} = setup()
 
-    const checkboxes = await findAllByTestId('messageListItem-Checkbox')
+    const checkboxes = await findAllByTestId('conversationListItem-Checkbox')
     expect(checkboxes.length).toBe(1)
     fireEvent.click(checkboxes[0])
 
@@ -169,7 +188,7 @@ describe('CanvasInbox Full Page', () => {
 
     const {findAllByTestId, findByTestId, getByText} = setup()
 
-    const checkboxes = await findAllByTestId('messageListItem-Checkbox')
+    const checkboxes = await findAllByTestId('conversationListItem-Checkbox')
     expect(checkboxes.length).toBe(2)
     fireEvent.click(checkboxes[0])
     fireEvent.click(checkboxes[1])
@@ -183,5 +202,17 @@ describe('CanvasInbox Full Page', () => {
     await waitFor(() =>
       expect(setOnSuccess).toHaveBeenCalledWith('The conversations has been successfully starred.')
     )
+  })
+
+  it('should trigger confirm when deleting', async () => {
+    window.confirm = jest.fn(() => true)
+    const container = setup()
+
+    const conversation = await container.findByTestId('conversationListItem-Checkbox')
+    fireEvent.click(conversation)
+
+    const deleteBtn = await container.findByTestId('delete')
+    fireEvent.click(deleteBtn)
+    expect(window.confirm).toHaveBeenCalled()
   })
 })

@@ -27,21 +27,21 @@ class Pseudonym < ActiveRecord::Base
   include Canvas::RootAccountCacher
   belongs_to :user
   has_many :communication_channels, -> { ordered }
-  has_many :sis_enrollments, class_name: 'Enrollment', inverse_of: :sis_pseudonym
+  has_many :sis_enrollments, class_name: "Enrollment", inverse_of: :sis_pseudonym
   has_many :auditor_authentication_records,
            class_name: "Auditors::ActiveRecord::AuthenticationRecord",
            dependent: :destroy,
            inverse_of: :pseudonym
   belongs_to :communication_channel
-  belongs_to :sis_communication_channel, :class_name => 'CommunicationChannel'
+  belongs_to :sis_communication_channel, class_name: "CommunicationChannel"
   belongs_to :authentication_provider
   MAX_UNIQUE_ID_LENGTH = 100
 
   CAS_TICKET_TTL = 1.day
 
-  validates_length_of :unique_id, :maximum => MAX_UNIQUE_ID_LENGTH
-  validates_length_of :sis_user_id, :maximum => maximum_string_length, :allow_blank => true
-  validates_presence_of :account_id
+  validates :unique_id, length: { maximum: MAX_UNIQUE_ID_LENGTH }
+  validates :sis_user_id, length: { maximum: maximum_string_length, allow_blank: true }
+  validates :account_id, presence: true
   validate :must_be_root_account
   # allows us to validate the user and pseudonym together, before saving either
   validates_each :user_id do |record, attr, value|
@@ -49,6 +49,9 @@ class Pseudonym < ActiveRecord::Base
   end
   before_validation :validate_unique_id
   before_destroy :retire_channels
+  validates :declared_user_type,
+            allow_nil: true,
+            inclusion: { in: %w[administrative observer staff student student_other teacher] }
 
   before_save :set_password_changed
   before_validation :infer_defaults, :verify_unique_sis_user_id, :verify_unique_integration_id
@@ -66,7 +69,7 @@ class Pseudonym < ActiveRecord::Base
                         length: { within: 1..MAX_UNIQUE_ID_LENGTH },
                         uniqueness: {
                           case_sensitive: false,
-                          scope: [:account_id, :workflow_state, :authentication_provider_id],
+                          scope: %i[account_id workflow_state authentication_provider_id],
                           if: ->(p) { (p.unique_id_changed? || p.workflow_state_changed?) && p.active? }
                         }
 
@@ -101,67 +104,65 @@ class Pseudonym < ActiveRecord::Base
     password_changed? || (send(crypted_password_field).blank? && sis_ssha.blank?) || @require_password
   end
 
-  acts_as_list :scope => :user
+  acts_as_list scope: :user
 
   set_broadcast_policy do |p|
     p.dispatch :confirm_registration
-    p.to { self.communication_channel || self.user.communication_channel }
-    p.whenever { |record|
-      @send_confirmation
-    }
+    p.to { communication_channel || user.communication_channel }
+    p.whenever { @send_confirmation }
 
     p.dispatch :pseudonym_registration
-    p.to { self.communication_channel || self.user.communication_channel }
+    p.to { communication_channel || user.communication_channel }
     p.whenever { @send_registration_notification }
 
     p.dispatch :pseudonym_registration_done
-    p.to { self.communication_channel || self.user.communication_channel }
+    p.to { communication_channel || user.communication_channel }
     p.whenever { @send_registration_done_notification }
   end
 
   def update_account_associations_if_account_changed
-    return unless self.user && !User.skip_updating_account_associations?
+    return unless user && !User.skip_updating_account_associations?
 
-    if self.id_before_last_save.nil?
-      return if %w{creation_pending deleted}.include?(self.user.workflow_state)
+    if id_before_last_save.nil?
+      return if %w[creation_pending deleted].include?(user.workflow_state)
 
-      self.user.update_account_associations(:incremental => true, :precalculated_associations => { self.account_id => 0 })
-    elsif self.saved_change_to_account_id?
-      self.user.update_account_associations_later
+      user.update_account_associations(incremental: true, precalculated_associations: { account_id => 0 })
+    elsif saved_change_to_account_id?
+      user.update_account_associations_later
     end
   end
 
   def must_be_root_account
-    if account_id_changed?
-      self.errors.add(:account_id, "must belong to a root_account") unless account.root_account?
+    if account_id_changed? && !account.root_account?
+      errors.add(:account_id, "must belong to a root_account")
     end
   end
 
   def send_registration_notification!
     @send_registration_notification = true
-    self.save!
+    save!
     @send_registration_notification = false
   end
 
   def send_registration_done_notification!
     @send_registration_done_notification = true
-    self.save!
+    save!
     @send_registration_done_notification = false
   end
 
   def send_confirmation!
     @send_confirmation = true
-    self.save!
+    save!
     @send_confirmation = false
   end
 
-  scope :by_unique_id, lambda { |unique_id| where("LOWER(unique_id)=LOWER(?)", unique_id.to_s) }
+  scope :by_unique_id, ->(unique_id) { where("LOWER(unique_id)=LOWER(?)", unique_id.to_s) }
 
   def self.custom_find_by_unique_id(unique_id)
     return unless unique_id
 
     active_only.by_unique_id(unique_id).where("authentication_provider_id IS NULL OR EXISTS (?)",
-                                              AuthenticationProvider.active.where(auth_type: ['canvas', 'ldap'])
+                                              AuthenticationProvider.active.where(auth_type: ["canvas", "ldap"])
                                                 .where("authentication_provider_id=authentication_providers.id"))
                .order("authentication_provider_id NULLS LAST").first
   end
@@ -173,7 +174,7 @@ class Pseudonym < ActiveRecord::Base
   end
 
   def set_password_changed
-    @password_changed = self.password && self.password_confirmation == self.password
+    @password_changed = password && password_confirmation == password
   end
 
   def password=(new_pass)
@@ -182,35 +183,35 @@ class Pseudonym < ActiveRecord::Base
   end
 
   def communication_channel
-    self.user.communication_channels.by_path(self.unique_id).first
+    user.communication_channels.by_path(unique_id).first
   end
 
   def confirmation_code
-    (self.communication_channel || self.user.communication_channel).confirmation_code
+    (communication_channel || user.communication_channel).confirmation_code
   end
 
   def infer_defaults
     self.account ||= Account.default
     if (!crypted_password || crypted_password == "") && !@require_password
-      self.generate_temporary_password
+      generate_temporary_password
     end
     # treat empty or whitespaced strings as nullable
-    self.integration_id = nil if self.integration_id.blank?
-    self.sis_user_id = nil if self.sis_user_id.blank?
+    self.integration_id = nil if integration_id.blank?
+    self.sis_user_id = nil if sis_user_id.blank?
   end
 
   def login_assertions_for_user
-    if !self.persistence_token || self.persistence_token == ''
+    if !persistence_token || persistence_token == ""
       # Some pseudonyms can end up without a persistence token if they were created
       # using the SIS, for example.
-      self.persistence_token = CanvasSlug.generate('pseudo', 15)
-      self.save
+      self.persistence_token = CanvasSlug.generate("pseudo", 15)
+      save
     end
 
     user = self.user
     return nil if user.unavailable?
 
-    user.workflow_state = 'registered' unless user.registered?
+    user.workflow_state = "registered" unless user.registered?
 
     add_ldap_channel
 
@@ -227,32 +228,33 @@ class Pseudonym < ActiveRecord::Base
     :email_login
   end
 
-  def works_for_account?(account, allow_implicit = false, ignore_types: [:implicit])
+  def works_for_account?(_account, _allow_implicit = false, ignore_types: [:implicit])
     true
   end
 
   def <=>(other)
-    self.position <=> other.position
+    position <=> other.position
   end
 
   def retire_channels
-    communication_channels.each { |cc| cc.update_attribute(:workflow_state, 'retired') }
+    communication_channels.each { |cc| cc.update_attribute(:workflow_state, "retired") }
   end
 
   def validate_unique_id
-    if (!self.account || self.account.email_pseudonyms) && !self.deleted?
-      unless self.unique_id.present? && EmailAddressValidator.valid?(self.unique_id)
-        self.errors.add(:unique_id, "not_email")
-        throw :abort
-      end
+    if (!account || account.email_pseudonyms) &&
+       !deleted? &&
+       (unique_id.blank? ||
+       !EmailAddressValidator.valid?(unique_id))
+      errors.add(:unique_id, "not_email")
+      throw :abort
     end
-    unless self.deleted?
-      self.shard.activate do
-        existing_pseudo = Pseudonym.active.by_unique_id(self.unique_id).where(:account_id => self.account_id,
-                                                                              :authentication_provider_id => self.authentication_provider_id).where.not(id: self).exists?
+    unless deleted?
+      shard.activate do
+        existing_pseudo = Pseudonym.active.by_unique_id(unique_id).where(account_id: account_id,
+                                                                         authentication_provider_id: authentication_provider_id).where.not(id: self).exists?
         if existing_pseudo
-          self.errors.add(:unique_id, :taken,
-                          message: t("ID already in use for this account and authentication provider"))
+          errors.add(:unique_id, :taken,
+                     message: t("ID already in use for this account and authentication provider"))
           throw :abort
         end
       end
@@ -261,20 +263,20 @@ class Pseudonym < ActiveRecord::Base
   end
 
   def verify_unique_sis_user_id
-    return true unless self.sis_user_id
-    return true unless Pseudonym.where.not(id: id).where(account_id: self.account_id, sis_user_id: self.sis_user_id).exists?
+    return true unless sis_user_id
+    return true unless Pseudonym.where.not(id: id).where(account_id: account_id, sis_user_id: sis_user_id).exists?
 
-    self.errors.add(:sis_user_id, :taken,
-                    message: t('#errors.sis_id_in_use', "SIS ID \"%{sis_id}\" is already in use", sis_id: self.sis_user_id))
+    errors.add(:sis_user_id, :taken,
+               message: t("#errors.sis_id_in_use", "SIS ID \"%{sis_id}\" is already in use", sis_id: sis_user_id))
     throw :abort
   end
 
   def verify_unique_integration_id
-    return true unless self.integration_id
-    return true unless Pseudonym.where.not(id: id).where(account_id: self.account_id, integration_id: self.integration_id).exists?
+    return true unless integration_id
+    return true unless Pseudonym.where.not(id: id).where(account_id: account_id, integration_id: integration_id).exists?
 
-    self.errors.add(:integration_id, :taken,
-                    message: t("Integration ID \"%{integration_id}\" is already in use", integration_id: self.integration_id))
+    errors.add(:integration_id, :taken,
+               message: t("Integration ID \"%{integration_id}\" is already in use", integration_id: integration_id))
     throw :abort
   end
 
@@ -330,7 +332,7 @@ class Pseudonym < ActiveRecord::Base
     # permission on the pseudonym's account
     given do |user|
       self.account.grants_right?(user, :manage_sis) &&
-        self.grants_right?(user, :update)
+        grants_right?(user, :update)
     end
     can :manage_sis
 
@@ -349,45 +351,45 @@ class Pseudonym < ActiveRecord::Base
 
   alias_method :destroy_permanently!, :destroy
   def destroy
-    self.workflow_state = 'deleted'
+    self.workflow_state = "deleted"
     self.deleted_at = Time.now.utc
-    result = self.save
-    self.user.try(:update_account_associations) if result
+    result = save
+    user.try(:update_account_associations) if result
     result
   end
 
   def never_logged_in?
-    !self.login_count || self.login_count == 0
+    !login_count || login_count == 0
   end
 
   def user_code
-    self.user.uuid rescue nil
+    user.uuid rescue nil
   end
 
   def email
-    user.email if user
+    user&.email
   end
 
   def email_channel
-    self.communication_channel if self.communication_channel && self.communication_channel.path_type == 'email'
+    communication_channel if communication_channel && communication_channel.path_type == "email"
   end
 
   def email=(e)
-    return false unless user
+    return unless user
 
-    self.user.email = (e)
+    user.email = (e)
     user.save!
     user.email
   end
 
   def sms
-    user.sms if user
+    user&.sms
   end
 
   def sms=(s)
-    return false unless user
+    return unless user
 
-    self.user.sms = (s)
+    user.sms = (s)
     user.save!
     user.sms
   end
@@ -410,7 +412,7 @@ class Pseudonym < ActiveRecord::Base
       !authentication_provider.is_a?(AuthenticationProvider::Canvas)
     else
       # otherwise we have to guess
-      !!(self.sis_user_id && account.non_canvas_auth_configured?)
+      !!(sis_user_id && account.non_canvas_auth_configured?)
     end
   end
 
@@ -423,7 +425,7 @@ class Pseudonym < ActiveRecord::Base
     return false unless active?
     return false if plaintext_password.blank?
 
-    require 'net/ldap'
+    require "net/ldap"
     res = false
     res ||= valid_ldap_credentials?(plaintext_password)
     if !res && passwordable?
@@ -436,20 +438,20 @@ class Pseudonym < ActiveRecord::Base
   end
 
   def generate_temporary_password
-    self.reset_password
+    reset_password
     self.password_auto_generated = true
-    self.password
+    password
   end
 
   def valid_ssha?(plaintext_password)
-    return false if plaintext_password.blank? || self.sis_ssha.blank?
+    return false if plaintext_password.blank? || sis_ssha.blank?
 
-    decoded = Base64::decode64(self.sis_ssha.sub(/\A\{SSHA\}/, ""))
+    decoded = Base64.decode64(sis_ssha.delete_prefix("{SSHA}"))
     digest = decoded[0, 40]
-    salt = decoded[40..-1]
+    salt = decoded[40..]
     return false unless digest && salt
 
-    digested_password = Digest::SHA1.digest(plaintext_password + salt).unpack('H*').first
+    digested_password = Digest::SHA1.digest(plaintext_password + salt).unpack1("H*")
     digest == digested_password
   end
 
@@ -458,13 +460,13 @@ class Pseudonym < ActiveRecord::Base
           when AuthenticationProvider::LDAP
             [authentication_provider]
           when nil
-            account.authentication_providers.active.where(auth_type: 'ldap')
+            account.authentication_providers.active.where(auth_type: "ldap")
           # when AuthenticationProvider::Canvas
           else
             []
           end
     aps.each do |config|
-      res = config.ldap_bind_result(self.unique_id, password_plaintext)
+      res = config.ldap_bind_result(unique_id, password_plaintext)
       next unless res
 
       infer_auth_provider(config)
@@ -479,31 +481,31 @@ class Pseudonym < ActiveRecord::Base
     res = @ldap_result
     if res && res[:mail] && res[:mail][0]
       email = res[:mail][0]
-      cc = self.user.communication_channels.email.by_path(email).first
-      cc ||= self.user.communication_channels.build(:path => email)
-      cc.workflow_state = 'active'
-      cc.user = self.user
+      cc = user.communication_channels.email.by_path(email).first
+      cc ||= user.communication_channels.build(path: email)
+      cc.workflow_state = "active"
+      cc.user = user
       cc.save if cc.changed?
       self.communication_channel = cc
-      self.save_without_session_maintenance if self.changed?
+      save_without_session_maintenance if changed?
     end
   end
 
   def changed?
     !strip_inferred_authentication_provider(changed_attribute_names_to_save).empty?
   end
-  alias has_changes_to_save? changed?
+  alias_method :has_changes_to_save?, :changed?
 
   def attribute_names_for_partial_writes
     strip_inferred_authentication_provider(super)
   end
 
   def strip_inferred_authentication_provider(attribute_names)
-    if attribute_names.include?('authentication_provider_id') &&
+    if attribute_names.include?("authentication_provider_id") &&
        @inferred_auth_provider &&
        authentication_provider_id &&
        !account.feature_enabled?(:persist_inferred_authentication_providers)
-      attribute_names.delete('authentication_provider_id')
+      attribute_names.delete("authentication_provider_id")
     end
     attribute_names
   end
@@ -523,19 +525,21 @@ class Pseudonym < ActiveRecord::Base
     Canvas::Errors.capture(e, {
                              type: :ldap,
                              message: "LDAP authentication error",
-                             object: self.inspect.to_s,
-                             unique_id: self.unique_id,
+                             object: inspect.to_s,
+                             unique_id: unique_id,
                            })
     nil
   end
 
-  scope :active, -> { where.not(workflow_state: 'deleted') }
-  scope :active_only, -> { where(workflow_state: 'active') }
-  scope :deleted, -> { where(workflow_state: 'deleted') }
+  scope :active, -> { where.not(workflow_state: "deleted") }
+  scope :active_only, -> { where(workflow_state: "active") }
+  scope :deleted, -> { where(workflow_state: "deleted") }
 
-  def self.serialization_excludes; [:crypted_password, :password_salt, :reset_password_token, :persistence_token, :single_access_token, :perishable_token, :sis_ssha]; end
+  def self.serialization_excludes
+    %i[crypted_password password_salt reset_password_token persistence_token single_access_token perishable_token sis_ssha]
+  end
 
-  def self.associated_shards(unique_id_or_sis_user_id)
+  def self.associated_shards(_unique_id_or_sis_user_id)
     [Shard.default]
   end
 
@@ -579,7 +583,7 @@ class Pseudonym < ActiveRecord::Base
     pseudonyms = []
     begin
       pseudonyms = find_all_by_arbitrary_credentials(credentials, account_ids, remote_ip)
-    rescue ImpossibleCredentialsError => e
+    rescue ImpossibleCredentialsError
       Rails.logger.info("Impossible pseudonym credentials: #{credentials[:unique_id]}, invalidating session")
       return :impossible_credentials
     end

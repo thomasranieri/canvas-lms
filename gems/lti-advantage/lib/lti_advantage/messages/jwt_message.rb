@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'json/jwt'
+require "json/jwt"
 
 module LtiAdvantage::Messages
   # Abstract base class for all LTI 1.3 JWT message types
@@ -47,12 +47,9 @@ module LtiAdvantage::Messages
                   :custom,
                   :email,
                   :email_verified,
-                  :extensions,
                   :family_name,
                   :gender,
                   :given_name,
-                  :launch_presentation,
-                  :lis,
                   :locale,
                   :middle_name,
                   :name,
@@ -60,15 +57,18 @@ module LtiAdvantage::Messages
                   :phone_number,
                   :phone_number_verified,
                   :picture,
-                  :tool_platform,
                   :preferred_username,
                   :profile,
-                  :roles,
-                  :role_scope_mentor,
                   :updated_at,
                   :website,
                   :zoneinfo,
                   :id
+    attr_writer :extensions,
+                :launch_presentation,
+                :list,
+                :roles,
+                :role_scope_mentor,
+                :tool_platform
 
     def self.create_jws(body, private_key, alg = :RS256)
       JSON::JWT.new(body).sign(private_key, alg).to_s
@@ -115,7 +115,7 @@ module LtiAdvantage::Messages
     end
 
     def read_attribute(attribute)
-      self.send(attribute)
+      send(attribute)
     end
 
     def to_h
@@ -123,7 +123,7 @@ module LtiAdvantage::Messages
     end
 
     def to_jws(private_key, alg = :RS256)
-      self.class.create_jws(self.to_h, private_key, alg)
+      self.class.create_jws(to_h, private_key, alg)
     end
   end
 end

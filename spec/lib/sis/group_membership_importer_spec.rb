@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
 require_dependency "sis/group_membership_importer"
 
 module SIS
@@ -37,17 +36,17 @@ module SIS
       [user, @pseudonym]
     end
 
-    it 'does not blow up if you hand it integers' do
+    it "does not blow up if you hand it integers" do
       create_group
       create_user
       expect do
         GroupMembershipImporter.new(Account.default, { batch: Account.default.sis_batches.create! }).process do |importer|
-          importer.add_group_membership(12345, 54321, 'accepted')
+          importer.add_group_membership(12_345, 54_321, "accepted")
         end
       end.to_not raise_error
     end
 
-    describe 'validation' do
+    describe "validation" do
       before do
         course_model
       end
@@ -56,15 +55,15 @@ module SIS
         create_user
 
         group_category = GroupCategory.communities_for(Account.default)
-        group_category.self_signup = 'restricted'
+        group_category.self_signup = "restricted"
         group_category.save!
 
-        group = create_group(:group_category => group_category)
+        group = create_group(group_category: group_category)
 
         importer = GroupMembershipImporter.new(Account.default, { batch: Account.default.sis_batches.create! })
         expect do
-          importer.process do |importer|
-            importer.add_group_membership(12345, group.sis_source_id, 'accepted')
+          importer.process do |work|
+            work.add_group_membership(12_345, group.sis_source_id, "accepted")
           end
         end.to raise_error(SIS::ImportError)
       end

@@ -26,7 +26,7 @@ RSpec::Matchers.define :have_answer do |expected|
 end
 
 shared_examples_for "All answer parsers" do
-  before(:each) do
+  before do
     question = Quizzes::QuizQuestion::QuestionData.new(question_params)
     question.answers = Quizzes::QuizQuestion::AnswerGroup.new(raw_answers)
     parser = parser_class.new(question.answers)
@@ -46,12 +46,12 @@ shared_examples_for "All answer parsers" do
   end
 
   it "provides IDs for the answers" do
-    ids = @answer_data.answers.map { |a| a[:id] }
+    ids = @answer_data.answers.pluck(:id)
     ids.each { |id| expect(id).to be_kind_of(Integer) }
   end
 
   it "sanitizes answer comments" do
-    expect(@answer_data.first[:comments_html]).to include('<img')
-    expect(@answer_data.first[:comments_html]).not_to include('onerror')
+    expect(@answer_data.first[:comments_html]).to include("<img")
+    expect(@answer_data.first[:comments_html]).not_to include("onerror")
   end
 end

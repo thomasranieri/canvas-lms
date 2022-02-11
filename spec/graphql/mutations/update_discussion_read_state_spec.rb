@@ -18,13 +18,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-require_relative '../graphql_spec_helper'
+require_relative "../graphql_spec_helper"
 
 RSpec.describe Mutations::UpdateDiscussionReadState do
   before(:once) do
     course_with_teacher(active_all: true)
-    topic_with_nested_replies({ context: @course })
+    topic_with_nested_replies
   end
 
   def mutation_str(
@@ -62,13 +61,24 @@ RSpec.describe Mutations::UpdateDiscussionReadState do
     result.to_h.with_indifferent_access
   end
 
-  it 'updates read state' do
+  it "marks all as unread" do
     @topic.change_all_read_state(:read, @teacher)
     result = run_mutation({ id: @topic.id, read: false })
-    expect(result.dig('errors')).to be nil
-    expect(result.dig('data', 'updateDiscussionReadState', 'discussionTopic', 'title')).to eq @topic.title
+    expect(result["errors"]).to be nil
+    expect(result.dig("data", "updateDiscussionReadState", "discussionTopic", "title")).to eq @topic.title
     scope = @topic.discussion_entry_participants.where(user: @teacher)
-                  .where.not(discussion_entries: { workflow_state: 'deleted' })
-    expect(scope.pluck(:workflow_state)).not_to include('read')
+                  .where.not(discussion_entries: { workflow_state: "deleted" })
+    expect(scope.pluck(:workflow_state)).not_to include("read")
+  end
+
+  it "marks all as read" do
+    expect(@topic.unread_count(@teacher)).to eq 5
+    result = run_mutation({ id: @topic.id, read: true })
+    expect(@topic.unread_count(@teacher)).to eq 0
+    expect(result["errors"]).to be nil
+    expect(result.dig("data", "updateDiscussionReadState", "discussionTopic", "title")).to eq @topic.title
+    scope = @topic.discussion_entry_participants.where(user: @teacher)
+                  .where.not(discussion_entries: { workflow_state: "deleted" })
+    expect(scope.pluck(:workflow_state)).not_to include("unread")
   end
 end

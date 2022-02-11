@@ -22,27 +22,31 @@ module ObserverEnrollmentsHelper
   include Api::V1::User
 
   MAX_OBSERVED_USERS = 1000
-  SELECTED_OBSERVED_USER_COOKIE = "k5_observed_user_id"
+  OBSERVER_COOKIE_PREFIX = "k5_observed_user_for_"
 
   # Returns users whom the user is observing. Sorted by sortable_name. Includes the
   # provided user first if they have their own non-ObserverEnrollment enrollments.
   # Uses all enrollments if course_id is nil, otherwise restricts results to provided
   # course.
   def observed_users(user, session, course_id = nil)
-    users = Rails.cache.fetch_with_batched_keys(["observed_users", course_id].cache_key, batch_object: user, batched_keys: :enrollments, expires_in: 1.hour) do
+    return [] unless user
+
+    users = Rails.cache.fetch_with_batched_keys(["observed_users", course_id].cache_key, batch_object: user, batched_keys: :enrollments, expires_in: 1.day) do
       GuardRail.activate(:secondary) do
-        scope = user.enrollments.active_or_pending
+        scope = user.enrollments.active_or_pending.shard(user.in_region_associated_shards)
         scope = scope.where(course_id: course_id) if course_id
         has_own_enrollments = scope.not_of_observer_type.exists?
         users = User.where(
-          id: scope.of_observer_type.where("associated_user_id IS NOT NULL").limit(MAX_OBSERVED_USERS).pluck(:associated_user_id)
+          id: scope.of_observer_type.where.not(associated_user_id: nil).limit(MAX_OBSERVED_USERS).pluck(:associated_user_id)
         ).sort_by { |u| Canvas::ICU.collation_key(u.sortable_name) }.to_a
         users.prepend(user) if has_own_enrollments
         users
       end
     end
 
-    @selected_observed_user = users.detect { |u| u.id.to_s == cookies[SELECTED_OBSERVED_USER_COOKIE] } || users.first
-    users.map { |u| user_json(u, @current_user, session, ['avatar_url'], @context, nil, ['pseudonym']) }
+    observed_user_cookie_name = "#{OBSERVER_COOKIE_PREFIX}#{user.id}"
+    @selected_observed_user = users.detect { |u| u.id.to_s == cookies[observed_user_cookie_name] } || users.first
+    cookies.delete(observed_user_cookie_name) if @selected_observed_user == users.first
+    users.map { |u| user_json(u, @current_user, session, ["avatar_url"], @context, nil, ["pseudonym"]) }
   end
 end

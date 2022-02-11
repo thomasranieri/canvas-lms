@@ -18,10 +18,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'oauth2'
-require 'canvas/core_ext/oauth2'
+require "oauth2"
+require "canvas/core_ext/oauth2"
 
-class AuthenticationProvider::Oauth < AuthenticationProvider::Delegated
+class AuthenticationProvider::OAuth < AuthenticationProvider::Delegated
   SENSITIVE_PARAMS = [:consumer_secret].freeze
 
   # rename DB fields to something that makes sense for OAuth2

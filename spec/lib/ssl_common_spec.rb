@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe SSLCommon do
   it "works with http basic auth, username and password" do
     expect_any_instance_of(Net::HTTP::Post).to receive(:basic_auth).with("theusername", "thepassword")
@@ -43,7 +41,7 @@ describe SSLCommon do
   end
 
   it "works with no auth" do
-    expect_any_instance_of(Net::HTTP::Post).to receive(:basic_auth).never
+    expect_any_instance_of(Net::HTTP::Post).not_to receive(:basic_auth)
     expect_any_instance_of(Net::HTTP).to receive(:start)
     SSLCommon.post_data("http://localhost/endpoint",
                         "somedata", "application/x-jt-is-so-cool")

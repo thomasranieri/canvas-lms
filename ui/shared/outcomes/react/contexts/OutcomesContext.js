@@ -26,23 +26,23 @@ export const ACCOUNT_GROUP_ID = '-1'
 export const getContext = isMobileView => {
   const [snakeContextType, contextId] = ENV.context_asset_string.split('_')
   const contextType = snakeContextType === 'course' ? 'Course' : 'Account'
-  const useRceEnhancements = ENV.use_rce_enhancements
   const rootOutcomeGroup = ENV.ROOT_OUTCOME_GROUP
   const friendlyDescriptionFF = ENV.OUTCOMES_FRIENDLY_DESCRIPTION
   const canManage = ENV.PERMISSIONS?.manage_outcomes
   const canImport = ENV.PERMISSIONS?.import_outcomes
   const isAdmin = ENV.current_user_roles?.includes('admin')
-  const isStudent = ENV.current_user_roles?.includes('student')
+  const isStudent = ENV.current_user_is_student
   const globalRootId = ENV.GLOBAL_ROOT_OUTCOME_GROUP_ID?.toString()
   const treeBrowserRootGroupId = ROOT_GROUP_ID
   const treeBrowserAccountGroupId = ACCOUNT_GROUP_ID
   const rootIds = [globalRootId, treeBrowserAccountGroupId, treeBrowserRootGroupId]
+  const individualOutcomeRatingAndCalculationFF = ENV.INDIVIDUAL_OUTCOME_RATING_AND_CALCULATION
+  const accountLevelMasteryScalesFF = ENV.ACCOUNT_LEVEL_MASTERY_SCALES
 
   return {
     env: {
       contextType,
       contextId,
-      useRceEnhancements,
       rootOutcomeGroup,
       friendlyDescriptionFF,
       isMobileView,
@@ -53,7 +53,9 @@ export const getContext = isMobileView => {
       globalRootId,
       treeBrowserRootGroupId,
       treeBrowserAccountGroupId,
-      rootIds
+      rootIds,
+      individualOutcomeRatingAndCalculationFF,
+      accountLevelMasteryScalesFF
     }
   }
 }

@@ -18,10 +18,8 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe "Canvas::RedisConnections" do
-  before(:each) do
+  before do
     skip("requires redis") unless CanvasCache::Redis.enabled?
   end
 

@@ -16,23 +16,31 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 import React from 'react'
-import {render, fireEvent} from '@testing-library/react'
+import {render as rtlRender, fireEvent} from '@testing-library/react'
 import FindOutcomeItem from '../FindOutcomeItem'
 import {
   IMPORT_COMPLETED,
   IMPORT_NOT_STARTED,
   IMPORT_PENDING
 } from '@canvas/outcomes/react/hooks/useOutcomesImport'
+import OutcomesContext from '@canvas/outcomes/react/contexts/OutcomesContext'
+import {defaultRatingsAndCalculationMethod} from '../Management/__tests__/helpers'
 
 jest.useFakeTimers()
 
 describe('FindOutcomeItem', () => {
   let onMenuHandlerMock
   let onImportOutcomeHandlerMock
+  const {calculationMethod, calculationInt, masteryPoints, ratings} =
+    defaultRatingsAndCalculationMethod
   const defaultProps = (props = {}) => ({
     id: '1',
     title: 'Outcome Title',
     description: 'Outcome Description',
+    calculationMethod,
+    calculationInt,
+    masteryPoints,
+    ratings,
     isImported: false,
     importGroupStatus: IMPORT_NOT_STARTED,
     sourceContextId: '100',
@@ -41,6 +49,28 @@ describe('FindOutcomeItem', () => {
     importOutcomeHandler: onImportOutcomeHandlerMock,
     ...props
   })
+
+  const render = (
+    children,
+    {
+      friendlyDescriptionFF = true,
+      individualOutcomeRatingAndCalculationFF = false,
+      renderer = rtlRender
+    } = {}
+  ) => {
+    return renderer(
+      <OutcomesContext.Provider
+        value={{
+          env: {
+            friendlyDescriptionFF,
+            individualOutcomeRatingAndCalculationFF
+          }
+        }}
+      >
+        {children}
+      </OutcomesContext.Provider>
+    )
+  }
 
   beforeEach(() => {
     onMenuHandlerMock = jest.fn()
@@ -64,12 +94,14 @@ describe('FindOutcomeItem', () => {
   it('enables add button with Add as text if outcome is not imported', () => {
     const {getByText} = render(<FindOutcomeItem {...defaultProps()} />)
     expect(getByText('Add')).toBeInTheDocument()
+    expect(getByText('Add outcome Outcome Title')).toBeInTheDocument()
     expect(getByText('Add').closest('button')).toBeEnabled()
   })
 
   it('disables add button with Added as text if outcome is imported', () => {
     const {getByText} = render(<FindOutcomeItem {...defaultProps({isImported: true})} />)
     expect(getByText('Added')).toBeInTheDocument()
+    expect(getByText('Added outcome Outcome Title')).toBeInTheDocument()
     expect(getByText('Added').closest('button')).toBeDisabled()
   })
 
@@ -111,7 +143,7 @@ describe('FindOutcomeItem', () => {
   it('passes item id and sourceContextId/sourceContextType to add button handler', () => {
     const {getByText} = render(<FindOutcomeItem {...defaultProps()} />)
     fireEvent.click(getByText('Add'))
-    expect(onImportOutcomeHandlerMock).toHaveBeenCalledWith('1', 1, false, '100', 'Account')
+    expect(onImportOutcomeHandlerMock).toHaveBeenCalledWith('1', '100', 'Account')
   })
 
   it('displays right pointing caret when description is collapsed', () => {
@@ -121,26 +153,21 @@ describe('FindOutcomeItem', () => {
 
   it('displays down pointing caret when description is expanded', () => {
     const {queryByTestId, getByText} = render(<FindOutcomeItem {...defaultProps()} />)
-    fireEvent.click(getByText('Expand outcome description'))
+    fireEvent.click(getByText('Expand description for outcome Outcome Title'))
     expect(queryByTestId('icon-arrow-down')).toBeInTheDocument()
   })
 
   it('expands description when user clicks on right pointing caret', () => {
     const {queryByTestId, getByText} = render(<FindOutcomeItem {...defaultProps()} />)
-    fireEvent.click(getByText('Expand outcome description'))
+    fireEvent.click(getByText('Expand description for outcome Outcome Title'))
     expect(queryByTestId('description-expanded')).toBeInTheDocument()
   })
 
   it('collapses description when user clicks on downward pointing caret', () => {
     const {queryByTestId, getByText} = render(<FindOutcomeItem {...defaultProps()} />)
-    fireEvent.click(getByText('Expand outcome description'))
-    fireEvent.click(getByText('Collapse outcome description'))
+    fireEvent.click(getByText('Expand description for outcome Outcome Title'))
+    fireEvent.click(getByText('Collapse description for outcome Outcome Title'))
     expect(queryByTestId('description-truncated')).toBeInTheDocument()
-  })
-
-  it('displays disabled caret button if no description', () => {
-    const {queryByTestId} = render(<FindOutcomeItem {...defaultProps({description: null})} />)
-    expect(queryByTestId('icon-arrow-right').closest('button')).toHaveAttribute('disabled')
   })
 
   it('calls onImportHandler if Add button is clicked', () => {
@@ -149,5 +176,47 @@ describe('FindOutcomeItem', () => {
     })
     fireEvent.click(getByText('Add'))
     expect(onImportOutcomeHandlerMock).toHaveBeenCalled()
+  })
+
+  it('renders a friendly description when the caret is clicked and friendlyDescriptionFF is true', () => {
+    const {getByText} = render(
+      <FindOutcomeItem {...defaultProps({friendlyDescription: 'test friendly description'})} />,
+      {
+        friendlyDescriptionFF: true
+      }
+    )
+
+    fireEvent.click(getByText('Expand description for outcome Outcome Title'))
+    expect(getByText('test friendly description')).toBeInTheDocument()
+  })
+
+  it('doesnt render a friendly description when the caret is clicked and friendlyDescriptionFF is false', () => {
+    const {queryByText, getByText} = render(
+      <FindOutcomeItem {...defaultProps({friendlyDescription: 'test friendly description'})} />,
+      {
+        friendlyDescriptionFF: false
+      }
+    )
+
+    fireEvent.click(getByText('Expand description for outcome Outcome Title'))
+    expect(queryByText('test friendly description')).not.toBeInTheDocument()
+  })
+
+  describe('individual outcome rating and calculation FF', () => {
+    describe('when feature flag enabled', () => {
+      it('enables caret button even if no description', () => {
+        const {queryByTestId} = render(<FindOutcomeItem {...defaultProps({description: null})} />, {
+          individualOutcomeRatingAndCalculationFF: true
+        })
+        expect(queryByTestId('icon-arrow-right').closest('button')).toBeEnabled()
+      })
+    })
+
+    describe('when feature flag disabled', () => {
+      it('disables caret button if no description', () => {
+        const {queryByTestId} = render(<FindOutcomeItem {...defaultProps({description: null})} />)
+        expect(queryByTestId('icon-arrow-right').closest('button')).toBeDisabled()
+      })
+    })
   })
 })

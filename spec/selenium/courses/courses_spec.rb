@@ -17,26 +17,26 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require_relative '../common.rb'
-require_relative 'pages/courses_home_page.rb'
+require_relative "../common"
+require_relative "pages/courses_home_page"
 
 describe "courses" do
   include_context "in-process server selenium tests"
   include CoursesHomePage
 
   context "as a teacher" do
-    before(:each) do
+    before do
       account = Account.default
-      account.settings = { :open_registration => true, :no_enrollments_can_create_courses => true, :teachers_can_create_courses => true }
+      account.settings = { open_registration: true, no_enrollments_can_create_courses: true, teachers_can_create_courses: true }
       account.save!
       allow_any_instance_of(Account).to receive(:feature_enabled?).and_call_original
       allow_any_instance_of(Account).to receive(:feature_enabled?).with(:new_user_tutorial).and_return(false)
     end
 
-    context 'in draft state' do
-      before(:each) do
+    context "in draft state" do
+      before do
         course_with_student_submissions
-        @course.default_view = 'feed'
+        @course.default_view = "feed"
         @course.save
       end
 
@@ -44,16 +44,16 @@ describe "courses" do
         visit_course(@course)
         unpublish_btn.click
 
-        wait_for(method: nil, timeout: 5) {
-          assert_flash_notice_message('successfully updated')
-        }
-        expect(unpublish_btn).to have_class('disabled')
+        wait_for(method: nil, timeout: 5) do
+          assert_flash_notice_message("successfully updated")
+        end
+        expect(unpublish_btn).to have_class("disabled")
       end
 
       it "loads the users page using ajax", custom_timeout: 30 do
         # Set up the course with > 50 users (to test scrolling)
         create_users_in_course @course, 60
-        @course.enroll_user(user_factory, 'TaEnrollment')
+        @course.enroll_user(user_factory, "TaEnrollment")
         visit_course_people(@course)
         wait_for_ajaximations
 
@@ -64,10 +64,13 @@ describe "courses" do
   end
 
   context "as a student" do
-    before(:each) do
-      course_with_teacher(:active_all => true, :name => 'discussion course')
-      @student = User.create!(:name => "First Student")
-      en = @course.enroll_student(@student)
+    before :once do
+      course_with_teacher(active_all: true, name: "discussion course")
+      @student = User.create!(name: "First Student")
+      @course.enroll_student(@student)
+    end
+
+    before do
       user_session(@student)
     end
 
@@ -99,6 +102,34 @@ describe "courses" do
       wait_for_ajaximations
 
       assert_flash_notice_message "Invitation canceled."
+    end
+
+    describe "course navigation menu" do
+      before :once do
+        Account.site_admin.enable_feature!(:remember_course_nav_collapsed_state)
+      end
+
+      it "collapses and persists when clicking the collapse/expand button" do
+        visit_course(@course)
+        expect(left_side).to be_displayed
+        click_course_menu_toggle
+        wait_for_ajax_requests
+        expect(left_side).not_to be_displayed
+        refresh_page
+        expect(left_side).not_to be_displayed
+      end
+
+      it "can be expanded when collapsed" do
+        @student.preferences[:collapse_course_nav] = true
+        @student.save!
+        visit_course(@course)
+        expect(left_side).not_to be_displayed
+        click_course_menu_toggle
+        wait_for_ajax_requests
+        expect(left_side).to be_displayed
+        refresh_page
+        expect(left_side).to be_displayed
+      end
     end
   end
 end

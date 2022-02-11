@@ -68,9 +68,9 @@ class AssignmentStudentVisibility < ActiveRecord::Base
     if course_ids
       opts[:course_id] = course_ids
     end
-    self.where(opts).pluck(:assignment_id)
+    where(opts).pluck(:assignment_id)
   end
 
   # readonly? is not checked in destroy though
-  before_destroy { |record| raise ActiveRecord::ReadOnlyRecord }
+  before_destroy { raise ActiveRecord::ReadOnlyRecord }
 end

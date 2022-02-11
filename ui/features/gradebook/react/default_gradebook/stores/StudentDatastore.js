@@ -66,9 +66,23 @@ export default class StudentDatastore {
     })
   }
 
-  listStudents() {
-    return this.studentIds.map(
-      id => this.userStudentMap[id] || this.testStudentMap[id] || createStudentPlaceholder(id)
-    )
+  student(id, {includePlaceholder = true} = {}) {
+    const user = this.userStudentMap[id] || this.testStudentMap[id]
+    if (!user && includePlaceholder) {
+      return createStudentPlaceholder(id)
+    }
+
+    return user
+  }
+
+  listStudents({includePlaceholders = true} = {}) {
+    return this.studentIds.reduce((students, id) => {
+      const student =
+        this.userStudentMap[id] || this.testStudentMap[id] || createStudentPlaceholder(id)
+      if (includePlaceholders || !student.isPlaceholder) {
+        students.push(student)
+      }
+      return students
+    }, [])
   }
 }

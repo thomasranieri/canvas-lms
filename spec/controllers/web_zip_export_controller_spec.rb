@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../apis/api_spec_helper')
+require_relative "../apis/api_spec_helper"
 
 describe WebZipExportsController do
   before :once do
@@ -29,7 +29,7 @@ describe WebZipExportsController do
     student_in_course(active_all: true)
   end
 
-  before(:each) do
+  before do
     user_session(@student)
   end
 
@@ -44,7 +44,7 @@ describe WebZipExportsController do
                                 controller: :web_zip_exports,
                                 action: :index,
                                 course_id: @course.to_param,
-                                format: 'json'
+                                format: "json"
                               })
 
       expect(json.size).to eq 2
@@ -56,7 +56,7 @@ describe WebZipExportsController do
                                 controller: :web_zip_exports,
                                 action: :index,
                                 course_id: @course.to_param,
-                                format: 'json'
+                                format: "json"
                               })
 
       expect(json.size).to eq 2
@@ -76,10 +76,10 @@ describe WebZipExportsController do
                                 action: :show,
                                 course_id: @course.to_param,
                                 id: web_zip_export.to_param,
-                                format: 'json'
+                                format: "json"
                               })
 
-      expect(json['id']).to eq(web_zip_export.id)
+      expect(json["id"]).to eq(web_zip_export.id)
     end
 
     it "does not show web zip exports for other users" do
@@ -89,7 +89,7 @@ describe WebZipExportsController do
                                 action: :show,
                                 course_id: @course.to_param,
                                 id: web_zip_export.to_param,
-                                format: 'json'
+                                format: "json"
                               })
 
       expect(response).to eq 401

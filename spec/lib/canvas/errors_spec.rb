@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
 require_dependency "canvas/errors"
 module Canvas
   # TODO: Leaving one spec in here to make sure the shim
@@ -38,24 +37,24 @@ module Canvas
       end
     end
 
-    before(:each) do
+    before do
       @old_registry = described_class.instance_variable_get(:@registry)
       described_class.clear_callback_registry!
       @error_harness = error_testing_class.new
       @error_harness.register!
     end
 
-    after(:each) do
+    after do
       described_class.instance_variable_set(:@registry, @old_registry)
     end
 
     let(:error) { double("Some Error") }
 
-    describe '.capture_exception' do
-      it 'tags with the exception type and default level' do
+    describe ".capture_exception" do
+      it "tags with the exception type and default level" do
         Canvas::Errors.capture_exception(:core_meltdown, error)
         expect(@error_harness.exception).to eq(error)
-        expect(@error_harness.details[:tags][:type]).to eq('core_meltdown')
+        expect(@error_harness.details[:tags][:type]).to eq("core_meltdown")
         expect(@error_harness.level).to eq(:error)
       end
     end

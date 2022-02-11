@@ -17,14 +17,13 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
 require_dependency "users/creation_notify_policy"
 
 module Users
   describe CreationNotifyPolicy do
     describe "#is_self_registration?" do
       it "is true when forced" do
-        policy = CreationNotifyPolicy.new(false, { force_self_registration: '1' })
+        policy = CreationNotifyPolicy.new(false, { force_self_registration: "1" })
         expect(policy.is_self_registration?).to be(true)
       end
 
@@ -37,12 +36,13 @@ module Users
     end
 
     describe "#dispatch!" do
-      let(:user) { double() }
+      let(:user) { double }
       let(:pseudonym) { double(account: Account.default) }
-      let(:channel) { double() }
+      let(:channel) { double }
 
       context "for self_registration" do
         let(:policy) { CreationNotifyPolicy.new(true, { force_self_registration: true }) }
+
         before { allow(channel).to receive_messages(has_merge_candidates?: false) }
 
         it "sends confirmation notification" do
@@ -59,15 +59,15 @@ module Users
         end
 
         it "sends the registration notification if should notify" do
-          policy = CreationNotifyPolicy.new(true, { send_confirmation: '1' })
+          policy = CreationNotifyPolicy.new(true, { send_confirmation: "1" })
           expect(pseudonym).to receive(:send_registration_notification!)
           result = policy.dispatch!(user, pseudonym, channel)
           expect(result).to be(true)
         end
 
         it "doesnt send the registration notification if shouldnt notify" do
-          policy = CreationNotifyPolicy.new(true, { send_confirmation: '0' })
-          expect(pseudonym).to receive(:send_registration_notification!).never
+          policy = CreationNotifyPolicy.new(true, { send_confirmation: "0" })
+          expect(pseudonym).not_to receive(:send_registration_notification!)
           result = policy.dispatch!(user, pseudonym, channel)
           expect(result).to be(false)
         end

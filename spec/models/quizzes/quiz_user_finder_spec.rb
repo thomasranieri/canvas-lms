@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require 'spec_helper'
 
 describe Quizzes::QuizUserFinder do
   before :once do
@@ -50,7 +49,7 @@ describe Quizzes::QuizUserFinder do
   end
 
   it "doesn't find submissions from teachers for preview submissions" do
-    sub = @quiz.generate_submission(@teacher, preview = true)
+    sub = @quiz.generate_submission(@teacher, true)
     Quizzes::SubmissionGrader.new(sub).grade_submission
     sub.save!
     expect(@finder.submitted_students).not_to include @teacher
@@ -60,13 +59,17 @@ describe Quizzes::QuizUserFinder do
   end
 
   it "doesn't duplicate the same user found in multiple sections" do
-    add_section('The Mother We Share')
+    add_section("The Mother We Share")
     student_in_section(@course_section, user: @submitted_student)
     expect(@finder.all_students).to match_array students
   end
 
   context "differentiated_assignments" do
-    before { @quiz.only_visible_to_overrides = true; @quiz.save! }
+    before do
+      @quiz.only_visible_to_overrides = true
+      @quiz.save!
+    end
+
     it "(#all_students_with_visibility) filters students if DA is on" do
       expect(@finder.unsubmitted_students).not_to include(@unsubmitted_student)
       create_section_override_for_quiz(@quiz, { course_section: @unsubmitted_student.enrollments.current.first.course_section })

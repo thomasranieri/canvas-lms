@@ -24,7 +24,9 @@ export default {
   title: 'Examples/Canvas Inbox/MessageDetailActions',
   component: MessageDetailActions,
   argTypes: {
-    handleOptionSelect: {action: 'handleOptionSelect'}
+    onReply: {action: 'reply'},
+    onReplyAll: {action: 'replyAll'},
+    onDelete: {action: 'delete'}
   }
 }
 

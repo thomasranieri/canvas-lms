@@ -21,6 +21,7 @@ import userEvent from '@testing-library/user-event'
 import {mockSubmission} from '@canvas/assignments/graphql/studentMocks'
 import React from 'react'
 import TextEntry from '../TextEntry'
+import StudentViewContext from '../../Context'
 
 jest.mock('@canvas/tinymce-external-tools/TinyMCEContentItem', () => ({
   fromJSON: contentItem => ({
@@ -91,21 +92,28 @@ describe('TextEntry', () => {
 
     describe('when the RCE has finished rendering', () => {
       describe('read-only mode', () => {
-        it('is enabled if the readOnly prop is true', async () => {
-          await renderEditor(
-            await makeProps({
-              readOnly: true
-            })
-          )
-          await waitFor(() => {
-            expect(fakeEditor.readonly).toBeTruthy()
-          })
-        })
-
         it('is not enabled if the readOnly prop is false', async () => {
           await renderEditor()
           await waitFor(() => {
             expect(fakeEditor.readonly).toStrictEqual(false)
+          })
+        })
+
+        it('is enabled for observers', async () => {
+          const props = await makeProps()
+          render(
+            <StudentViewContext.Provider
+              value={{isObserver: true, allowChangesToSubmission: false}}
+            >
+              <TextEntry {...props} />
+            </StudentViewContext.Provider>
+          )
+          await waitFor(() => {
+            expect(tinymce.editors[0]).toBeDefined()
+          })
+          fakeEditor = tinymce.editors[0]
+          await waitFor(() => {
+            expect(fakeEditor.readonly).toStrictEqual(true)
           })
         })
       })
@@ -168,6 +176,36 @@ describe('TextEntry', () => {
           const textarea = await findByDisplayValue('', {exact: true})
           expect(textarea).toBeInTheDocument()
         })
+
+        it('renders the content in the read-only-content div when readOnly is true', async () => {
+          const props = await makeProps({
+            readOnly: true,
+            submission: {
+              id: '1',
+              _id: '1',
+              body: '<p>HELLO WORLD</p>',
+              state: 'unsubmitted'
+            }
+          })
+          const {queryByTestId} = await renderEditor(props)
+          expect(await queryByTestId('read-only-content')).toBeInTheDocument()
+          expect(queryByTestId('text-editor')).not.toBeInTheDocument()
+        })
+
+        it('renders the content in the rce component when readOnly is false', async () => {
+          const props = await makeProps({
+            readOnly: false,
+            submission: {
+              id: '1',
+              _id: '1',
+              body: '<p>HELLO WORLD</p>',
+              state: 'unsubmitted'
+            }
+          })
+          const {queryByTestId} = await renderEditor(props)
+          expect(await queryByTestId('text-editor')).toBeInTheDocument()
+          expect(queryByTestId('read-only-content')).not.toBeInTheDocument()
+        })
       })
     })
   })
@@ -187,23 +225,6 @@ describe('TextEntry', () => {
       return result
     }
 
-    it('updates the mode of the editor if the readOnly prop has changed', async () => {
-      const {rerender} = await doInitialRender()
-      const newProps = await makeProps({
-        readOnly: true,
-        submission: initialSubmission
-      })
-      await waitFor(() => {
-        expect(fakeEditor.readonly).toStrictEqual(false)
-      })
-
-      rerender(<TextEntry {...newProps} />)
-
-      await waitFor(() => {
-        expect(fakeEditor.readonly).toStrictEqual(true)
-      })
-    })
-
     it('does not update the mode of the editor if the readOnly prop has not changed', async () => {
       const {rerender} = await doInitialRender()
       const updatedProps = await makeProps({
@@ -219,7 +240,7 @@ describe('TextEntry', () => {
       expect(setModeSpy).not.toHaveBeenCalled()
     })
 
-    it('sets the content of the editor if the attempt has changed', async () => {
+    it('sets the content of the editor if the attempt and body draft has changed', async () => {
       const {rerender} = await doInitialRender()
 
       const newProps = await makeProps({
@@ -234,6 +255,23 @@ describe('TextEntry', () => {
       const setContentSpy = jest.spyOn(fakeEditor, 'setContent')
       rerender(<TextEntry {...newProps} />)
       expect(setContentSpy).toHaveBeenCalledWith('hello, again')
+    })
+
+    it('does not sets the content of the editor if the body draft has not changed', async () => {
+      const {rerender} = await doInitialRender()
+
+      const newProps = await makeProps({
+        submission: {
+          id: '1',
+          _id: '1',
+          attempt: 2,
+          state: 'unsubmitted',
+          submissionDraft: {body: 'hello'}
+        }
+      })
+      const setContentSpy = jest.spyOn(fakeEditor, 'setContent')
+      rerender(<TextEntry {...newProps} />)
+      expect(setContentSpy).not.toHaveBeenCalled()
     })
 
     it('does not set the content of the editor if the attempt has not changed', async () => {
@@ -356,10 +394,6 @@ describe('TextEntry', () => {
     it('is not called for any changes inexplicably emitted in read-only mode', async () => {
       const props = await makeProps({readOnly: true})
       await renderEditor(props)
-
-      fakeEditor.setContent('No')
-      jest.advanceTimersByTime(500)
-      fakeEditor.setContent('No way')
 
       jest.advanceTimersByTime(3000)
       expect(props.createSubmissionDraft).not.toHaveBeenCalled()

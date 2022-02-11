@@ -91,9 +91,11 @@ export default class TotalGradeColumnHeader extends ColumnHeader {
       onMoveToFront: func.isRequired,
       onMoveToBack: func.isRequired
     }).isRequired,
+    onApplyScoreToUngraded: func,
     onMenuDismiss: Menu.propTypes.onDismiss.isRequired,
     grabFocus: bool,
     viewUngradedAsZero: bool.isRequired,
+    isRunningScoreToUngraded: bool,
     ...ColumnHeader.propTypes
   }
 
@@ -210,6 +212,19 @@ export default class TotalGradeColumnHeader extends ColumnHeader {
                         <span data-menu-item-id="total-grade-move-to-back">
                           {I18n.t('Move to End')}
                         </span>
+                      </Menu.Item>
+                    )}
+
+                    {this.props.onApplyScoreToUngraded && <Menu.Separator />}
+
+                    {this.props.onApplyScoreToUngraded && (
+                      <Menu.Item
+                        disabled={this.props.isRunningScoreToUngraded}
+                        onSelect={this.props.onApplyScoreToUngraded}
+                      >
+                        {this.props.isRunningScoreToUngraded
+                          ? I18n.t('Applying Score to Ungraded')
+                          : I18n.t('Apply Score to Ungraded')}
                       </Menu.Item>
                     )}
                   </Menu>

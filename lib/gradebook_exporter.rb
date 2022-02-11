@@ -28,11 +28,11 @@ class GradebookExporter
   # hash. Use the buffer_columns and buffer_column_headers methods to populate the
   # relevant rows.
   BUFFER_COLUMN_DEFINITIONS = {
-    grading_standard: ['Current Grade', 'Unposted Current Grade', 'Final Grade', 'Unposted Final Grade'].freeze,
-    override_score: ['Override Score'].freeze,
-    override_grade: ['Override Grade'].freeze,
-    points: ['Current Points', 'Final Points'].freeze,
-    total_scores: ['Current Score', 'Unposted Current Score', 'Final Score', 'Unposted Final Score'].freeze
+    grading_standard: ["Current Grade", "Unposted Current Grade", "Final Grade", "Unposted Final Grade"].freeze,
+    override_score: ["Override Score"].freeze,
+    override_grade: ["Override Grade"].freeze,
+    points: ["Current Points", "Final Points"].freeze,
+    total_scores: ["Current Score", "Unposted Current Score", "Final Score", "Unposted Final Score"].freeze
   }.freeze
 
   def initialize(course, user, options = {})
@@ -48,7 +48,7 @@ class GradebookExporter
       root_account: @course.root_account
     )
 
-    @options = CsvWithI18n.csv_i18n_settings(@user, @options)
+    @options = CSVWithI18n.csv_i18n_settings(@user, @options)
     csv_data
   end
 
@@ -114,14 +114,15 @@ class GradebookExporter
 
     groups = calc.groups
 
-    read_only = I18n.t('csv.read_only_field', '(read only)')
+    read_only = I18n.t("csv.read_only_field", "(read only)")
     include_root_account = @course.root_account.trust_exists?
     should_show_totals = show_totals?
     include_sis_id = @options[:include_sis_id]
 
-    CsvWithI18n.generate(**@options.slice(:encoding, :col_sep, :include_bom)) do |csv|
+    CSVWithI18n.generate(**@options.slice(:encoding, :col_sep, :include_bom)) do |csv|
       # First row
-      header = ["Student", "ID"]
+      header = @options[:show_student_first_last_name] ? ["LastName", "FirstName"] : ["Student"]
+      header << "ID"
       header << "SIS User ID" if include_sis_id
       header << "SIS Login ID"
       header << "Integration ID" if include_sis_id && show_integration_id?
@@ -156,6 +157,7 @@ class GradebookExporter
       # Possible "hidden" (muted or manual posting) row
       if assignments.any? { |assignment| show_as_hidden?(assignment) }
         row = [nil, nil, nil, nil]
+        row << nil if @options[:show_student_first_last_name]
         if include_sis_id
           row << nil
           row << nil if show_integration_id?
@@ -190,6 +192,7 @@ class GradebookExporter
 
       # Second Row
       row = ["    Points Possible", nil, nil, nil]
+      row << nil if @options[:show_student_first_last_name]
       if include_sis_id
         row << nil
         row << nil if show_integration_id?
@@ -260,7 +263,12 @@ class GradebookExporter
               "N/A"
             end
           end
-          row = [student_name(student), student.id]
+          row = if @options[:show_student_first_last_name]
+                  [student_name(student.last_name), student_name(student.first_name)]
+                else
+                  [student_name(student.sortable_name)]
+                end
+          row << student.id
           pseudonym = SisPseudonym.for(student, student_enrollment, type: :implicit, require_sis: false, root_account: @course.root_account)
           row << pseudonym&.sis_user_id if include_sis_id
           row << pseudonym&.unique_id
@@ -321,7 +329,7 @@ class GradebookExporter
     # course_section: used for display_name in csv output
     # user > pseudonyms: used for sis_user_id/unique_id if options[:include_sis_id]
     # user > pseudonyms > account: used in SisPseudonym > works_for_account
-    includes = { :user => { :pseudonyms => :account }, :course_section => [], :scores => [] }
+    includes = { user: { pseudonyms: :account }, course_section: [], scores: [] }
 
     enrollments = scope.preload(includes).eager_load(:user).order_by_sortable_name.to_a
     enrollments.each { |e| e.course = @course }
@@ -388,14 +396,13 @@ class GradebookExporter
     @course.display_totals_for_all_grading_periods?
   end
 
-  STARTS_WITH_EQUAL = /^\s*=/
+  STARTS_WITH_EQUAL = /^\s*=/.freeze
 
   # Returns the student name to use for the export.  If the name
   # starts with =, quote it so anyone pulling the data into Excel
   # doesn't have a formula execute.
-  def student_name(student)
-    name = student.sortable_name
-    name = "=\"#{name}\"" if name =~ STARTS_WITH_EQUAL
+  def student_name(name)
+    name = "=\"#{name}\"" if name.match?(STARTS_WITH_EQUAL)
     name
   end
 

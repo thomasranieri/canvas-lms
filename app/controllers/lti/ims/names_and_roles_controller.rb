@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-# rubocop:disable Layout/LineLength
-module Lti::Ims
+module Lti::IMS
   # @API Names and Role
   #
   # API for IMS Names and Role Provisioning Service version 2 .
@@ -260,10 +259,9 @@ module Lti::Ims
   #        }
   #     }
   class NamesAndRolesController < ApplicationController
-    # rubocop:enable Layout/LineLength
     include Concerns::AdvantageServices
 
-    MIME_TYPE = 'application/vnd.ims.lti-nrps.v2.membershipcontainer+json'.freeze
+    MIME_TYPE = "application/vnd.ims.lti-nrps.v2.membershipcontainer+json"
 
     # @API List Course Memberships
     # Return active NamesAndRoleMemberships in the given course.

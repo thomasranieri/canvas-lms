@@ -18,12 +18,11 @@
 
 import I18n from 'i18n!managed_course_selector'
 import React, {useState, useEffect} from 'react'
-import {func, string, object} from 'prop-types'
+import {func, string, object, shape, instanceOf} from 'prop-types'
 
 import CanvasAsyncSelect from '@canvas/instui-bindings/react/AsyncSelect'
 import useDebouncedSearchTerm from '../hooks/useDebouncedSearchTerm'
-
-const MINIMUM_SEARCH_LENGTH = 2
+import {MINIMUM_SEARCH_LENGTH, isSearchableTerm} from '../effects/useManagedCourseSearchApi'
 
 SearchItemSelector.propTypes = {
   onItemSelected: func, // expects each item to have the 'name' property
@@ -31,7 +30,10 @@ SearchItemSelector.propTypes = {
   renderLabel: string,
   contextId: string,
   renderOption: func,
-  additionalParams: object
+  additionalParams: object,
+  mountNodeRef: shape({
+    current: instanceOf(Element)
+  })
 }
 
 SearchItemSelector.defaultProps = {
@@ -41,17 +43,14 @@ SearchItemSelector.defaultProps = {
   additionalParams: {}
 }
 
-function isSearchableTerm(value) {
-  return value.length === 0 || value.length >= MINIMUM_SEARCH_LENGTH
-}
-
 export default function SearchItemSelector({
   onItemSelected,
   renderLabel,
   itemSearchFunction,
   contextId = '',
   renderOption,
-  additionalParams
+  additionalParams,
+  mountNodeRef
 }) {
   const [items, setItems] = useState(null)
   const [error, setError] = useState(null)
@@ -119,7 +118,8 @@ export default function SearchItemSelector({
     placeholder: I18n.t('Begin typing to search'),
     noOptionsLabel,
     onInputChange: handleInputChanged,
-    onOptionSelected: handleItemSelected
+    onOptionSelected: handleItemSelected,
+    mountNode: mountNodeRef?.current
   }
   return <CanvasAsyncSelect {...selectProps}>{itemOptions}</CanvasAsyncSelect>
 }

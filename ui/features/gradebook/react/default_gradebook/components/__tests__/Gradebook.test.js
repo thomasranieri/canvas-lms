@@ -21,6 +21,7 @@ import {defaultGradebookProps} from '../../__tests__/GradebookSpecHelper'
 import {darken, statusColors, defaultColors} from '../../constants/colors'
 import {render, within} from '@testing-library/react'
 import Gradebook from '../../Gradebook'
+
 import '@testing-library/jest-dom/extend-expect'
 
 describe('Gradebook', () => {
@@ -70,5 +71,17 @@ describe('GridColor', () => {
       '.slick-cell.editable .gradebook-cell.excused { background-color: white; }'
     ].join('')
     expect(node.innerHTML).toContain(styleText)
+  })
+
+  describe('FlashAlert', () => {
+    it('renders flash alerts if the flashAlerts prop has content', () => {
+      const node = document.createElement('div')
+      const alert = {key: 'alert', message: 'Uh oh!', variant: 'error'}
+      render(
+        <Gradebook {...defaultGradebookProps} flashAlerts={[alert]} flashMessageContainer={node} />
+      )
+      const {getByText} = within(node)
+      expect(node).toContainElement(getByText(/Uh oh!/i))
+    })
   })
 })

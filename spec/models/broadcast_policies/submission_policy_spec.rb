@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path('../../spec_helper', File.dirname(__FILE__))
 require_dependency "broadcast_policies/submission_policy"
 
 module BroadcastPolicies
@@ -75,46 +74,51 @@ module BroadcastPolicies
       end
     end
 
-    describe '#should_dispatch_assignment_submitted_late?' do
+    describe "#should_dispatch_assignment_submitted_late?" do
       before { allow(submission).to receive(:late?).and_return true }
+
       def wont_send_when
         yield
         expect(policy.should_dispatch_assignment_submitted_late?).to be_falsey
       end
 
-      it 'is true with the inputs are true' do
+      it "is true with the inputs are true" do
         expect(policy.should_dispatch_assignment_submitted_late?).to be_truthy
       end
-      specify {
-        wont_send_when {
+
+      specify do
+        wont_send_when do
           allow(submission).to receive(:group_broadcast_submission).and_return true
-        }
-      }
-      specify {
-        wont_send_when {
+        end
+      end
+
+      specify do
+        wont_send_when do
           allow(course).to receive(:available?).and_return false
-        }
-      }
+        end
+      end
+
       specify { wont_send_when { allow(submission).to receive(:submitted?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:has_submission?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:late?).and_return false } }
     end
 
-    describe '#should_dispatch_assignment_submitted?' do
+    describe "#should_dispatch_assignment_submitted?" do
       def wont_send_when
         yield
         expect(policy.should_dispatch_assignment_submitted?).to be_falsey
       end
 
-      it 'is true when the relevant inputs are true' do
+      it "is true when the relevant inputs are true" do
         expect(policy.should_dispatch_assignment_submitted?).to be_truthy
       end
+
       specify { wont_send_when { allow(course).to receive(:available?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:submitted?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:late?).and_return true } }
     end
 
-    describe '#should_dispatch_assignment_resubmitted' do
+    describe "#should_dispatch_assignment_resubmitted" do
       before do
         allow(submission).to receive(:submitted_at_before_last_save).and_return(1.day.ago)
         allow(submission).to receive(:saved_change_to_submitted_at?).and_return(true)
@@ -125,16 +129,17 @@ module BroadcastPolicies
         expect(policy.should_dispatch_assignment_resubmitted?).to be_falsey
       end
 
-      it 'is true when the relevant inputs are true' do
+      it "is true when the relevant inputs are true" do
         expect(policy.should_dispatch_assignment_resubmitted?).to be_truthy
       end
+
       specify { wont_send_when { allow(course).to receive(:available?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:submitted?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:has_submission?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:late?).and_return true } }
     end
 
-    describe '#should_dispatch_group_assignment_submitted_late?' do
+    describe "#should_dispatch_group_assignment_submitted_late?" do
       before do
         allow(submission).to receive(:group_broadcast_submission).and_return true
         allow(submission).to receive(:late?).and_return true
@@ -145,16 +150,17 @@ module BroadcastPolicies
         expect(policy.should_dispatch_group_assignment_submitted_late?).to be_falsey
       end
 
-      it 'returns true when the inputs are all true' do
+      it "returns true when the inputs are all true" do
         expect(policy.should_dispatch_group_assignment_submitted_late?).to be_truthy
       end
+
       specify { wont_send_when { allow(submission).to receive(:group_broadcast_submission).and_return false } }
       specify { wont_send_when { allow(course).to receive(:available?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:submitted?).and_return false } }
       specify { wont_send_when { allow(submission).to receive(:late?).and_return false } }
     end
 
-    describe '#should_dispatch_submission_graded?' do
+    describe "#should_dispatch_submission_graded?" do
       before do
         allow(submission).to receive(:changed_state_to).with(:graded).and_return true
       end
@@ -164,7 +170,7 @@ module BroadcastPolicies
         expect(policy.should_dispatch_submission_graded?).to be_falsey
       end
 
-      it 'returns true when all inputs are true' do
+      it "returns true when all inputs are true" do
         expect(policy.should_dispatch_submission_graded?).to be_truthy
       end
 
@@ -176,12 +182,12 @@ module BroadcastPolicies
       specify { wont_send_when { allow(course).to receive(:concluded?).and_return true } }
     end
 
-    describe '#should_dispatch_submission_grade_changed?' do
+    describe "#should_dispatch_submission_grade_changed?" do
       before do
         allow(submission).to receive(:graded_at).and_return Time.now
         allow(submission).to receive(:assignment_graded_in_the_last_hour?).and_return false
         allow(submission).to receive(:assignment_just_published).and_return true
-        allow(submission).to receive(:changed_in_state).with(:graded, :fields => [:score, :grade]).and_return true
+        allow(submission).to receive(:changed_in_state).with(:graded, fields: [:score, :grade]).and_return true
       end
 
       def wont_send_when
@@ -189,7 +195,7 @@ module BroadcastPolicies
         expect(policy.should_dispatch_submission_grade_changed?).to be_falsey
       end
 
-      it 'returns true when all inputs are true' do
+      it "returns true when all inputs are true" do
         expect(policy.should_dispatch_submission_grade_changed?).to be_truthy
       end
 
@@ -213,7 +219,7 @@ module BroadcastPolicies
         course.enroll_student(student)
       end
 
-      before(:each) do
+      before do
         assignment.ensure_post_policy(post_manually: true)
         course.update!(workflow_state: "available")
       end

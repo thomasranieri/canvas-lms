@@ -36,16 +36,16 @@ describe DatadogRumHelper do
       Account.site_admin.enable_feature!(:datadog_rum_js)
     end
 
-    before :each do
-      allow(Canvas::DynamicSettings).to receive(:find).and_call_original
-      allow(Canvas::DynamicSettings).to(
+    before do
+      allow(DynamicSettings).to receive(:find).and_call_original
+      allow(DynamicSettings).to(
         receive(:find).with("datadog-rum", tree: "config", service: "canvas").and_return(datadog_rum_config)
       )
       allow(self).to receive(:random).and_return(0.5)
     end
 
     context "when opted in to using datadog rum js" do
-      before :each do
+      before do
         opt_in_datadog_rum_js
       end
 
@@ -137,9 +137,7 @@ describe DatadogRumHelper do
       datadog_rum_config.data.delete(:sample_rate_percentage)
       expect(include_datadog_rum_js?).to be(false)
     end
-  end
 
-  describe "#include_datadog_rum_js?" do
     it "renders the datadog rum js partial when it will be included" do
       expect(self).to receive(:include_datadog_rum_js?).and_return(true)
       expect(self).to receive(:render).with(partial: "shared/datadog_rum_js")

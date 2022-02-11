@@ -18,28 +18,26 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::BackfillNewDefaultHelpLink do
   let(:new_default_link) do
     {
-      :available_to => ['student'],
-      :text => -> { I18n.t('#help_dialog.stuff', 'Stuff') },
-      :subtext => -> { I18n.t('#help_dialog.things', 'Things') },
-      :url => '#teacher_feedback',
-      :type => 'default',
-      :id => :covid
+      available_to: ["student"],
+      text: -> { I18n.t("#help_dialog.stuff", "Stuff") },
+      subtext: -> { I18n.t("#help_dialog.things", "Things") },
+      url: "#teacher_feedback",
+      type: "default",
+      id: :covid
     }.freeze
   end
 
   let(:existing_default_link) do
     {
-      :available_to => ['student'],
-      :text => -> { I18n.t('#help_dialog.hi', 'Hi') },
-      :subtext => -> { I18n.t('#help_dialog.hello', 'Hello') },
-      :url => '#teacher_feedback',
-      :type => 'default',
-      :id => :hi_and_hello
+      available_to: ["student"],
+      text: -> { I18n.t("#help_dialog.hi", "Hi") },
+      subtext: -> { I18n.t("#help_dialog.hello", "Hello") },
+      url: "#teacher_feedback",
+      type: "default",
+      id: :hi_and_hello
     }.freeze
   end
 
@@ -52,10 +50,8 @@ describe DataFixup::BackfillNewDefaultHelpLink do
     @original_help_links_builder = @account.help_links_builder
   end
 
-  before(:each) do
-    # rubocop:disable RSpec/AnyInstance
+  before do
     allow_any_instance_of(Account).to receive(:help_links_builder).and_return(help_links_builder_double)
-    # rubocop:enable RSpec/AnyInstance
     allow(help_links_builder_double).to receive(:default_links).and_return([])
     allow(help_links_builder_double).to receive(:instantiate_links) { |links| @original_help_links_builder.instantiate_links(links) }
   end
@@ -106,7 +102,7 @@ describe DataFixup::BackfillNewDefaultHelpLink do
 
     it "adds the help link to custom_help_links" do
       DataFixup::BackfillNewDefaultHelpLink.run(:covid)
-      expect(@account.reload.settings[:custom_help_links].map { |hl| hl[:id] }).to match_array([existing_default_link[:id], new_default_link[:id]])
+      expect(@account.reload.settings[:custom_help_links].pluck(:id)).to match_array([existing_default_link[:id], new_default_link[:id]])
     end
   end
 end

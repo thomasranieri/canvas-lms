@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-class Login::OauthController < Login::OauthBaseController
+class Login::OAuthController < Login::OAuthBaseController
   def new
     super
 
@@ -37,7 +37,7 @@ class Login::OauthController < Login::OauthBaseController
 
   def create
     @aac = @domain_root_account.authentication_providers.active.find(params[:id])
-    raise ActiveRecord::RecordNotFound unless @aac.is_a?(AuthenticationProvider::Oauth)
+    raise ActiveRecord::RecordNotFound unless @aac.is_a?(AuthenticationProvider::OAuth)
 
     oauth_state = session.delete(:oauth)
     request_token = OAuth::RequestToken.new(@aac.consumer,

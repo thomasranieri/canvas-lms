@@ -24,7 +24,6 @@ const useCanvasContext = () => {
   const contextType = context?.env?.contextType
   const contextId = context?.env?.contextId
   const isCourse = context?.env?.contextType === 'Course'
-  const useRceEnhancements = context?.env?.useRceEnhancements
   const rootOutcomeGroup = context?.env?.rootOutcomeGroup
   const friendlyDescriptionFF = context?.env?.friendlyDescriptionFF
   const isMobileView = context?.env?.isMobileView
@@ -36,12 +35,14 @@ const useCanvasContext = () => {
   const treeBrowserRootGroupId = context?.env?.treeBrowserRootGroupId
   const treeBrowserAccountGroupId = context?.env?.treeBrowserAccountGroupId
   const rootIds = context?.env?.rootIds
+  const individualOutcomeRatingAndCalculationFF =
+    context?.env?.individualOutcomeRatingAndCalculationFF
+  const accountLevelMasteryScalesFF = context?.env?.accountLevelMasteryScalesFF
 
   return {
     contextType,
     contextId,
     isCourse,
-    useRceEnhancements,
     rootOutcomeGroup,
     friendlyDescriptionFF,
     isMobileView,
@@ -52,7 +53,9 @@ const useCanvasContext = () => {
     globalRootId,
     treeBrowserRootGroupId,
     treeBrowserAccountGroupId,
-    rootIds
+    rootIds,
+    individualOutcomeRatingAndCalculationFF,
+    accountLevelMasteryScalesFF
   }
 }
 

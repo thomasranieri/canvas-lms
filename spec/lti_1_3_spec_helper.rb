@@ -17,23 +17,22 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
-require 'lti_1_3_tool_configuration_spec_helper'
+require "lti_1_3_tool_configuration_spec_helper"
 
 RSpec.shared_context "lti_1_3_spec_helper", shared_context: :metadata do
-  include_context 'lti_1_3_tool_configuration_spec_helper'
+  include_context "lti_1_3_tool_configuration_spec_helper"
 
   let(:fallback_proxy) do
-    Canvas::DynamicSettings::FallbackProxy.new({
-                                                 Canvas::Security::KeyStorage::PAST => Canvas::Security::KeyStorage.new_key,
-                                                 Canvas::Security::KeyStorage::PRESENT => Canvas::Security::KeyStorage.new_key,
-                                                 Canvas::Security::KeyStorage::FUTURE => Canvas::Security::KeyStorage.new_key
+    DynamicSettings::FallbackProxy.new({
+                                                 CanvasSecurity::KeyStorage::PAST => CanvasSecurity::KeyStorage.new_key,
+                                                 CanvasSecurity::KeyStorage::PRESENT => CanvasSecurity::KeyStorage.new_key,
+                                                 CanvasSecurity::KeyStorage::FUTURE => CanvasSecurity::KeyStorage.new_key
                                                })
   end
 
   let(:developer_key) { DeveloperKey.create!(account: account) }
 
   before do
-    allow(Canvas::DynamicSettings).to receive(:kv_proxy).and_return(fallback_proxy)
+    allow(DynamicSettings).to receive(:kv_proxy).and_return(fallback_proxy)
   end
 end

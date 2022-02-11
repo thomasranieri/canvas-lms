@@ -17,38 +17,36 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path('../spec_helper', File.dirname(__FILE__))
-
 module ActiveRecord
   describe Base do
-    describe '.wildcard' do
-      it 'produces a useful wildcard sql string' do
-        sql = Base.wildcard('users.name', 'users.short_name', 'Sinatra, Frank', { :delimiter => ',' })
+    describe ".wildcard" do
+      it "produces a useful wildcard sql string" do
+        sql = Base.wildcard("users.name", "users.short_name", "Sinatra, Frank", { delimiter: "," })
         expect(sql).to eq "(LOWER(',' || users.name || ',') LIKE '%,sinatra, frank,%' OR LOWER(',' || users.short_name || ',') LIKE '%,sinatra, frank,%')"
       end
     end
 
-    describe '.wildcard_pattern' do
-      it 'downcases the query string' do
-        expect(Base.wildcard_pattern('SomeString')).to include('somestring')
+    describe ".wildcard_pattern" do
+      it "downcases the query string" do
+        expect(Base.wildcard_pattern("SomeString")).to include("somestring")
       end
 
-      it 'escapes special characters in the query' do
-        %w(% _).each do |char|
-          expect(Base.wildcard_pattern('some' + char + 'string')).to include('some\\' + char + 'string')
+      it "escapes special characters in the query" do
+        %w[% _].each do |char|
+          expect(Base.wildcard_pattern("some" + char + "string")).to include("some\\" + char + "string")
         end
       end
 
-      it 'bases modulos on either end of the query per the configured type' do
-        { :full => '%somestring%', :left => '%somestring', :right => 'somestring%' }.each do |type, result|
-          expect(Base.wildcard_pattern('somestring', :type => type)).to eq result
+      it "bases modulos on either end of the query per the configured type" do
+        { full: "%somestring%", left: "%somestring", right: "somestring%" }.each do |type, result|
+          expect(Base.wildcard_pattern("somestring", type: type)).to eq result
         end
       end
     end
 
     describe ".coalesced_wildcard" do
-      it 'produces a useful wildcard string for a coalesced index' do
-        sql = Base.coalesced_wildcard('users.name', 'users.short_name', 'Sinatra, Frank')
+      it "produces a useful wildcard string for a coalesced index" do
+        sql = Base.coalesced_wildcard("users.name", "users.short_name", "Sinatra, Frank")
         expect(sql).to eq "((COALESCE(LOWER(users.name), '') || ' ' || COALESCE(LOWER(users.short_name), '')) LIKE '%sinatra, frank%')"
       end
     end
@@ -63,7 +61,7 @@ module ActiveRecord
     describe "find_in_batches" do
       describe "with cursor" do
         before do
-          skip "needs PostgreSQL" unless Account.connection.adapter_name == 'PostgreSQL'
+          skip "needs PostgreSQL" unless Account.connection.adapter_name == "PostgreSQL"
         end
 
         it "iterates through all selected rows" do
@@ -77,8 +75,8 @@ module ActiveRecord
         it "cleans up the cursor" do
           # two cursors with the same name; if it didn't get cleaned up, it would error
           expect do
-            User.all.find_each {}
-            User.all.find_each {}
+            User.all.find_each { nil }
+            User.all.find_each { nil } # rubocop:disable Style/CombinableLoops
           end.to_not raise_error
         end
 
@@ -91,16 +89,16 @@ module ActiveRecord
             end
           end.to raise_error(ArgumentError)
 
-          User.all.find_each {}
+          User.all.find_each { nil }
         end
 
         it "doesnt obfuscate the error when it dies in a transaction" do
           account = Account.create!
-          course = account.courses.create!
+          account.courses.create!
           User.create!
           expect do
             ActiveRecord::Base.transaction do
-              User.all.find_each do |batch|
+              User.all.find_each do
                 # to force a foreign key error
                 Account.where(id: account).delete_all
               end
@@ -111,18 +109,16 @@ module ActiveRecord
 
       describe "with temp table" do
         around do |example|
-          begin
-            ActiveRecord::Base.in_migration = true
-            example.run
-          ensure
-            ActiveRecord::Base.in_migration = false
-          end
+          ActiveRecord::Base.in_migration = true
+          example.run
+        ensure
+          ActiveRecord::Base.in_migration = false
         end
 
         it "uses a temp table when you select without an id" do
           expect do
             User.create!
-            User.select(:name).find_in_batches do |batch|
+            User.select(:name).find_in_batches do
               User.connection.select_value("SELECT COUNT(*) FROM users_in_batches_temp_table_#{User.select(:name).to_sql.hash.abs.to_s(36)}")
             end
           end.to_not raise_error
@@ -142,21 +138,21 @@ module ActiveRecord
           end
         end
 
-        it 'does not bomb when you try to force past the cursor option on selects with the primary key' do
+        it "does not bomb when you try to force past the cursor option on selects with the primary key" do
           selectors = ["*", "users.*", "users.id, users.updated_at"]
           User.create!
           selectors.each do |selector|
-            expect {
-              User.select(selector).find_in_batches(strategy: :id) {}
-            }.not_to raise_error
+            expect do
+              User.select(selector).find_in_batches(strategy: :id) { nil }
+            end.not_to raise_error
           end
         end
 
         it "cleans up the temp table" do
           # two temp tables with the same name; if it didn't get cleaned up, it would error
           expect do
-            User.all.find_in_batches(strategy: :temp_table) {}
-            User.all.find_in_batches(strategy: :temp_table) {}
+            User.all.find_in_batches(strategy: :temp_table) { nil }
+            User.all.find_in_batches(strategy: :temp_table) { nil }
           end.to_not raise_error
         end
 
@@ -169,7 +165,7 @@ module ActiveRecord
             end
           end.to raise_error(ArgumentError)
 
-          User.all.find_in_batches(strategy: :temp_table) {}
+          User.all.find_in_batches(strategy: :temp_table) { nil }
         end
 
         it "does not die with index error when table size is exactly batch size" do
@@ -177,16 +173,16 @@ module ActiveRecord
           User.delete_all
           user_count.times { user_model }
           expect(User.count).to eq(user_count)
-          User.all.find_in_batches(strategy: :temp_table, batch_size: user_count) {}
+          User.all.find_in_batches(strategy: :temp_table, batch_size: user_count) { nil }
         end
 
         it "doesnt obfuscate the error when it dies in a transaction" do
           account = Account.create!
-          course = account.courses.create!
+          account.courses.create!
           User.create!
           expect do
             ActiveRecord::Base.transaction do
-              User.all.find_in_batches(strategy: :temp_table) do |batch|
+              User.all.find_in_batches(strategy: :temp_table) do
                 # to force a foreign key error
                 Account.where(id: account).delete_all
               end
@@ -207,12 +203,12 @@ module ActiveRecord
         end
 
         it "keeps the specified order" do
-          ["user_F", "user_D", "user_A", "user_C", "user_B", "user_E"].map { |name| user_model(name: name) }
+          %w[user_F user_D user_A user_C user_B user_E].map { |name| user_model(name: name) }
           names = []
           User.order(:name).find_in_batches(strategy: :pluck_ids, batch_size: 3) do |u_batch|
             names += u_batch.map(&:name)
           end
-          expect(names).to eq(["user_A", "user_B", "user_C", "user_D", "user_E", "user_F"])
+          expect(names).to eq(%w[user_A user_B user_C user_D user_E user_F])
         end
       end
     end
@@ -220,13 +216,13 @@ module ActiveRecord
     describe ".bulk_insert" do
       it "throws exception if it violates a foreign key" do
         attrs = {
-          'request_id' => 'abcde-12345',
-          'uuid' => 'edcba-54321',
-          'account_id' => Account.default.id,
-          'user_id' => -1,
-          'pseudonym_id' => -1,
-          'event_type' => 'login',
-          'created_at' => DateTime.now.utc
+          "request_id" => "abcde-12345",
+          "uuid" => "edcba-54321",
+          "account_id" => Account.default.id,
+          "user_id" => -1,
+          "pseudonym_id" => -1,
+          "event_type" => "login",
+          "created_at" => DateTime.now.utc
         }
         expect do
           Auditors::ActiveRecord::AuthenticationRecord.bulk_insert([attrs])
@@ -237,16 +233,16 @@ module ActiveRecord
         user = user_with_pseudonym(active_user: true)
         pseud = @pseudonym
         attrs_1 = {
-          'request_id' => 'abcde-12345',
-          'uuid' => 'edcba-54321',
-          'account_id' => Account.default.id,
-          'user_id' => user.id,
-          'pseudonym_id' => pseud.id,
-          'event_type' => 'login',
-          'created_at' => DateTime.now.utc
+          "request_id" => "abcde-12345",
+          "uuid" => "edcba-54321",
+          "account_id" => Account.default.id,
+          "user_id" => user.id,
+          "pseudonym_id" => pseud.id,
+          "event_type" => "login",
+          "created_at" => DateTime.now.utc
         }
         attrs_2 = attrs_1.merge({
-                                  'created_at' => 40.days.ago
+                                  "created_at" => 40.days.ago
                                 })
         ar_type = Auditors::ActiveRecord::AuthenticationRecord
         expect { ar_type.bulk_insert([attrs_1, attrs_2]) }.to_not raise_error
@@ -266,26 +262,26 @@ module ActiveRecord
     describe "deconstruct_joins" do
       describe "delete_all" do
         it "allows delete all on inner join with alias" do
-          User.create(name: 'dr who')
-          User.create(name: 'dr who')
+          User.create(name: "dr who")
+          User.create(name: "dr who")
 
-          expect {
+          expect do
             User.joins("INNER JOIN #{User.quoted_table_name} u ON users.sortable_name = u.sortable_name")
                 .where("u.sortable_name <> users.sortable_name").delete_all
-          }.to_not raise_error
+          end.to_not raise_error
         end
       end
     end
 
     describe "update_all with limit" do
       it "does the right thing with a join and a limit" do
-        u1 = User.create!(name: 'u1')
-        e1 = u1.eportfolios.create!(name: 'e1')
-        u2 = User.create!(name: 'u2')
-        e2 = u2.eportfolios.create!(name: 'e2')
-        Eportfolio.joins(:user).order(:id).limit(1).update_all(name: 'changed')
-        expect(e1.reload.name).to eq 'changed'
-        expect(e2.reload.name).not_to eq 'changed'
+        u1 = User.create!(name: "u1")
+        e1 = u1.eportfolios.create!(name: "e1")
+        u2 = User.create!(name: "u2")
+        e2 = u2.eportfolios.create!(name: "e2")
+        Eportfolio.joins(:user).order(:id).limit(1).update_all(name: "changed")
+        expect(e1.reload.name).to eq "changed"
+        expect(e2.reload.name).not_to eq "changed"
       end
     end
 
@@ -314,12 +310,12 @@ module ActiveRecord
     describe ".parse_asset_string_list" do
       it "parses to a hash" do
         expect(ActiveRecord::Base.parse_asset_string_list("course_1,course_2,user_3"))
-          .to eq({ 'Course' => [1, 2], 'User' => [3] })
+          .to eq({ "Course" => [1, 2], "User" => [3] })
       end
 
       it "accepts an array" do
-        expect(ActiveRecord::Base.parse_asset_string_list(%w{course_1 course_2 user_3}))
-          .to eq({ 'Course' => [1, 2], 'User' => [3] })
+        expect(ActiveRecord::Base.parse_asset_string_list(%w[course_1 course_2 user_3]))
+          .to eq({ "Course" => [1, 2], "User" => [3] })
       end
     end
 
@@ -333,12 +329,12 @@ module ActiveRecord
       end
 
       it "accepts a pre-parsed hash" do
-        expect(ActiveRecord::Base.find_all_by_asset_string('Course' => [course.id], 'User' => [user.id]))
+        expect(ActiveRecord::Base.find_all_by_asset_string("Course" => [course.id], "User" => [user.id]))
           .to eq [course, user]
       end
 
       it "ignores unnamed asset types" do
-        expect(ActiveRecord::Base.find_all_by_asset_string([course.asset_string, user.asset_string], ['User', 'Group']))
+        expect(ActiveRecord::Base.find_all_by_asset_string([course.asset_string, user.asset_string], ["User", "Group"]))
           .to eq [user]
       end
     end
@@ -346,7 +342,7 @@ module ActiveRecord
 
   describe ".asset_string" do
     it "generates a string with the reflection_type_name and id" do
-      expect(User.asset_string(3)).to eq('user_3')
+      expect(User.asset_string(3)).to eq("user_3")
     end
   end
 
@@ -402,58 +398,60 @@ module ActiveRecord
       end
 
       context "directly on the table" do
-        include_examples "query creation"
         let(:base) { User.active }
+
+        include_examples "query creation"
       end
 
       context "through a relation" do
-        include_examples "query creation"
         let(:base) { Account.create.users }
+
+        include_examples "query creation"
       end
     end
   end
 
-  describe 'ConnectionAdapters' do
-    describe 'SchemaStatements' do
-      it 'finds the name of a foreign key on the default column' do
+  describe "ConnectionAdapters" do
+    describe "SchemaStatements" do
+      it "finds the name of a foreign key on the default column" do
         fk_name = ActiveRecord::Migration.find_foreign_key(:enrollments, :users)
-        expect(fk_name).to eq('fk_rails_e860e0e46b')
+        expect(fk_name).to eq("fk_rails_e860e0e46b")
       end
 
-      it 'finds the name of a foreign key on a specific column' do
+      it "finds the name of a foreign key on a specific column" do
         fk_name = ActiveRecord::Migration.find_foreign_key(:accounts, :outcome_imports,
-                                                           column: 'latest_outcome_import_id')
-        expect(fk_name).to eq('fk_rails_3f0c8923c0')
+                                                           column: "latest_outcome_import_id")
+        expect(fk_name).to eq("fk_rails_3f0c8923c0")
       end
 
-      it 'does not find a foreign key if there is not one' do
+      it "does not find a foreign key if there is not one" do
         fk_name = ActiveRecord::Migration.find_foreign_key(:users, :courses)
         other_fk_name = ActiveRecord::Migration.find_foreign_key(:users, :users)
         expect(fk_name).to be_nil
         expect(other_fk_name).to be_nil
       end
 
-      it 'does not find a foreign key on a column that is not one' do
-        fk_name = ActiveRecord::Migration.find_foreign_key(:users, :pseudonyms, column: 'time_zone')
+      it "does not find a foreign key on a column that is not one" do
+        fk_name = ActiveRecord::Migration.find_foreign_key(:users, :pseudonyms, column: "time_zone")
         expect(fk_name).to be_nil
       end
 
-      it 'does not crash on a non-existant column' do
-        fk_name = ActiveRecord::Migration.find_foreign_key(:users, :pseudonyms, column: 'notacolumn')
+      it "does not crash on a non-existant column" do
+        fk_name = ActiveRecord::Migration.find_foreign_key(:users, :pseudonyms, column: "notacolumn")
         expect(fk_name).to be_nil
       end
 
-      it 'does not crash on a non-existant table' do
+      it "does not crash on a non-existant table" do
         fk_name = ActiveRecord::Migration.find_foreign_key(:notatable, :users)
         other_fk_name = ActiveRecord::Migration.find_foreign_key(:users, :notatable)
         expect(fk_name).to be_nil
-        expect(fk_name).to be_nil
+        expect(other_fk_name).to be_nil
       end
 
-      it 'actually renames foreign keys' do
+      it "actually renames foreign keys" do
         old_name = User.connection.find_foreign_key(:user_services, :users)
-        User.connection.alter_constraint(:user_services, old_name, new_name: 'test')
-        expect(User.connection.find_foreign_key(:user_services, :users)).to eq 'test'
+        User.connection.alter_constraint(:user_services, old_name, new_name: "test")
+        expect(User.connection.find_foreign_key(:user_services, :users)).to eq "test"
       end
 
       it "allows if_not_exists on add_index" do
@@ -487,7 +485,7 @@ module ActiveRecord
       end
 
       it "foreign_key_for prefers a 'bare' FK first" do
-        expect(User.connection.foreign_key_for(:enrollments, to_table: :users).column).to eq 'user_id'
+        expect(User.connection.foreign_key_for(:enrollments, to_table: :users).column).to eq "user_id"
       end
 
       it "remove_index allows if_exists" do
@@ -496,6 +494,144 @@ module ActiveRecord
 
       it "remove_index by name allows if_exists" do
         expect { User.connection.remove_index(:users, name: :lti_id, if_exists: true) }.not_to raise_exception
+      end
+    end
+  end
+end
+
+describe ActiveRecord::ConnectionAdapters::SchemaStatements do
+  describe ".add_replica_identity" do
+    subject { test_adapter_instance.add_replica_identity model_name, field_name, new_default_column_value }
+
+    let(:model_name) { "Example" }
+    let(:field_name) { :test_field }
+    let(:existing_default_column_value) { nil }
+    let(:new_default_column_value) { "test default value" }
+
+    let(:example_model) do
+      Class.new(ActiveRecord::Base) do
+        self.table_name = "examples"
+
+        def self.exists?; end
+      end
+    end
+
+    let(:example_column) do
+      Class.new(ActiveRecord::ConnectionAdapters::Column)
+    end
+
+    let(:test_adapter) do
+      Class.new do
+        include ActiveRecord::ConnectionAdapters::SchemaStatements
+
+        @column_definitions = Hash.new { |h, k| h[k] = {} }
+        class << self
+          attr_reader :column_definitions
+        end
+
+        def initialize
+          super
+          @column_definitions = self.class.column_definitions
+        end
+
+        def self.define_column(table_name, field, column)
+          @column_definitions[table_name][field] = column
+        end
+
+        def column_definitions(table_name)
+          @column_definitions[table_name].keys
+        end
+
+        def new_column_from_field(table_name, field)
+          @column_definitions[table_name][field]
+        end
+
+        def change_column_null(*args); end
+
+        def add_index(*args); end
+
+        # rubocop:disable Naming/AccessorMethodName we're implementing a module method here
+        def set_replica_identity(*args); end
+        # rubocop:enable Naming/AccessorMethodName
+      end
+    end
+
+    let(:test_adapter_instance) { test_adapter.new }
+
+    before do
+      stub_const(model_name, example_model)
+      stub_const("TestColumn", example_column)
+
+      existing_column = TestColumn.new(field_name.to_s, existing_default_column_value)
+      test_adapter.define_column(Example.table_name, field_name, existing_column)
+
+      allow(DataFixup::BackfillNulls).to receive(:run)
+    end
+
+    it "adds an index" do
+      index_name = "index_#{Example.table_name}_replica_identity"
+      expect(test_adapter_instance).to receive(:add_index) do |table_name, column_name, **options|
+        raise "incorrect table name #{table_name}" unless table_name == Example.table_name
+        raise "incorrect column name #{column_name}" unless column_name == [field_name, Example.primary_key]
+        raise "index isn't unique" unless options[:unique]
+        raise "incorrect index name #{options[:name]}" unless options[:name] == index_name
+      end
+      subject
+    end
+
+    it "sets the replica identity" do
+      index_name = "index_#{Example.table_name}_replica_identity"
+      expect(test_adapter_instance).to receive(:set_replica_identity).with(Example.table_name, index_name)
+      subject
+    end
+
+    context "when the column is nullable" do
+      it "backfills nulls with the new default value" do
+        expect(DataFixup::BackfillNulls).to receive(:run).with(Example, field_name, default_value: new_default_column_value)
+        subject
+      end
+
+      it "sets the field to not be nullable" do
+        expect(test_adapter_instance).to receive(:change_column_null).with(Example.table_name, field_name, false)
+        subject
+      end
+    end
+
+    context "when the column is not nullable" do
+      before do
+        existing_column = TestColumn.new(field_name.to_s, existing_default_column_value, nil, false)
+        test_adapter.define_column(Example.table_name, field_name, existing_column)
+      end
+
+      it "does not run a backfill of null values" do
+        expect(DataFixup::BackfillNulls).not_to receive(:run)
+        subject
+      end
+    end
+
+    context "on an existing table" do
+      before do
+        allow(Example).to receive(:exists?).and_return(true)
+      end
+
+      it "adds the index with algorithm: concurrently" do
+        expect(test_adapter_instance).to receive(:add_index) do |_table_name, _field_name, **options|
+          raise "didn't add index with algorithm: :concurrently" unless options[:algorithm] == :concurrently
+        end
+        subject
+      end
+    end
+
+    context "on a new table" do
+      before do
+        allow(Example).to receive(:exists?).and_return(false)
+      end
+
+      it "does not require the migration run outside of a transaction" do
+        expect(test_adapter_instance).to receive(:add_index) do |_table_name, _field_name, **options|
+          raise "added index with algorithm: :concurrently" if options[:algorithm] == :concurrently
+        end
+        subject
       end
     end
   end

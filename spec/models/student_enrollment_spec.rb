@@ -18,14 +18,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe StudentEnrollment do
-  before(:each) do
-    @student = User.create(:name => "some student")
-    @course = Course.create(:name => "some course")
+  before do
+    @student = User.create(name: "some student")
+    @course = Course.create(name: "some course")
     @se = @course.enroll_student(@student)
-    @assignment = @course.assignments.create!(:title => 'some assignment')
+    @assignment = @course.assignments.create!(title: "some assignment")
     @submission = @assignment.submit_homework(@student)
     @assignment.reload
     @course.save!
@@ -67,7 +65,7 @@ describe StudentEnrollment do
       )
     end
 
-    before(:each) do
+    before do
       course.enable_feature!(:final_grades_override)
       course.allow_final_grade_override = true
       course.save!
@@ -107,9 +105,9 @@ describe StudentEnrollment do
         end_date: 2.months.from_now(now)
       )
 
-      expect {
+      expect do
         enrollment.update_override_score(override_score: 80.0, grading_period_id: other_period.id, updating_user: teacher)
-      }.to raise_error(ActiveRecord::RecordNotFound)
+      end.to raise_error(ActiveRecord::RecordNotFound)
     end
 
     it "records a grade change event if record_grade_change is true and updating_user is supplied" do
@@ -143,15 +141,71 @@ describe StudentEnrollment do
     it "does not record a grade change if the override score did not actually change" do
       enrollment.update_override_score(override_score: 90.0, updating_user: teacher, record_grade_change: true)
 
-      expect {
+      expect do
         enrollment.update_override_score(override_score: 90.0, updating_user: teacher, record_grade_change: true)
-      }.not_to change {
+      end.not_to change {
         Auditors::ActiveRecord::GradeChangeRecord.where(
           context_id: course.id,
           student_id: student.id,
           assignment_id: nil
         ).count
       }
+    end
+  end
+
+  describe "pace plan republishing" do
+    before :once do
+      @enrollment = course_with_student active_all: true
+      @pace_plan = @course.pace_plans.create!
+      @pace_plan.publish
+    end
+
+    it "does nothing if pace plans aren't turned on" do
+      @enrollment.update start_at: 1.day.from_now
+      expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).not_to exist
+    end
+
+    context "with pace plans enabled" do
+      before :once do
+        @course.enable_pace_plans = true
+        @course.save!
+      end
+
+      it "queues an update for a new student enrollment" do
+        student_in_course(active_all: true, user: user_with_pseudonym)
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).to exist
+      end
+
+      it "doesn't queue an update if the pace plan isn't published" do
+        @pace_plan.update workflow_state: "unpublished"
+        student_in_course(active_all: true, user: user_with_pseudonym)
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).not_to exist
+      end
+
+      it "publishes a student pace plan (alone) if it exists" do
+        student_pace_plan = @course.pace_plans.create!(user_id: @enrollment.user_id)
+        student_pace_plan.publish
+        @enrollment.start_at = 2.days.from_now
+        @enrollment.save!
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).not_to exist
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:#{@enrollment.global_user_id}")).to exist
+      end
+
+      it "doesn't queue an update for irrelevant changes" do
+        @enrollment.last_attended_at = 1.day.ago
+        @enrollment.save!
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).not_to exist
+      end
+
+      it "queues only one update when multiple enrollments are created" do
+        3.times { student_in_course(active_all: true, user: user_with_pseudonym) }
+        expect(Delayed::Job.where("strand LIKE 'pace_plan_republish:%'").count).to eq 1
+      end
+
+      it "doesn't queue an update for non-student-enrollment creation" do
+        ta_in_course(active_all: true, user: user_with_pseudonym)
+        expect(Delayed::Job.where(singleton: "pace_plan_republish:#{@course.global_id}:")).not_to exist
+      end
     end
   end
 end

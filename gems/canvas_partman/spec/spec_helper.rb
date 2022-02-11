@@ -19,14 +19,14 @@
 #
 
 begin
-  require 'byebug'
+  require "byebug"
 rescue LoadError
   # do nothing if its not available
 end
 
 begin
-  require '../../spec/coverage_tool.rb'
-  CoverageTool.start('canvas-partman-gem')
+  require "../../spec/coverage_tool"
+  CoverageTool.start("canvas-partman-gem")
 rescue LoadError => e
   puts "Error: #{e} "
 end
@@ -34,27 +34,27 @@ end
 module CanvasPartmanTest
 end
 
-require 'active_record'
-require 'rails/version'
-require 'canvas_partman'
+require "active_record"
+require "rails/version"
+require "canvas_partman"
 
-require 'uri'
-ActiveRecord::Base.establish_connection(ENV.fetch('DATABASE_URL', nil))
+require "uri"
+ActiveRecord::Base.establish_connection(ENV.fetch("DATABASE_URL", nil))
 # we need to ensure this callback is called for active_record-pg_extensions,
 # which isn't running because we're not using Rails to setup the database
 ActiveRecord::PGExtensions::Railtie.run_initializers
-require 'support/schema_helper'
-require 'fixtures/zoo'
-require 'fixtures/animal'
-require 'fixtures/trail'
-require 'fixtures/week_event'
+require "support/schema_helper"
+require "fixtures/zoo"
+require "fixtures/animal"
+require "fixtures/trail"
+require "fixtures/week_event"
+
+Zoo = CanvasPartmanTest::Zoo
+Animal = CanvasPartmanTest::Animal
+Trail = CanvasPartmanTest::Trail
+WeekEvent = CanvasPartmanTest::WeekEvent
 
 RSpec.configure do |config|
-  Zoo = CanvasPartmanTest::Zoo
-  Animal = CanvasPartmanTest::Animal
-  Trail = CanvasPartmanTest::Trail
-  WeekEvent = CanvasPartmanTest::WeekEvent
-
   config.color = true
   config.order = :random
 
@@ -63,7 +63,7 @@ RSpec.configure do |config|
   end
 
   def count_records(table_name)
-    pg_result = ActiveRecord::Base.connection.select_value <<-SQL
+    pg_result = ActiveRecord::Base.connection.select_value <<~SQL.squish
       SELECT  COUNT(*)
         FROM  #{table_name}
     SQL
@@ -79,13 +79,11 @@ RSpec.configure do |config|
     [Animal, Trail, Zoo, WeekEvent].each(&:drop_schema)
   end
 
-  config.after :each do
+  config.after do
     connection.tables.grep(/^partman_(?:animals|trails)_/).each do |partition_table_name|
-      begin
-        SchemaHelper.drop_table(partition_table_name)
-      rescue StandardError => e
-        puts "[WARN] Partition table dropping failed: #{e.message}"
-      end
+      SchemaHelper.drop_table(partition_table_name)
+    rescue => e
+      puts "[WARN] Partition table dropping failed: #{e.message}"
     end
   end
 end

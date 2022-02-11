@@ -78,7 +78,10 @@ export const handlers = [
       return res(
         ctx.data({
           legacyNode: Discussion.mock({
-            author: User.mock({courseRoles: ['TeacherEnrollment', 'TaEnrollment'], id: 'role-user'})
+            author: User.mock({
+              courseRoles: ['TeacherEnrollment', 'TaEnrollment', 'DesignerEnrollment'],
+              id: 'role-user'
+            })
           })
         })
       )
@@ -113,12 +116,15 @@ export const handlers = [
       return res(
         ctx.data({
           legacyNode: DiscussionEntry.mock({
+            isolatedEntryId: '77',
+            parentId: '77',
             discussionSubentriesConnection: {
               nodes: [
                 DiscussionEntry.mock({
                   _id: '50',
                   id: '50',
-                  message: '<p>This is the child reply asc</p>'
+                  message: '<p>This is the child reply asc</p>',
+                  isolatedEntryId: '77'
                 })
               ],
               pageInfo: PageInfo.mock(),

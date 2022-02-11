@@ -19,19 +19,23 @@
 import DateHelper from '../../../../../shared/datetime/dateHelper'
 import I18n from 'i18n!discussion_topics_post'
 import PropTypes from 'prop-types'
-import React from 'react'
-import {responsiveQuerySizes} from '../../utils'
+import React, {useState} from 'react'
+import {getDisplayName, responsiveQuerySizes} from '../../utils'
 
 import {Flex} from '@instructure/ui-flex'
 import {Responsive} from '@instructure/ui-responsive'
 import {Text} from '@instructure/ui-text'
-import {TruncateText} from '@instructure/ui-truncate-text'
 import {View} from '@instructure/ui-view'
+import {CondensedButton} from '@instructure/ui-buttons'
 
 export const ReplyPreview = ({...props}) => {
-  const message = props.deleted
+  const [shouldShowTruncatedText, setShouldShowTruncatedText] = useState(true)
+  const TRUNCATE_LENGTH = 170
+
+  const deletedMessage = props.editor?.shortName
     ? I18n.t('Deleted by %{editor}', {editor: props.editor.shortName})
-    : props.previewMessage
+    : I18n.t('Deleted')
+  const message = props.deleted ? deletedMessage : props.previewMessage
 
   return (
     <Responsive
@@ -45,37 +49,60 @@ export const ReplyPreview = ({...props}) => {
           textSize: 'small'
         }
       }}
-      render={responsiveProps => (
-        <View
-          as="div"
-          borderWidth="0 0 0 large"
-          data-testid="reply-preview"
-          margin="0 0 medium 0"
-          padding="x-small 0 x-small medium"
-        >
-          <Flex direction="column">
-            <Flex.Item>
-              <View>
-                <Text weight="bold" size={responsiveProps.textSize}>
-                  {props.author.shortName}
-                </Text>
-              </View>
-            </Flex.Item>
-            <Flex.Item>
-              <View>
-                <Text size="x-small">
-                  {DateHelper.formatDatetimeForDiscussions(props.createdAt)}
-                </Text>
-              </View>
-            </Flex.Item>
-            <Flex.Item margin="small 0 0 0">
-              <TruncateText maxLines={2} truncate="word" ellipsis=" ...">
-                <Text size={responsiveProps.textSize}>{message}</Text>
-              </TruncateText>
-            </Flex.Item>
-          </Flex>
-        </View>
-      )}
+      render={responsiveProps => {
+        const showTruncatedText = () => {
+          return shouldShowTruncatedText && message.length > TRUNCATE_LENGTH ? (
+            <Text size={responsiveProps.textSize}>{`${message.slice(0, 165)} ...`}</Text>
+          ) : (
+            <Text size={responsiveProps.textSize}>{message}</Text>
+          )
+        }
+
+        const readMoreButtonText = shouldShowTruncatedText
+          ? I18n.t('Read More')
+          : I18n.t('Read Less')
+
+        return (
+          <View
+            as="div"
+            borderWidth="0 0 0 large"
+            data-testid="reply-preview"
+            margin="0 0 medium 0"
+          >
+            <Flex direction="column" padding="x-small 0 x-small medium">
+              <Flex.Item>
+                <View>
+                  <Text weight="bold" size={responsiveProps.textSize}>
+                    {getDisplayName(props)}
+                  </Text>
+                </View>
+              </Flex.Item>
+              <Flex.Item>
+                <View>
+                  <Text size="x-small">
+                    {DateHelper.formatDatetimeForDiscussions(props.createdAt)}
+                  </Text>
+                </View>
+              </Flex.Item>
+              <Flex.Item margin="small 0 0 0">
+                <Flex direction="column">
+                  <Flex.Item>{showTruncatedText()}</Flex.Item>
+                  {message.length > TRUNCATE_LENGTH && (
+                    <Flex.Item>
+                      <CondensedButton
+                        margin="small"
+                        onClick={() => setShouldShowTruncatedText(!shouldShowTruncatedText)}
+                      >
+                        <Text size={responsiveProps.textSize}>{readMoreButtonText}</Text>
+                      </CondensedButton>
+                    </Flex.Item>
+                  )}
+                </Flex>
+              </Flex.Item>
+            </Flex>
+          </View>
+        )
+      }}
     />
   )
 }
@@ -85,6 +112,10 @@ ReplyPreview.propTypes = {
    * Quoted author
    */
   author: PropTypes.object,
+  /**
+   * Quoted anonymous author
+   */
+  anonymousAuthor: PropTypes.object,
   /**
    * Editor of the quoted message
    */

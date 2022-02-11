@@ -31,22 +31,22 @@ module I18nTasks
     # see also ui/shared/i18n/i18nLolcalize.js
     def let_there_be_lols(str)
       # don't want to mangle placeholders, wrappers, etc.
-      pattern = /(\s*%h?\{[^\}]+\}\s*|\s*[\n\\`\*_\{\}\[\]\(\)\#\+\-!]+\s*|^\s+)/
+      pattern = /(\s*%h?\{[^}]+\}\s*|\s*[\n\\`*_{}\[\]()\#+\-!]+\s*|^\s+)/
       result = str.split(pattern).map do |token|
-        if token =~ pattern
+        if token&.match?(pattern)
           token
         else
-          s = +''
+          s = +""
           token.chars.each_with_index do |c, i|
-            s << (i % 2 == 1 ? c.upcase : c.downcase)
+            s << (i.odd? ? c.upcase : c.downcase)
           end
-          s.gsub!(/\.( |\z)/, '!!?! ')
+          s.gsub!(/\.( |\z)/, "!!?! ")
           s.sub!(/\A(\w+)\z/, '\1!')
           s << " LOL!" if s.length > 2
           s
         end
       end
-      result.join('')
+      result.join
     end
 
     def i18n_lolcalize(default_thing)

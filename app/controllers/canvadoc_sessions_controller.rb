@@ -31,11 +31,7 @@ class CanvadocSessionsController < ApplicationController
       return render_unauthorized_action
     end
 
-    return render_unauthorized_action unless Account.site_admin.feature_enabled?(:annotated_document_submissions)
-    # Denying graders from this endpoint for now because graders should be
-    # grading in SpeedGrader. This also simplifies the enable_annotations opt now
-    # that we don't have to consider grading roles or peer reviewers.
-    return render_unauthorized_action unless submission.user == @current_user
+    return render_unauthorized_action unless submission.grants_right?(@current_user, :read)
     return render_unauthorized_action if submission.assignment.annotatable_attachment_id.blank?
 
     is_draft = submission_attempt == "draft"
@@ -55,9 +51,20 @@ class CanvadocSessionsController < ApplicationController
       return render json: { error: "No annotations associated with that submission_attempt" }, status: :bad_request
     end
 
+    # Check whether the user can view annotations
+    enable_annotations = annotation_context.grants_right?(@current_user, :read)
+    # Allow observers to continue with annotations disabled (viewing draft) while others are unauthorized
+    return render_unauthorized_action unless enable_annotations || submission.observer?(@current_user)
+
     render json: {
       annotation_context_launch_id: annotation_context.launch_id,
-      canvadocs_session_url: canvadocs_session_url(@current_user, annotation_context, submission, true)
+      canvadocs_session_url: canvadocs_session_url(
+        @current_user,
+        annotation_context,
+        submission,
+        true,
+        enable_annotations
+      )
     }
   end
 
@@ -73,14 +80,21 @@ class CanvadocSessionsController < ApplicationController
     if attachment.canvadocable?
       opts = {
         preferred_plugins: [Canvadocs::RENDER_PDFJS, Canvadocs::RENDER_BOX, Canvadocs::RENDER_CROCODOC],
-        enable_annotations: blob['enable_annotations'],
+        enable_annotations: blob["enable_annotations"],
         use_cloudfront: Account.site_admin.feature_enabled?(:use_cloudfront_for_docviewer)
       }
 
       submission_id = blob["submission_id"]
       if submission_id
         submission = Submission.preload(:assignment).find(submission_id)
-        user_session_params = Canvadocs.user_session_params(@current_user, submission: submission)
+        options = { submission: submission }
+
+        if blob["annotation_context"]
+          attempt = submission.canvadocs_annotation_contexts.find_by(launch_id: blob["annotation_context"])&.submission_attempt
+          options[:attempt] = attempt if attempt && attempt != submission.attempt
+        end
+
+        user_session_params = Canvadocs.user_session_params(@current_user, options)
       else
         user_session_params = Canvadocs.user_session_params(@current_user, attachment: attachment)
       end
@@ -90,7 +104,7 @@ class CanvadocSessionsController < ApplicationController
         opts[:enrollment_type] = blob["enrollment_type"]
         opts[:disable_annotation_notifications] = blob["disable_annotation_notifications"] || false
         # If we STILL don't have a role, something went way wrong so let's be unauthorized.
-        return render(plain: 'unauthorized', status: :unauthorized) if opts[:enrollment_type].blank?
+        return render(plain: "unauthorized", status: :unauthorized) if opts[:enrollment_type].blank?
 
         assignment = submission.assignment
         # If we're doing annotations, DocViewer needs additional information to send notifications
@@ -111,7 +125,7 @@ class CanvadocSessionsController < ApplicationController
         if blob["annotation_context"].present?
           opts[:annotation_context] = blob["annotation_context"]
           annotation_context = submission.canvadocs_annotation_contexts.find_by(launch_id: opts[:annotation_context])
-          opts[:read_only] = !annotation_context.grants_right?(@current_user, :readwrite)
+          opts[:read_only] = !annotation_context.grants_right?(@current_user, :annotate)
         end
       end
 
@@ -128,24 +142,25 @@ class CanvadocSessionsController < ApplicationController
       # either the context of the attachment or the attachments' user
       if (attachment.context == @current_user) || (attachment.user == @current_user)
         attachment.touch(:viewed_at)
+        @current_user&.mark_submission_annotations_read!(submission) if submission && opts[:enable_annotations]
       end
 
       redirect_to url
     else
-      render :plain => "Not found", :status => :not_found
+      render plain: "Not found", status: :not_found
     end
   rescue HmacHelper::Error => e
     Canvas::Errors.capture_exception(:canvadocs, e, :info)
-    render :plain => 'unauthorized', :status => :unauthorized
+    render plain: "unauthorized", status: :unauthorized
   rescue Timeout::Error, Canvadocs::BadGateway, Canvadocs::ServerError => e
     Canvas::Errors.capture_exception(:canvadocs, e, :warn)
-    render :plain => "Service is currently unavailable. Try again later.",
-           :status => :service_unavailable
+    render plain: "Service is currently unavailable. Try again later.",
+           status: :service_unavailable
   rescue Canvadocs::BadRequest => e
     Canvas::Errors.capture_exception(:canvadocs, e, :info)
-    render :plain => 'Canvadocs Bad Request', :status => :bad_request
+    render plain: "Canvadocs Bad Request", status: :bad_request
   rescue Canvadocs::HttpError => e
     Canvas::Errors.capture_exception(:canvadocs, e, :error)
-    render :plain => 'Unknown Canvadocs Error', :status => :service_unavailable
+    render plain: "Unknown Canvadocs Error", status: :service_unavailable
   end
 end

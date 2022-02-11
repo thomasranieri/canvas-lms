@@ -50,35 +50,21 @@ module ActiveRecord
         #   symbols that match associations are expanded to match the foreign key (polymorphic associations
         #   are supported)
         def acts_as_list(options = {})
-          configuration = { :column => "position" }
+          configuration = { column: "position" }
           configuration.update(options) if options.is_a?(Hash)
 
-          if !configuration[:scope]
-            scope_condition_method = <<-RUBY
-            def scope_condition
-              nil
-            end
-
-            def in_scope?
-              true
-            end
-
-            def list_scope_base
-              self.class.base_class.all
-            end
-            RUBY
-          else
+          if configuration[:scope]
             scope = configuration[:scope]
             # translate symbols and arrays to hash format
             scope = case scope
                     when Symbol
                       { scope => self }
                     when Array
-                      Hash[scope.map { |symbol| [symbol, self] }]
+                      scope.index_with { self }
                     when Hash
                       scope
                     else
-                      raise ArgumentError.new("scope must be nil, a symbol, an array, or a hash")
+                      raise ArgumentError, "scope must be nil, a symbol, an array, or a hash"
                     end
             # expand assocations to their foreign keys
             new_scope = {}
@@ -97,13 +83,13 @@ module ActiveRecord
             scope = new_scope
 
             # build the conditions hash, using literal values or the attribute if it's self
-            conditions = Hash[scope.map { |k, v| [k, v == self ? k : v.inspect] }]
-            conditions = conditions.map { |c, v| "#{c}: #{v}" }.join(', ')
+            conditions = scope.map { |k, v| [k, v == self ? k : v.inspect] }.to_h
+            conditions = conditions.map { |c, v| "#{c}: #{v}" }.join(", ")
             # build the in_scope method, matching literals or requiring a foreign keys
             # to be non-nil
             in_scope_conditions = []
-            variable_conditions, constant_conditions = scope.partition { |k, v| v == self }
-            in_scope_conditions.concat(variable_conditions.map { |c, v| "!#{c}.nil?" })
+            variable_conditions, constant_conditions = scope.partition { |_k, v| v == self }
+            in_scope_conditions.concat(variable_conditions.map { |c, _v| "!#{c}.nil?" })
             in_scope_conditions.concat(constant_conditions.map do |c, v|
               if v.is_a?(Array)
                 "#{v.inspect}.include?(#{c})"
@@ -112,22 +98,36 @@ module ActiveRecord
               end
             end)
 
-            scope_condition_method = <<-RUBY
+            scope_condition_method = <<~RUBY
               def scope_condition
                 { #{conditions} }
               end
 
               def in_scope?
-                #{in_scope_conditions.join(' && ')}
+                #{in_scope_conditions.join(" && ")}
               end
 
               def list_scope_base
                 self.class.base_class.where(scope_condition)
               end
             RUBY
+          else
+            scope_condition_method = <<~RUBY
+              def scope_condition
+                nil
+              end
+
+              def in_scope?
+                true
+              end
+
+              def list_scope_base
+                self.class.base_class.all
+              end
+            RUBY
           end
 
-          class_eval <<-RUBY, __FILE__, __LINE__ + 1
+          class_eval <<~RUBY, __FILE__, __LINE__ + 1
             include ActiveRecord::Acts::List::InstanceMethods
 
             def self.position_column
@@ -146,7 +146,7 @@ module ActiveRecord
 
           scope(:ordered, -> { order(position_column.to_sym, primary_key.to_sym) })
 
-          if position_column != 'position'
+          if position_column != "position"
             define_method(:position) { read_attribute(self.class.position_column.to_sym) }
           end
         end
@@ -182,7 +182,7 @@ module ActiveRecord
               list_scope.where("#{self.class.position_column}>=?", position)
                         .update_all("#{self.class.position_column} = (#{self.class.position_column} + 1)")
             end
-            self.update_attribute(self.class.position_column, position)
+            update_attribute(self.class.position_column, position)
           end
         end
 

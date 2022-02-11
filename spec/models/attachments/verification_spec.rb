@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../sharding_spec_helper.rb')
-
 describe Attachments::Verification do
   let_once(:user) { user_model }
   let_once(:course) do
@@ -70,7 +68,7 @@ describe Attachments::Verification do
   end
 
   context "verifying a verifier" do
-    before :each do
+    before do
       allow(InstStatsd::Statsd).to receive(:increment)
     end
 

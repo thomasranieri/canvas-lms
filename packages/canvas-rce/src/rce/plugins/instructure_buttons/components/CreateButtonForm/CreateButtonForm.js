@@ -16,7 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React, {useReducer, useState, useEffect} from 'react'
+import React, {useState, useEffect} from 'react'
 
 import {View} from '@instructure/ui-view'
 
@@ -81,7 +81,7 @@ export const CreateButtonForm = ({editor, onClose, editing}) => {
       <ShapeSection settings={settings} onChange={dispatch} />
       <ColorSection settings={settings} onChange={dispatch} />
       <TextSection settings={settings} onChange={dispatch} />
-      <ImageSection editor={editor} settings={settings} onChange={dispatch} />
+      <ImageSection editor={editor} settings={settings} onChange={dispatch} editing={editing} />
       <Footer
         disabled={status === statuses.LOADING}
         onCancel={onClose}

@@ -24,9 +24,16 @@ import {ScreenReaderContent} from '@instructure/ui-a11y-content'
 
 export default class DeveloperKeyStateControl extends React.Component {
   setBindingState = newValue => {
+    // eslint-disable-next-line no-alert
+    const confirmation = window.confirm(
+      I18n.t('Are you sure you want to change the state of this developer key?')
+    )
+    if (!confirmation) {
+      return
+    }
     this.props.store.dispatch(
       this.props.actions.setBindingWorkflowState(
-        this.props.developerKey.id,
+        this.props.developerKey,
         this.props.ctx.params.contextId,
         newValue
       )
@@ -34,7 +41,8 @@ export default class DeveloperKeyStateControl extends React.Component {
   }
 
   disabled() {
-    if (this.radioGroupValue() === 'allow') {
+    const devKeyBinding = this.props.developerKey.developer_key_account_binding
+    if (!devKeyBinding || this.radioGroupValue() === 'allow') {
       return false
     }
     return !this.props.developerKey.developer_key_account_binding.account_owns_binding
@@ -53,7 +61,11 @@ export default class DeveloperKeyStateControl extends React.Component {
     if (devKeyBinding) {
       return devKeyBinding.workflow_state || 'allow'
     }
-    return 'allow'
+    else if (!this.isSiteAdmin()) {
+      return 'off'
+    } else {
+      return 'allow'
+    }
   }
 
   isSiteAdmin() {
@@ -90,6 +102,7 @@ export default class DeveloperKeyStateControl extends React.Component {
         onChange={(e, val) => this.setBindingState(val)}
         disabled={this.disabled()}
         name={this.props.developerKey.id}
+        value={this.radioGroupValue()}
       >
         <RadioInput ref={this.refOnToggle} label={I18n.t('On')} value="on" context="success" />
         {this.isSiteAdmin() && (

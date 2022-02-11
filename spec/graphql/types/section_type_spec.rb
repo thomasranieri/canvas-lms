@@ -18,11 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::SectionType do
-  let_once(:course) { course_with_student(active_all: true); @course }
+  let_once(:course) do
+    course_with_student(active_all: true)
+    @course
+  end
   let_once(:section) { course.course_sections.create! name: "Whatever", sis_source_id: "sisSection" }
   let(:section_type) { GraphQLTypeTester.new(section, current_user: @teacher) }
 
@@ -33,6 +35,28 @@ describe Types::SectionType do
 
   it "requires read permission" do
     expect(section_type.resolve("_id", current_user: @student)).to be_nil
+  end
+
+  describe "section users" do
+    let(:section_with_1_student) { course.course_sections.create! }
+    let(:section_with_1_student_type) { GraphQLTypeTester.new(section_with_1_student, current_user: @teacher) }
+    let(:course_student) { User.create! }
+
+    before do
+      course.enroll_student(course_student, enrollment_state: "active", section: section_with_1_student)
+      course.student_view_student
+    end
+
+    it "returns the number of users in a section if there are no users" do
+      expect(section_type.resolve("userCount")).to eq 0
+    end
+
+    it "returns the real user count" do
+      number_of_fake_users = section_with_1_student.users.where(preferences: { fake_student: true }).count
+      number_of_section_users = section_with_1_student.users.count
+
+      expect(section_with_1_student_type.resolve("userCount")).to eq number_of_section_users - number_of_fake_users
+    end
   end
 
   context "sis field" do

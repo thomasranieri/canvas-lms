@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::SetExistingBindingState do
   describe "#run" do
     it "sets the bindings workflow_state" do
@@ -32,12 +30,12 @@ describe DataFixup::SetExistingBindingState do
       deleted_key_2  = DeveloperKey.create!.tap(&:destroy)
 
       # Set bindings' workflow state
-      active_key_1.developer_key_account_bindings.first.update(workflow_state: 'on')
-      active_key_2.developer_key_account_bindings.first.update(workflow_state: 'off')
-      inactive_key_1.developer_key_account_bindings.first.update(workflow_state: 'on')
-      inactive_key_2.developer_key_account_bindings.first.update(workflow_state: 'off')
-      deleted_key_1.developer_key_account_bindings.first.update(workflow_state: 'on')
-      deleted_key_2.developer_key_account_bindings.first.update(workflow_state: 'off')
+      active_key_1.developer_key_account_bindings.first.update(workflow_state: "on")
+      active_key_2.developer_key_account_bindings.first.update(workflow_state: "off")
+      inactive_key_1.developer_key_account_bindings.first.update(workflow_state: "on")
+      inactive_key_2.developer_key_account_bindings.first.update(workflow_state: "off")
+      deleted_key_1.developer_key_account_bindings.first.update(workflow_state: "on")
+      deleted_key_2.developer_key_account_bindings.first.update(workflow_state: "off")
 
       # Update binding state
       described_class.run

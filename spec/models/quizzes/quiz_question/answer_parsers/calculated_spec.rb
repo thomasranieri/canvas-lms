@@ -18,8 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../../../spec_helper.rb')
-require File.expand_path(File.dirname(__FILE__) + '/answer_parser_spec_helper.rb')
+require_relative "answer_parser_spec_helper"
 
 describe Quizzes::QuizQuestion::AnswerParsers::Calculated do
   context "#parse" do
@@ -50,7 +49,7 @@ describe Quizzes::QuizQuestion::AnswerParsers::Calculated do
       }
     end
 
-    before(:each) do
+    before do
       @question = parser_class.new(Quizzes::QuizQuestion::AnswerGroup.new(raw_answers)).parse(Quizzes::QuizQuestion::QuestionData.new(question_params))
     end
 
@@ -66,12 +65,12 @@ describe Quizzes::QuizQuestion::AnswerParsers::Calculated do
       end
     end
 
-    it 'handles 0 scale answers without any decimal values' do
-      expect(@question.answers.first[:variables].first[:value]).to eq '9'
+    it "handles 0 scale answers without any decimal values" do
+      expect(@question.answers.first[:variables].first[:value]).to eq "9"
     end
 
-    it 'handles 10 scale answers with the right number of decimal values' do
-      expect(@question.answers.to_a.last[:variables].first[:value]).to eq '7.0000000000'
+    it "handles 10 scale answers with the right number of decimal values" do
+      expect(@question.answers.to_a.last[:variables].first[:value]).to eq "7.0000000000"
     end
   end
 end

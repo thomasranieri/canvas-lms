@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe EpubExports::CreateService do
   before :once do
     course_with_teacher(active_all: true)
@@ -32,7 +30,7 @@ describe EpubExports::CreateService do
     end
 
     it "sends save & export to epub_export" do
-      expect(create_service.offline_export.new_record?).to be_truthy, 'precondition'
+      expect(create_service.offline_export.new_record?).to be_truthy, "precondition"
       expect(create_service.offline_export).to receive(:export).once.and_return(nil)
       expect(create_service.save).to be_truthy
       expect(create_service.offline_export.new_record?).to be_falsey

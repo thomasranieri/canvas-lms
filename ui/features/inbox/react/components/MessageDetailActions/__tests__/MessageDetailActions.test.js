@@ -22,24 +22,28 @@ import {MessageDetailActions} from '../MessageDetailActions'
 
 describe('MessageDetailItem', () => {
   it('sends the selected option to the provided callback function', () => {
-    const handleOptionSelectMock = jest.fn()
     const props = {
-      handleOptionSelect: handleOptionSelectMock
+      onReply: jest.fn(),
+      onReplyAll: jest.fn(),
+      onDelete: jest.fn()
     }
-
     const {getByRole, getByText} = render(<MessageDetailActions {...props} />)
 
     const replyButton = getByRole(
       (role, element) => role === 'button' && element.textContent === 'Reply'
     )
     fireEvent.click(replyButton)
-    expect(handleOptionSelectMock).toHaveBeenLastCalledWith('reply')
+    expect(props.onReply).toHaveBeenCalled()
 
     const moreOptionsButton = getByRole(
       (role, element) => role === 'button' && element.textContent === 'More options'
     )
     fireEvent.click(moreOptionsButton)
     fireEvent.click(getByText('Reply All'))
-    expect(handleOptionSelectMock).toHaveBeenLastCalledWith('reply-all')
+    expect(props.onReplyAll).toHaveBeenCalled()
+
+    fireEvent.click(moreOptionsButton)
+    fireEvent.click(getByText('Delete'))
+    expect(props.onDelete).toHaveBeenCalled()
   })
 })

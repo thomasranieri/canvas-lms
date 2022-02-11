@@ -18,10 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'added_to_conversation' do
+describe "added_to_conversation" do
   include MessagesCommon
 
   before :once do
@@ -39,6 +38,7 @@ describe 'added_to_conversation' do
 
   context ".email" do
     let(:path_type) { :email }
+
     it "renders" do
       generate_message(notification_name, path_type, asset)
     end
@@ -46,6 +46,7 @@ describe 'added_to_conversation' do
 
   context ".sms" do
     let(:path_type) { :sms }
+
     it "renders" do
       generate_message(notification_name, path_type, asset)
     end
@@ -53,6 +54,7 @@ describe 'added_to_conversation' do
 
   context ".summary" do
     let(:path_type) { :summary }
+
     it "renders" do
       generate_message(notification_name, path_type, asset)
     end
@@ -60,6 +62,7 @@ describe 'added_to_conversation' do
 
   context ".twitter" do
     let(:path_type) { :twitter }
+
     it "renders" do
       msg = generate_message(notification_name, path_type, asset)
       expect(msg.body).to be_present

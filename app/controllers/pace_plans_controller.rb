@@ -22,19 +22,35 @@ class PacePlansController < ApplicationController
   before_action :load_course
   before_action :require_feature_flag
   before_action :authorize_action
-  before_action :load_pace_plan, only: [:api_show, :update]
+  before_action :load_pace_plan, only: %i[api_show publish update]
 
   include Api::V1::Course
+  include Api::V1::Progress
   include K5Mode
 
   def index
     @pace_plan = @context.pace_plans.primary.first
 
     if @pace_plan.nil?
-      @pace_plan = @context.pace_plans.create!
-      @context.context_module_tags.each do |module_item|
-        @pace_plan.pace_plan_module_items.create module_item: module_item, duration: 0
+      @pace_plan = @context.pace_plans.new
+      @context.context_module_tags.not_deleted.each do |module_item|
+        next unless module_item.assignment
+
+        @pace_plan.pace_plan_module_items.new module_item: module_item, duration: 0
       end
+    end
+
+    progress = latest_progress
+    if progress
+      # start delayed job if it's not already started
+      if progress.queued?
+        if progress.delayed_job.present?
+          progress.delayed_job.update(run_at: Time.now)
+        else
+          progress = publish_pace_plan
+        end
+      end
+      progress_json = progress_json(progress, @current_user, session)
     end
 
     js_env({
@@ -42,47 +58,31 @@ class PacePlansController < ApplicationController
              COURSE: course_json(@context, @current_user, session, [], nil),
              ENROLLMENTS: enrollments_json(@context),
              SECTIONS: sections_json(@context),
-             PACE_PLAN: PacePlanPresenter.new(@pace_plan).as_json
+             PACE_PLAN: PacePlanPresenter.new(@pace_plan).as_json,
+             PACE_PLAN_PROGRESS: progress_json,
+             VALID_DATE_RANGE: CourseDateRange.new(@context)
            })
     js_bundle :pace_plans
     css_bundle :pace_plans
   end
 
   def api_show
-    plans_json = PacePlanPresenter.new(@pace_plan).as_json
-    render json: { pace_plan: plans_json }
+    progress = latest_progress
+    progress_json = progress_json(progress, @current_user, session) if progress
+    render json: {
+      pace_plan: PacePlanPresenter.new(@pace_plan).as_json,
+      progress: progress_json
+    }
   end
 
-  def create
-    pace_plan = @context.pace_plans.new(create_params)
-
-    if pace_plan.save
-      render json: PacePlanPresenter.new(pace_plan).as_json
-    else
-      render json: { success: false, errors: pace_plan.errors.full_messages }, status: :unprocessable_entity
-    end
-  end
-
-  def update
-    if @pace_plan.update(update_params)
-      # Force the updated_at to be updated, because if the update just changed the items the pace plan's
-      # updated_at doesn't get modified
-      @pace_plan.touch
-
-      render json: PacePlanPresenter.new(@pace_plan).as_json
-    else
-      render json: { success: false, errors: @pace_plan.errors.full_messages }, status: :unprocessable_entity
-    end
-  end
-
-  def latest_draft_for
+  def new
     @pace_plan = case @context
                  when Course
-                   @context.pace_plans.primary.unpublished.take
+                   @context.pace_plans.primary.not_deleted.take
                  when CourseSection
-                   @course.pace_plans.unpublished.for_section(@context).take
+                   @course.pace_plans.for_section(@context).not_deleted.take
                  when Enrollment
-                   @course.pace_plans.unpublished.for_user(@context.user).take
+                   @course.pace_plans.for_user(@context.user).not_deleted.take
                  end
     if @pace_plan.nil?
       params = case @context
@@ -98,16 +98,79 @@ class PacePlansController < ApplicationController
       if published_pace_plan
         @pace_plan = published_pace_plan.duplicate(params)
       else
-        @pace_plan = @course.pace_plans.create!(params)
-        @course.context_module_tags.not_deleted.each do |module_item|
-          @pace_plan.pace_plan_module_items.create module_item: module_item, duration: 0
+        @pace_plan = @course.pace_plans.new(params)
+        @course.context_module_tags.can_have_assignment.not_deleted.each do |module_item|
+          @pace_plan.pace_plan_module_items.new module_item: module_item, duration: 0
         end
       end
     end
     render json: { pace_plan: PacePlanPresenter.new(@pace_plan).as_json }
   end
 
+  def publish
+    publish_pace_plan
+    render json: progress_json(@progress, @current_user, session)
+  end
+
+  def create
+    @pace_plan = @context.pace_plans.new(create_params)
+
+    if @pace_plan.save
+      publish_pace_plan
+      render json: {
+        pace_plan: PacePlanPresenter.new(@pace_plan).as_json,
+        progress: progress_json(@progress, @current_user, session)
+      }
+    else
+      render json: { success: false, errors: @pace_plan.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def update
+    if @pace_plan.update(update_params)
+      # Force the updated_at to be updated, because if the update just changed the items the pace plan's
+      # updated_at doesn't get modified
+      @pace_plan.touch
+
+      publish_pace_plan
+      render json: {
+        pace_plan: PacePlanPresenter.new(@pace_plan).as_json,
+        progress: progress_json(@progress, @current_user, session)
+      }
+    else
+      render json: { success: false, errors: @pace_plan.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  def compress_dates
+    @pace_plan = @course.pace_plans.new(create_params)
+    unless @pace_plan.valid?
+      return render json: { success: false, errors: @pace_plan.errors.full_messages }, status: :unprocessable_entity
+    end
+
+    @pace_plan.course = @course
+    start_date = params.dig(:pace_plan, :start_date).present? ? Date.parse(params.dig(:pace_plan, :start_date)) : @pace_plan.start_date
+
+    if @pace_plan.end_date && start_date && @pace_plan.end_date < start_date
+      return render json: { success: false, errors: "End date cannot be before start date" }, status: :unprocessable_entity
+    end
+
+    compressed_module_items = @pace_plan.compress_dates(save: false, start_date: start_date)
+                                        .sort_by { |ppmi| ppmi.module_item.position }
+                                        .group_by { |ppmi| ppmi.module_item.context_module }
+                                        .sort_by { |context_module, _items| context_module.position }
+                                        .to_h.values.flatten
+    compressed_dates = PacePlanDueDatesCalculator.new(@pace_plan).get_due_dates(compressed_module_items, start_date: start_date)
+
+    render json: compressed_dates.to_json
+  end
+
   private
+
+  def latest_progress
+    progress = Progress.order(created_at: :desc).find_by(context: @pace_plan, tag: "pace_plan_publish")
+    progress&.workflow_state == "completed" ? nil : progress
+  end
 
   def enrollments_json(course)
     json = course.all_real_student_enrollments.map do |enrollment|
@@ -152,6 +215,8 @@ class PacePlansController < ApplicationController
   def load_context
     if params[:enrollment_id]
       @context = Enrollment.find(params[:enrollment_id])
+    elsif params[:course_section_id]
+      @context = CourseSection.find(params[:course_section_id])
     else
       require_context
     end
@@ -165,12 +230,11 @@ class PacePlansController < ApplicationController
     params.require(:pace_plan).permit(
       :course_section_id,
       :user_id,
-      :start_date,
       :end_date,
       :exclude_weekends,
       :hard_end_dates,
       :workflow_state,
-      pace_plan_module_items_attributes: [:id, :duration, :module_item_id, :root_account_id]
+      pace_plan_module_items_attributes: %i[id duration module_item_id root_account_id]
     )
   end
 
@@ -179,12 +243,15 @@ class PacePlansController < ApplicationController
       :course_id,
       :course_section_id,
       :user_id,
-      :start_date,
       :end_date,
       :exclude_weekends,
       :hard_end_dates,
       :workflow_state,
-      pace_plan_module_items_attributes: [:duration, :module_item_id, :root_account_id]
+      pace_plan_module_items_attributes: %i[duration module_item_id root_account_id]
     )
+  end
+
+  def publish_pace_plan
+    @progress = @pace_plan.create_publish_progress(run_at: Time.now)
   end
 end

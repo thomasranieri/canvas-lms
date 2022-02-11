@@ -88,7 +88,7 @@ module GreatExpectations
       GreatExpectations.expectation_checked(self, matcher)
       super
     end
-    alias to_not not_to
+    alias_method :to_not, :not_to
   end
 
   class << self
@@ -186,8 +186,8 @@ module GreatExpectations
       if action == :raise
         raise Error.for(message, location)
       else
-        $stderr.puts "\e[31mWarning: #{message}"
-        $stderr.puts "See: " + (location || CallStackUtils.best_line_for(caller).join("\n")) + "\e[0m"
+        warn "\e[31mWarning: #{message}"
+        warn "See: " + (location || CallStackUtils.best_line_for(caller).join("\n")) + "\e[0m"
       end
     end
   end

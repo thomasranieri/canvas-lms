@@ -59,7 +59,7 @@ After you have [installed the dependencies](getting_docker.md). You'll need to c
 over the required configuration files.
 
 The `docker-compose/config` directory has some config files already set up to use
-the linked containers supplied by config. Only copy yamls, not the contents of new-jenkins folder. 
+the linked containers supplied by config. Only copy yamls, not the contents of new-jenkins folder.
 You can just copy them to
 `config/`:
 
@@ -102,7 +102,39 @@ all be done with one command:
 Changes you're making are not showing up? See the Caveats section below.
 Ctrl-C your `docker-compose up` window and restart.
 
-## Debugging
+##
+
+### With an IDE
+Canvas supports [ruby-debug-ide](https://github.com/ruby-debug/ruby-debug-ide) to establish
+communication between the debugger engine and IDE (RubyMine or VS Code)
+
+For full instructions on setting up RubyMine or VS Code to visually debug Canvas
+Please see [this page](https://instructure.atlassian.net/wiki/spaces/CE/pages/4287561732/Debugging+Dockerized+Canvas+with+RubyMine+or+Visual+Studio+Code).
+
+#### Example VS Code Configuration
+1. Add `docker-compose/rdebug-ide.override.yml` to the `COMPOSE_FILE` variable in the `.env` file. Example:
+```
+COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml:docker-compose/rdebug-ide.override.yml
+```
+2. Install the Ruby extension from [the Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=rebornix.Ruby)
+3. Create a .vscode/launch.json file at the repo root, with the following contents:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Listen for rdebug-ide",
+      "type": "Ruby",
+      "request": "attach",
+      "remoteHost": "127.0.0.1",
+      "remotePort": "1234",
+      "remoteWorkspaceRoot": "/usr/src/app",
+      "cwd": "${workspaceRoot}"
+    }
+  ]
+}
+```
+4. Press F5, set breakpoints, and start debugging!
 
 ### Byebug
 
@@ -215,7 +247,7 @@ all docker-compose containers, or when specified explicitly. The selenium
 container needs to be started before running any specs that require selenium.
 
 ```sh
-docker-compose up selenium-firefox # or selenium-chrome
+docker-compose up selenium-firefox # or selenium-chrome or selenium-edge
 ```
 
 With the container running, you should be able to open a VNC session:
@@ -223,6 +255,7 @@ With the container running, you should be able to open a VNC session:
 ```sh
 open vnc://secret:secret@seleniumff.docker          (firefox)
 open vnc://secret:secret@seleniumch.docker:5901     (chrome)
+open vnc://secret:secret@seleniumedge.docker:5902   (edge)
 ```
 
 Now just run your choice of selenium specs:

@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-class OauthProxyController < ApplicationController
+class OAuthProxyController < ApplicationController
   skip_before_action :load_user
 
   def redirect_proxy
@@ -26,7 +26,7 @@ class OauthProxyController < ApplicationController
 
     begin
       json = Canvas::Security.decode_jwt(params[:state])
-      url = URI.parse(json['redirect_uri'])
+      url = URI.parse(json["redirect_uri"])
       filtered_params = params.permit(:state, :code)
       url.query = url.query.blank? ? filtered_params.to_h.to_query : "#{url.query}&#{filtered_params.to_h.to_query}"
       redirect_to url.to_s

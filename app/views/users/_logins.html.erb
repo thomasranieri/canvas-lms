@@ -34,8 +34,8 @@
     <table class="ic-Table">
       <% pseudonyms = @user.all_active_pseudonyms + [nil] %>
       <% pseudonyms.each do |pseudonym| %>
-        <tr class='login <%= 'blank' unless pseudonym %>' style="<%= hidden unless pseudonym %>">
-          <td class='sso-icon'>
+        <tr class="login<%= ' blank' unless pseudonym %>" <%= raw %Q(style="display: none") unless pseudonym %>>
+          <td class="sso-icon" <%= raw %Q(data-pseudonym-id="#{pseudonym.id}") if pseudonym %>>
             <% if lookup_context.template_exists?("shared/svg/_svg_icon_#{pseudonym.try(:authentication_provider).try(:auth_type)}.svg") %>
               <%= render(partial: "shared/svg/svg_icon_#{pseudonym.authentication_provider.auth_type}.svg") %>
               <span class="screenreader-only">
@@ -58,7 +58,17 @@
             <% end %>
           </th>
           <td class='account'>
-            <%= link_to(pseudonym ? pseudonym.account.name : nbsp, account_url(pseudonym ? pseudonym.account : "{{ account_id }}"), :class => 'account_name') %>
+            <% if pseudonym&.account == @domain_root_account %>
+              <%= link_to(pseudonym.account.name, account_url(pseudonym.account), class: 'account_name') %>
+            <% elsif pseudonym %>
+              <% pseudonym.shard.activate do %>
+                <%= link_to(pseudonym.account.name, account_user_url(pseudonym.account,
+                                                                     pseudonym.user,
+                                                                     host: HostUrl.context_host(pseudonym.account)), class: 'account_name') %>
+              <% end %>
+            <% else %>
+              <%= link_to(nbsp, account_url("{{ account_id }}"), class: 'account_name') %>
+            <% end %>
           </td>
           <td class='details'>
 

@@ -12,12 +12,57 @@ Lint/NoSleep:
   Exclude:
     - "**/spec/selenium/test_setup/**/*.rb"
 
+Migration/AddIndex:
+  Enable: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/AddForeignKey:
+  Enable: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/BooleanColumns:
+  Enable: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/ChangeColumn:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/ChangeColumnNull:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
 Migration/ConcurrentIndex:
   Enabled: true
   Include:
     - "**/db/migrate/*.rb"
 
+Migration/DataFixup:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
 Migration/Delay:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/Execute:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/IdColumn:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/Predeploy:
   Enabled: true
   Include:
     - "**/db/migrate/*.rb"
@@ -32,6 +77,16 @@ Migration/RemoveColumn:
   Include:
     - "**/db/migrate/*.rb"
 
+Migration/RenameTable:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
+Migration/RootAccountId:
+  Enabled: true
+  Include:
+    - "**/db/migrate/*.rb"
+
 Migration/SendLater:
   Enabled: true
   Include:
@@ -41,12 +96,6 @@ Rails/SmartTimeZone:
   Enabled: true
 
 Specs/EnsureSpecExtension:
-  Enabled: true
-  Include:
-    - "**/spec/**/*.rb"
-    - "**/spec_canvas/**/*.rb"
-
-Specs/NoBeforeAll:
   Enabled: true
   Include:
     - "**/spec/**/*.rb"
@@ -115,12 +164,6 @@ Specs/PreferFOverFj:
     - "**/spec_canvas/**/*.rb"
 
 Specs/ScopeHelperModules:
-  Enabled: true
-  Include:
-    - "**/spec/**/*.rb"
-    - "**/spec_canvas/**/*.rb"
-
-Specs/DeterministicDescribedClasses:
   Enabled: true
   Include:
     - "**/spec/**/*.rb"

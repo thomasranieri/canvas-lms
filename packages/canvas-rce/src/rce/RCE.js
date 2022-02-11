@@ -55,7 +55,6 @@ const RCE = forwardRef(function RCE(props, rceRef) {
     textareaId,
     textareaClassName,
     rcsProps,
-    use_rce_pretty_html_editor,
     use_rce_buttons_and_icons,
     use_rce_a11y_checker_notifications,
     onFocus,
@@ -97,7 +96,6 @@ const RCE = forwardRef(function RCE(props, rceRef) {
       textareaId,
       textareaClassName,
       trayProps: rcsProps,
-      use_rce_pretty_html_editor,
       use_rce_buttons_and_icons,
       use_rce_a11y_checker_notifications,
       editorOptions: Object.assign(editorOptions, editorOptions, {
@@ -149,7 +147,7 @@ RCE.propTypes = {
   // as a workaround, the KB Shortcut Helper Button may be supressed
   // setting renderKBShortcutModal to false
   renderKBShortcutModal: bool,
-  // 
+  //
   // height of the RCE. if a number, in px
   height: oneOfType([number, string]),
   // array of URLs to high-contrast css
@@ -175,8 +173,7 @@ RCE.propTypes = {
   // array of lti tools available to the user
   // {id, favorite} are all that's required, ther fields are ignored
   ltiTools: ltiToolsPropType,
-  // if the rce_limit_init_render_on_page flag is on, this
-  // is the maximum number of RCEs that will render on page load.
+  // The maximum number of RCEs that will render on page load.
   // Any more than this will be deferred until it is nearly
   // scrolled into view.
   // if isNaN or <=0, render them all
@@ -193,8 +190,6 @@ RCE.propTypes = {
   // properties necessary for the RCE to us the RCS
   // if missing, RCE features that require the RCS are omitted
   rcsProps: trayPropTypes,
-  // enable the pretty html editor (temporary until the feature is forced on)
-  use_rce_pretty_html_editor: bool,
   // enable the custom buttons feature (temporary until the feature is forced on)
   use_rce_buttons_and_icons: bool,
   // enable the a11y checker notifications (temporary until the feature is forced on)
@@ -218,7 +213,6 @@ RCE.defaultProps = {
   maxInitRenderedRCEs: -1,
   mirroredAttrs: {},
   readOnly: false,
-  use_rce_pretty_html_editor: true,
   use_rce_buttons_and_icons: true,
   use_rce_a11y_checker_notifications: true,
   onFocus: () => {},

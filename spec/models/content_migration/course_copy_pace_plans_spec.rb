@@ -17,16 +17,15 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/course_copy_helper.rb')
+require_relative "course_copy_helper"
 
 describe ContentMigration do
   context "pace plans" do
-    include_examples "course copy"
+    include_context "course copy"
 
     it "copies pace plan attributes" do
       pace_plan = @copy_from.pace_plans.new
-      pace_plan.workflow_state = 'active'
-      pace_plan.start_date = 1.day.ago.beginning_of_day
+      pace_plan.workflow_state = "active"
       pace_plan.end_date = 1.day.from_now.beginning_of_day
       pace_plan.published_at = Time.now.utc
       pace_plan.exclude_weekends = false
@@ -38,7 +37,7 @@ describe ContentMigration do
 
       pace_plan_to = @copy_to.pace_plans.take
 
-      expect(pace_plan_to.workflow_state).to eq 'active'
+      expect(pace_plan_to.workflow_state).to eq "active"
       expect(pace_plan_to.start_date).to eq pace_plan.start_date
       expect(pace_plan_to.end_date).to eq pace_plan.end_date
       expect(pace_plan_to.published_at.to_i).to eq pace_plan.published_at.to_i
@@ -48,12 +47,12 @@ describe ContentMigration do
 
     context "module items" do
       before :once do
-        @a1 = @copy_from.assignments.create! name: 'a1'
-        @a2 = @copy_from.assignments.create! name: 'a2'
-        @mod1 = @copy_from.context_modules.create! name: 'module1'
-        @tag1 = @mod1.add_item(type: 'assignment', id: @a1.id)
-        @mod2 = @copy_from.context_modules.create! name: 'module2'
-        @tag2 = @mod2.add_item(type: 'assignment', id: @a2.id)
+        @a1 = @copy_from.assignments.create! name: "a1"
+        @a2 = @copy_from.assignments.create! name: "a2"
+        @mod1 = @copy_from.context_modules.create! name: "module1"
+        @tag1 = @mod1.add_item(type: "assignment", id: @a1.id)
+        @mod2 = @copy_from.context_modules.create! name: "module2"
+        @tag2 = @mod2.add_item(type: "assignment", id: @a2.id)
 
         @pace_plan = @copy_from.pace_plans.create!
         @pace_plan.pace_plan_module_items.create! duration: 1, module_item_id: @tag1.id
@@ -65,7 +64,7 @@ describe ContentMigration do
 
         tag1_to = @copy_to.context_module_tags.where(migration_id: mig_id(@tag1)).take
         tag2_to = @copy_to.context_module_tags.where(migration_id: mig_id(@tag2)).take
-        pace_plan_to = @copy_to.pace_plans.where(workflow_state: 'unpublished').take
+        pace_plan_to = @copy_to.pace_plans.where(workflow_state: "unpublished").take
 
         expect(pace_plan_to.pace_plan_module_items.find_by(module_item_id: tag1_to.id).duration).to eq 1
         expect(pace_plan_to.pace_plan_module_items.find_by(module_item_id: tag2_to.id).duration).to eq 2
@@ -78,7 +77,7 @@ describe ContentMigration do
         }
         run_course_copy
 
-        pace_plan_to = @copy_to.pace_plans.where(workflow_state: 'unpublished').take
+        pace_plan_to = @copy_to.pace_plans.where(workflow_state: "unpublished").take
         expect(pace_plan_to.pace_plan_module_items.count).to eq 1
       end
     end

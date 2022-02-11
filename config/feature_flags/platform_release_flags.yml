@@ -51,15 +51,38 @@ microsoft_group_enrollments_syncing:
     If enabled, syncing course enrollments to Microsoft Groups will be
     available. Account admins may enable this in account settings.
   applies_to: RootAccount
+lti_platform_storage:
+  state: hidden
+  display_name: LTI Platform Storage
+  description: |-
+    If enabled, allows new window.postMessage subjects for the LTI Platform
+    Storage spec, and sends reponse messages to all postMessage.
+  applies_to: SiteAdmin
 lti_multiple_assignment_deep_linking:
   state: hidden
   display_name: LTI Multiple Assignment Deep Linking
   description: |-
     If enabled, allows multiple deep link support for assignments and modules.
-  applies_to: SiteAdmin
-lti_deep_linking_module_index_menu:
+  applies_to: RootAccount
+lti_deep_linking_module_index_menu_modal:
   state: hidden
   display_name: LTI Deep Linking for Module Index Menu
   description: |-
-    If enabled, allows deep linking from the module index.
+    If enabled, allows deep linking from the module index via a modal.
+  applies_to: RootAccount
+lti_deep_linking_line_items:
+  state: hidden
+  display_name: LTI Deep Linking Line Items
+  description: |-
+    If enabled, creates assignments from LineItems in deep link messages.
+  applies_to: RootAccount
+api_auth_error_updates:
+  state: hidden
+  display_name: Updates to JSON API auth error HTTP code and JSON status field
+  description: |-
+    If enabled, an "unauthorized" response from the JSON API will return a 403
+    (Forbidden) instead of a 401 code, to be more in line with HTTP standards.
+    Also, when the API returns a unauthenticated or unauthorized JSON error,
+    the "status" field will not be localized; it will always be given in
+    English.
   applies_to: SiteAdmin

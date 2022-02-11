@@ -31,16 +31,22 @@ import {
 import {showFlashAlert, showFlashError} from '@canvas/alerts/react/FlashAlert'
 import apiUserContent from '@canvas/util/jquery/apiUserContent'
 import DashboardOptionsMenu from './DashboardOptionsMenu'
-import loadCardDashboard from '@canvas/dashboard-card'
+import loadCardDashboard, {resetDashboardCards} from '@canvas/dashboard-card'
 import $ from 'jquery'
 import {asText, getPrefetchedXHR} from '@instructure/js-utils'
 import '@canvas/jquery/jquery.disableWhileLoading'
 import {CreateCourseModal} from '@canvas/create-course-modal/react/CreateCourseModal'
+import ObserverOptions from '@canvas/observer-picker'
+import {View} from '@instructure/ui-view'
 
 const [show, hide] = ['block', 'none'].map(displayVal => id => {
   const el = document.getElementById(id)
   if (el) el.style.display = displayVal
 })
+
+const observerMode = () =>
+  ENV.FEATURES?.observer_picker && ENV.current_user_roles?.includes('observer')
+
 /**
  * This component renders the header and the to do sidebar for the user
  * dashboard and loads the current dashboard.
@@ -52,7 +58,7 @@ class DashboardHeader extends React.Component {
     screenReaderFlashMessage: func,
     canEnableElementaryDashboard: bool,
     env: object,
-    showTodoList: func,
+    loadDashboardSidebar: func,
     responsiveSize: oneOf(['small', 'medium', 'large'])
   }
 
@@ -60,14 +66,15 @@ class DashboardHeader extends React.Component {
     dashboard_view: 'cards',
     screenReaderFlashMessage: () => {},
     env: {},
-    showTodoList,
+    loadDashboardSidebar,
     responsiveSize: 'large'
   }
 
   constructor(...args) {
     super(...args)
-    if (ENV.STUDENT_PLANNER_ENABLED) {
-      initializePlanner({
+    this.planner_init_promise = undefined
+    if (this.props.planner_enabled) {
+      this.planner_init_promise = initializePlanner({
         changeDashboardView: this.changeDashboard,
         getActiveApp: this.getActiveApp,
         flashError: message => showFlashAlert({message, type: 'error'}),
@@ -98,6 +105,14 @@ class DashboardHeader extends React.Component {
     this.showDashboard(this.state.currentDashboard)
   }
 
+  ready = () => {
+    if (this.props.planner_enabled) {
+      return this.planner_init_promise
+    } else {
+      return Promise.resolve()
+    }
+  }
+
   getActiveApp = () => this.state.currentDashboard
 
   resetClasses(newDashboard) {
@@ -114,7 +129,10 @@ class DashboardHeader extends React.Component {
 
   loadCardDashboard() {
     // I put this in so I can spy on the imported function in a spec :'(
-    loadCardDashboard()
+    if (!observerMode()) {
+      loadCardDashboard()
+    }
+    // if in observer mode, ObserverOptions will handle loading the cards for the right user
   }
 
   loadStreamItemDashboard() {
@@ -139,16 +157,23 @@ class DashboardHeader extends React.Component {
     if (this.state.loadedViews.includes(newView)) return
 
     if (newView === 'planner' && this.props.planner_enabled) {
-      this.loadPlannerComponent()
+      this.planner_init_promise
+        .then(() => {
+          this.loadPlannerComponent()
+        })
+        .catch(() =>
+          showFlashAlert({message: I18n.t('Failed initializing dashboard'), type: 'error'})
+        )
     } else if (newView === 'cards') {
       this.loadCardDashboard()
     } else if (newView === 'activity') {
       this.loadStreamItemDashboard()
     }
 
-    // also load the sidebar if we need to (no sidebar is shown in planner dashboard)
-    if (newView !== 'planner' && !this.sidebarHasLoaded) {
-      this.props.showTodoList()
+    // also load the sidebar if we need to
+    // (no sidebar is shown in planner dashboard; ObserverOptions loads sidebar for observers)
+    if (newView !== 'planner' && !this.sidebarHasLoaded && !observerMode()) {
+      this.props.loadDashboardSidebar()
       this.sidebarHasLoaded = true
     }
 
@@ -183,6 +208,7 @@ class DashboardHeader extends React.Component {
       this.saveDashboardView(newView)
       this.switchDashboard(newView)
     }
+    return this.ready()
   }
 
   switchDashboard = newView => {
@@ -212,6 +238,12 @@ class DashboardHeader extends React.Component {
     elements[newView].forEach(show)
   }
 
+  reloadDashboardForObserver = userId => {
+    resetDashboardCards()
+    loadCardDashboard(undefined, userId)
+    this.props.loadDashboardSidebar(userId)
+  }
+
   render() {
     return (
       <div className={classnames(this.props.responsiveSize, 'ic-Dashboard-header__layout')}>
@@ -219,6 +251,17 @@ class DashboardHeader extends React.Component {
           <span className="hidden-phone">{I18n.t('Dashboard')}</span>
         </h1>
         <div className="ic-Dashboard-header__actions">
+          {ENV.FEATURES?.observer_picker && ENV.current_user_roles?.includes('observer') && (
+            <View as="div" maxWidth="16em" margin="0 small">
+              <ObserverOptions
+                currentUser={ENV.current_user}
+                currentUserRoles={ENV.current_user_roles}
+                observedUsersList={ENV.OBSERVED_USERS_LIST}
+                canAddObservee={ENV.CAN_ADD_OBSERVEE}
+                handleChangeObservedUser={this.reloadDashboardForObserver}
+              />
+            </View>
+          )}
           {this.props.planner_enabled && (
             <div
               id="dashboard-planner-header"
@@ -247,57 +290,55 @@ class DashboardHeader extends React.Component {
 export {DashboardHeader}
 export default responsiviser()(DashboardHeader)
 
+let readSidebarPrefetch = false
 // extract this out to a property so tests can override it and not have to mock
 // out the timers in every single test.
-function showTodoList() {
-  if (ENV.DASHBOARD_SIDEBAR_URL) {
-    const rightSide = $('#right-side')
-    const promiseToGetNewCourseForm = import('../jquery/util/newCourseForm')
-    const promiseToGetHtml =
-      asText(getPrefetchedXHR(ENV.DASHBOARD_SIDEBAR_URL)) || $.get(ENV.DASHBOARD_SIDEBAR_URL)
+function loadDashboardSidebar(observedUserId) {
+  const dashboardSidebarUrl =
+    observedUserId && observerMode()
+      ? `/dashboard-sidebar?observed_user=${observedUserId}`
+      : '/dashboard-sidebar'
 
-    rightSide.disableWhileLoading(
-      Promise.all([promiseToGetNewCourseForm, promiseToGetHtml]).then(
-        ([{default: newCourseForm}, html]) => {
-          // inject the erb html we got from the server
-          rightSide.html(html)
-          newCourseForm()
+  const rightSide = $('#right-side')
+  const promiseToGetNewCourseForm = import('../jquery/util/newCourseForm')
+  const prefetchedXhr = getPrefetchedXHR(dashboardSidebarUrl)
+  const promiseToGetHtml =
+    !readSidebarPrefetch && prefetchedXhr !== undefined
+      ? asText(prefetchedXhr)
+      : $.get(dashboardSidebarUrl)
+  readSidebarPrefetch = true
 
-          // the injected html has a .Sidebar__TodoListContainer element in it,
-          // render the canvas-planner ToDo list into it
-          const container = document.querySelector('.Sidebar__TodoListContainer')
-          if (container) renderToDoSidebar(container)
+  rightSide.disableWhileLoading(
+    Promise.all([promiseToGetNewCourseForm, promiseToGetHtml]).then(
+      ([{default: newCourseForm}, html]) => {
+        // inject the erb html we got from the server
+        rightSide.html(html)
+        newCourseForm()
 
-          const startButton = document.getElementById('start_new_course')
-          const modalContainer = document.getElementById('create_course_modal_container')
-          let role
-          if (ENV.current_user_roles.includes('admin')) {
-            role = 'admin'
-          } else if (ENV.current_user_roles.includes('teacher')) {
-            role = 'teacher'
-          }
-          if (
-            startButton &&
-            modalContainer &&
-            role &&
-            ENV.FEATURES?.create_course_subaccount_picker
-          ) {
-            startButton.addEventListener('click', () => {
-              ReactDOM.render(
-                <CreateCourseModal
-                  isModalOpen
-                  setModalOpen={isOpen => {
-                    if (!isOpen) ReactDOM.unmountComponentAtNode(modalContainer)
-                  }}
-                  permissions={role}
-                  isK5User={false} // can't be k5 user if classic dashboard is showing
-                />,
-                modalContainer
-              )
-            })
-          }
+        // the injected html has a .Sidebar__TodoListContainer element in it,
+        // render the canvas-planner ToDo list into it
+        const container = document.querySelector('.Sidebar__TodoListContainer')
+        if (container) renderToDoSidebar(container)
+
+        const startButton = document.getElementById('start_new_course')
+        const modalContainer = document.getElementById('create_course_modal_container')
+        if (startButton && modalContainer && ENV.FEATURES?.create_course_subaccount_picker) {
+          startButton.addEventListener('click', () => {
+            ReactDOM.render(
+              <CreateCourseModal
+                isModalOpen
+                setModalOpen={isOpen => {
+                  if (!isOpen) ReactDOM.unmountComponentAtNode(modalContainer)
+                }}
+                permissions={ENV.CREATE_COURSES_PERMISSIONS.PERMISSION}
+                restrictToMCCAccount={ENV.CREATE_COURSES_PERMISSIONS.RESTRICT_TO_MCC_ACCOUNT}
+                isK5User={false} // can't be k5 user if classic dashboard is showing
+              />,
+              modalContainer
+            )
+          })
         }
-      )
+      }
     )
-  }
+  )
 }

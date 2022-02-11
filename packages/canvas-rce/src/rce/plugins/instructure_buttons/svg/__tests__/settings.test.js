@@ -34,16 +34,20 @@ describe('useSvgSettings()', () => {
       const [settings, _status, _dispatch] = subject().current
 
       expect(settings).toEqual({
+        type: 'image/svg+xml-buttons-and-icons',
         name: '',
         alt: '',
         shape: 'square',
         size: 'small',
         color: null,
+        encodedImage: '',
+        encodedImageType: '',
+        encodedImageName: '',
         outlineColor: null,
         outlineSize: 'none',
         text: '',
         textSize: 'small',
-        textColor: null,
+        textColor: '#000000',
         textBackgroundColor: null,
         textPosition: 'middle'
       })
@@ -70,16 +74,20 @@ describe('useSvgSettings()', () => {
         const result = subject()
         act(() => result.current[2](settingsUpdate))
         expect(result.current[0]).toEqual({
+          type: 'image/svg+xml-buttons-and-icons',
           name: 'Banana',
           alt: '',
           shape: 'square',
           size: 'large',
           color: null,
+          encodedImage: '',
+          encodedImageType: '',
+          encodedImageName: '',
           outlineColor: null,
           outlineSize: 'none',
           text: '',
           textSize: 'small',
-          textColor: null,
+          textColor: '#000000',
           textBackgroundColor: null,
           textPosition: 'middle'
         })
@@ -138,22 +146,24 @@ describe('useSvgSettings()', () => {
         return result.current[0]
       })
 
-      expect(result.current[0]).toEqual(
-        {
-          name: 'Test Image',
-          alt: 'a test image',
-          shape: 'triangle',
-          size: 'large',
-          color: '#FF2717',
-          outlineColor: '#06A3B7',
-          outlineSize: 'small',
-          text: 'Some Text',
-          textSize: 'medium',
-          textColor: '#009606',
-          textBackgroundColor: '#06A3B7',
-          textPosition: 'middle'
-        }
-      )
+      expect(result.current[0]).toEqual({
+        type: 'image/svg+xml-buttons-and-icons',
+        name: 'Test Image',
+        alt: 'a test image',
+        shape: 'triangle',
+        size: 'large',
+        color: '#FF2717',
+        encodedImage: '',
+        encodedImageType: '',
+        encodedImageName: '',
+        outlineColor: '#06A3B7',
+        outlineSize: 'small',
+        text: 'Some Text',
+        textSize: 'medium',
+        textColor: '#009606',
+        textBackgroundColor: '#06A3B7',
+        textPosition: 'middle'
+      })
     })
 
     it('sets the status to "loading"', () => {
@@ -184,16 +194,20 @@ describe('useSvgSettings()', () => {
       it('uses the default settings', () => {
         const result = subject()
         expect(result.current[0]).toEqual({
+          type: 'image/svg+xml-buttons-and-icons',
           name: '',
           alt: '',
           shape: 'square',
           size: 'small',
           color: null,
+          encodedImage: '',
+          encodedImageType: '',
+          encodedImageName: '',
           outlineColor: null,
           outlineSize: 'none',
           text: '',
           textSize: 'small',
-          textColor: null,
+          textColor: '#000000',
           textBackgroundColor: null,
           textPosition: 'middle'
         })
@@ -206,16 +220,20 @@ describe('useSvgSettings()', () => {
       it('uses the default settings', async () => {
         const result = subject()
         expect(result.current[0]).toEqual({
+          type: 'image/svg+xml-buttons-and-icons',
           name: '',
           alt: '',
           shape: 'square',
           size: 'small',
           color: null,
+          encodedImage: '',
+          encodedImageType: '',
+          encodedImageName: '',
           outlineColor: null,
           outlineSize: 'none',
           text: '',
           textSize: 'small',
-          textColor: null,
+          textColor: '#000000',
           textBackgroundColor: null,
           textPosition: 'middle'
         })

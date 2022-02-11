@@ -18,21 +18,17 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-class Mutations::CreateLearningOutcome < Mutations::BaseMutation
-  graphql_name 'CreateLearningOutcome'
+class Mutations::CreateLearningOutcome < Mutations::BaseLearningOutcomeMutation
+  graphql_name "CreateLearningOutcome"
 
-  # input arguments
-  argument :group_id, ID, required: true, prepare: GraphQLHelpers.relay_or_legacy_id_prepare_func('LearningOutcomeGroup')
-  argument :title, String, required: true
-  argument :description, String, required: false
-  argument :display_name, String, required: false
-  argument :vendor_guid, String, required: false
-
-  field :learning_outcome, Types::LearningOutcomeType, null: true
+  argument :group_id, ID, required: true, prepare: GraphQLHelpers.relay_or_legacy_id_prepare_func("LearningOutcomeGroup")
 
   def resolve(input:)
     outcome_group = learning_outcome_group(input)
-    record = LearningOutcome.new(context: outcome_group.context, **attrs(input))
+
+    outcome_input = attrs(input, outcome_group)
+
+    record = LearningOutcome.new(context: outcome_group.context, **outcome_input)
     check_permission(record)
     return errors_for(record) unless record.save
 
@@ -44,15 +40,11 @@ class Mutations::CreateLearningOutcome < Mutations::BaseMutation
 
   def learning_outcome_group(input)
     LearningOutcomeGroup.active.find_by(id: input[:group_id]).tap do |group|
-      raise GraphQL::ExecutionError, I18n.t('group not found') if group.nil?
+      raise GraphQL::ExecutionError, I18n.t("group not found") if group.nil?
     end
   end
 
   def check_permission(outcome)
-    raise GraphQL::ExecutionError, I18n.t('insufficient permission') unless outcome.grants_right? current_user, :create
-  end
-
-  def attrs(input)
-    input.to_h.slice(:title, :display_name, :description, :vendor_guid)
+    raise GraphQL::ExecutionError, I18n.t("insufficient permission") unless outcome.grants_right? current_user, :create
   end
 end

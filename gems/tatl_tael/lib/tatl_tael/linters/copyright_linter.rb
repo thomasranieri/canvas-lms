@@ -106,7 +106,7 @@ module TatlTael
       end
 
       def remove_blank_lines(lines)
-        lines.reject { |line| line =~ /^\s+$/ }
+        lines.grep_v(/^\s+$/)
       end
 
       def valid_title?(title)
@@ -134,7 +134,7 @@ module TatlTael
       end
 
       def copyright_body
-        copyright.split("\n")[1..-1].join("\n") # remove first line
+        copyright.split("\n")[1..].join("\n") # remove first line
                  .gsub(/\s+/, " ").strip
       end
 
@@ -174,7 +174,7 @@ module TatlTael
         end
       end
 
-      ENDING_BLOCK_COMMENT_REGEX = /^(\s+)?(\*+\/)(\s+)?$/
+      ENDING_BLOCK_COMMENT_REGEX = %r{^(\s+)?(\*+/)(\s+)?$}.freeze
       def ending_block_comment_only?(line, _ext)
         line =~ ENDING_BLOCK_COMMENT_REGEX
       end
@@ -190,9 +190,8 @@ module TatlTael
           end
 
           if first_line_about_to_write
-            if first_line_exception?(line) # e.g. "# encoding: UTF-8"
-              next
-            elsif ending_block_comment_only?(line, ext) # e.g. "*/"
+            if first_line_exception?(line) || # e.g. "# encoding: UTF-8"
+               ending_block_comment_only?(line, ext) # e.g. "*/"
               next
             elsif !blank_or_comment_symbol_only?(line, ext)
               temp_file.write "\n"

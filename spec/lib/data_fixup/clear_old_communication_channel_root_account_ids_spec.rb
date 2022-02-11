@@ -18,19 +18,17 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::ClearOldCommunicationChannelRootAccountIds do
   it "clears out root_account_ids" do
     a = account_model
     u1 = user_model
     u2 = user_model(root_account_ids: [a.id])
     u3 = user_model(root_account_ids: [a.id])
-    CommunicationChannel.create!(user: u1, path: 'a@b.com')
-    CommunicationChannel.create!(user: u2, path: 'a@b.com')
-    CommunicationChannel.create!(user: u3, path: 'a@b.com')
-    expect {
+    CommunicationChannel.create!(user: u1, path: "a@b.com")
+    CommunicationChannel.create!(user: u2, path: "a@b.com")
+    CommunicationChannel.create!(user: u3, path: "a@b.com")
+    expect do
       described_class.run
-    }.to change { CommunicationChannel.pluck(:root_account_ids).uniq }.from([[], [a.id]]).to([nil])
+    end.to change { CommunicationChannel.pluck(:root_account_ids).uniq }.from([[], [a.id]]).to([nil])
   end
 end

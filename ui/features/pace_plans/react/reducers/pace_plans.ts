@@ -17,23 +17,25 @@
  */
 
 import {createSelector, createSelectorCreator, defaultMemoize} from 'reselect'
-import equal from 'fast-deep-equal'
+import {deepEqual} from '@instructure/ui-utils'
+import moment from 'moment-timezone'
 
 import {Constants as PacePlanConstants, PacePlanAction} from '../actions/pace_plans'
 import pacePlanItemsReducer from './pace_plan_items'
 import * as DateHelpers from '../utils/date_stuff/date_helpers'
 import * as PlanDueDatesCalculator from '../utils/date_stuff/plan_due_dates_calculator'
-import {weekendIntegers} from '../shared/api/backend_serializer'
 import {
   PacePlansState,
   PacePlan,
+  PlanContextTypes,
   StoreState,
   PacePlanItem,
   PacePlanItemDueDates,
   Enrollment,
   Sections,
   Enrollments,
-  Section
+  Section,
+  Module
 } from '../types'
 import {BlackoutDate, Course} from '../shared/types'
 import {Constants as UIConstants, SetSelectedPlanType} from '../actions/ui'
@@ -41,8 +43,19 @@ import {getCourse} from './course'
 import {getEnrollments} from './enrollments'
 import {getSections} from './sections'
 import {getBlackoutDates} from '../shared/reducers/blackout_dates'
+import {Change, summarizeChanges} from '../utils/change_tracking'
 
-export const initialState: PacePlansState = (window.ENV.PACE_PLAN || {}) as PacePlansState
+const initialProgress = window.ENV.PACE_PLAN_PROGRESS
+
+export const initialState: PacePlansState = ({
+  ...window.ENV.PACE_PLAN,
+  course: window.ENV.COURSE,
+  originalPlan: window.ENV.PACE_PLAN,
+  publishingProgress: initialProgress
+} || {}) as PacePlansState
+
+const getModuleItems = (modules: Module[]) =>
+  ([] as PacePlanItem[]).concat(...modules.map(m => m.items))
 
 /* Selectors */
 
@@ -53,21 +66,100 @@ export const initialState: PacePlansState = (window.ENV.PACE_PLAN || {}) as Pace
 // The memoization equality check is potentially slower, but if the selector itself is computing
 // some complex data, it will ultimately be better to use this, otherwise you'll get unnecessary
 // calculations.
-const createDeepEqualSelector = createSelectorCreator(defaultMemoize, equal)
+const createDeepEqualSelector = createSelectorCreator(defaultMemoize, deepEqual)
 
-export const getPacePlan = (state: StoreState): PacePlan => state.pacePlan
 export const getExcludeWeekends = (state: StoreState): boolean => state.pacePlan.exclude_weekends
-export const getStartDate = (state: StoreState): string | undefined => state.pacePlan.start_date
+export const getOriginalPlan = (state: StoreState) => state.pacePlan.originalPlan
+export const getPacePlan = (state: StoreState): PacePlansState => state.pacePlan
+export const getPacePlanModules = (state: StoreState) => state.pacePlan.modules
+export const getPacePlanType = (state: StoreState): PlanContextTypes => state.pacePlan.context_type
+export const getHardEndDates = (state: StoreState): boolean => state.pacePlan.hard_end_dates
+export const getPlanPublishing = (state: StoreState): boolean => {
+  const progress = state.pacePlan.publishingProgress
+  if (!progress) return false
+  return !!progress.id && ['queued', 'running'].includes(progress.workflow_state)
+}
+export const getPublishingError = (state: StoreState): string | undefined => {
+  const progress = state.pacePlan.publishingProgress
+  if (!progress || progress.workflow_state !== 'failed') return undefined
+  return progress.message
+}
+export const getEndDate = (state: StoreState): string | undefined => state.pacePlan.end_date
+export const isStudentPlan = (state: StoreState) => state.pacePlan.context_type === 'Enrollment'
+export const getIsPlanCompressed = (state: StoreState): boolean =>
+  !!state.pacePlan.compressed_due_dates
+export const getPlanCompressedDates = (state: StoreState): PacePlanItemDueDates | undefined =>
+  state.pacePlan.compressed_due_dates
 
-export const getPacePlanItems = createSelector(
-  getPacePlan,
-  (pacePlan: PacePlan): PacePlanItem[] => {
-    const pacePlanItems: PacePlanItem[] = []
-    pacePlan.modules.forEach(module => {
-      module.items.forEach(item => pacePlanItems.push(item))
-    })
-    return pacePlanItems
+export const getPacePlanItems = createSelector(getPacePlanModules, getModuleItems)
+
+export const getSettingChanges = createDeepEqualSelector(
+  getExcludeWeekends,
+  getHardEndDates,
+  getOriginalPlan,
+  getEndDate,
+  (excludeWeekends, hardEndDates, originalPlan, endDate) => {
+    const changes: Change[] = []
+
+    if (excludeWeekends !== originalPlan.exclude_weekends)
+      changes.push({
+        id: 'exclude_weekends',
+        oldValue: originalPlan.exclude_weekends,
+        newValue: excludeWeekends
+      })
+
+    // we want to validate that if hardEndDates is true that the endDate is a valid date
+    if (
+      hardEndDates !== originalPlan.hard_end_dates &&
+      (!hardEndDates || (hardEndDates && endDate))
+    )
+      changes.push({
+        id: 'hard_end_dates',
+        oldValue: originalPlan.hard_end_dates,
+        newValue: hardEndDates
+      })
+
+    if (endDate && endDate !== originalPlan.end_date)
+      changes.push({
+        id: 'end_date',
+        oldValue: originalPlan.end_date,
+        newValue: endDate
+      })
+
+    return changes
   }
+)
+
+export const getPacePlanItemChanges = createDeepEqualSelector(
+  getPacePlanItems,
+  getOriginalPlan,
+  (pacePlanItems, originalPlan) => {
+    const originalItems = getModuleItems(originalPlan.modules)
+    const changes: Change<PacePlanItem>[] = []
+
+    for (const i in pacePlanItems) {
+      const originalItem = originalItems[i]
+      const currentItem = pacePlanItems[i]
+
+      if (originalItem.duration !== currentItem.duration) {
+        changes.push({id: originalItem.id, oldValue: originalItem, newValue: currentItem})
+      }
+    }
+
+    return changes
+  }
+)
+
+export const getUnpublishedChangeCount = createSelector(
+  getSettingChanges,
+  getPacePlanItemChanges,
+  (settingChanges, pacePlanItemChanges) => settingChanges.length + pacePlanItemChanges.length
+)
+
+export const getSummarizedChanges = createSelector(
+  getSettingChanges,
+  getPacePlanItemChanges,
+  summarizeChanges
 )
 
 export const getPacePlanItemPosition = createDeepEqualSelector(
@@ -87,20 +179,96 @@ export const getPacePlanItemPosition = createDeepEqualSelector(
   }
 )
 
+export const getPacePlanDurationTotal = createDeepEqualSelector(
+  getPacePlanItems,
+  (pacePlanItems: PacePlanItem[]): number =>
+    pacePlanItems.reduce((total, item) => total + item.duration, 0)
+)
+
+export const getStartDate = createDeepEqualSelector(
+  getPacePlan,
+  getOriginalPlan,
+  (pacePlan: PacePlan): string | undefined => {
+    return pacePlan.start_date
+  }
+)
+
+// Wrapping this in a selector makes sure the result is memoized
+export const getDueDates = createDeepEqualSelector(
+  getPacePlanItems,
+  getExcludeWeekends,
+  getBlackoutDates,
+  getStartDate,
+  getPlanCompressedDates,
+  (
+    items: PacePlanItem[],
+    excludeWeekends: boolean,
+    blackoutDates: BlackoutDate[],
+    startDate?: string,
+    compressedDueDates?: PacePlanItemDueDates
+  ): PacePlanItemDueDates => {
+    if (compressedDueDates) {
+      return compressedDueDates
+    }
+    return PlanDueDatesCalculator.getDueDates(items, excludeWeekends, blackoutDates, startDate)
+  }
+)
+
+export const getUncompressedDueDates = createDeepEqualSelector(
+  getPacePlanItems,
+  getExcludeWeekends,
+  getBlackoutDates,
+  getStartDate,
+  (
+    items: PacePlanItem[],
+    excludeWeekends: boolean,
+    blackoutDates: BlackoutDate[],
+    startDate?: string
+  ): PacePlanItemDueDates => {
+    return PlanDueDatesCalculator.getDueDates(items, excludeWeekends, blackoutDates, startDate)
+  }
+)
+
+export const getDueDate = createSelector(
+  getDueDates,
+  (_, props): PacePlanItem => props.pacePlanItem,
+  (dueDates: PacePlanItemDueDates, pacePlanItem: PacePlanItem): string => {
+    return dueDates[pacePlanItem.module_item_id]
+  }
+)
+
+export const getProjectedEndDate = createDeepEqualSelector(
+  getUncompressedDueDates,
+  getPacePlanItems,
+  getStartDate,
+  (
+    dueDates: PacePlanItemDueDates,
+    items: PacePlanItem[],
+    startDate?: string
+  ): string | undefined => {
+    if (!startDate || !Object.keys(dueDates) || !items.length) return startDate
+
+    // Get the due date associated with the last module item
+    const lastDueDate = dueDates[items[items.length - 1].module_item_id]
+    return lastDueDate && DateHelpers.formatDate(lastDueDate)
+  }
+)
+
 export const getPlanDays = createDeepEqualSelector(
   getPacePlan,
   getExcludeWeekends,
   getBlackoutDates,
-  (pacePlan: PacePlan, excludeWeekends: boolean, blackoutDates: BlackoutDate[]): number => {
-    if (!pacePlan.end_date || !pacePlan.start_date) {
-      return 0
-    }
-    return DateHelpers.daysBetween(
-      pacePlan.start_date,
-      pacePlan.end_date,
-      excludeWeekends,
-      blackoutDates
-    )
+  getProjectedEndDate,
+  (
+    pacePlan: PacePlan,
+    excludeWeekends: boolean,
+    blackoutDates: BlackoutDate[],
+    projectedEndDate?: string
+  ): number => {
+    if (!pacePlan.start_date) return 0
+
+    const endDate = pacePlan.end_date || projectedEndDate || pacePlan.start_date
+    return DateHelpers.daysBetween(pacePlan.start_date, endDate, excludeWeekends, blackoutDates)
   }
 )
 
@@ -117,30 +285,6 @@ export const getWeekLength = createSelector(
   getExcludeWeekends,
   (excludeWeekends: boolean): number => {
     return excludeWeekends ? 5 : 7
-  }
-)
-
-// Wrapping this in a selector makes sure the result is memoized
-export const getDueDates = createDeepEqualSelector(
-  getPacePlanItems,
-  getStartDate,
-  getExcludeWeekends,
-  getBlackoutDates,
-  (
-    items: PacePlanItem[],
-    startDate: string | undefined,
-    excludeWeekends: boolean,
-    blackoutDates: BlackoutDate[]
-  ): PacePlanItemDueDates => {
-    return PlanDueDatesCalculator.getDueDates(items, startDate, excludeWeekends, blackoutDates)
-  }
-)
-
-export const getDueDate = createSelector(
-  getDueDates,
-  (_, props): PacePlanItem => props.pacePlanItem,
-  (dueDates: PacePlanItemDueDates, pacePlanItem: PacePlanItem): string => {
-    return dueDates[pacePlanItem.id]
   }
 )
 
@@ -166,22 +310,17 @@ export const getActivePlanContext = createSelector(
   }
 )
 
-export const isPlanCompleted = createSelector(
+export const getIsCompressing = createSelector(
   getPacePlan,
-  getActivePlanContext,
-  (pacePlan: PacePlan, context: Course | Section | Enrollment): boolean => {
-    if (pacePlan.context_type !== 'Enrollment') {
-      return false
-    } else {
-      return !!(context as Enrollment).completed_pace_plan_at
-    }
-  }
-)
-
-export const getDisabledDaysOfWeek = createSelector(
-  getExcludeWeekends,
-  (excludeWeekends: boolean): number[] => {
-    return excludeWeekends ? weekendIntegers : []
+  getHardEndDates,
+  getProjectedEndDate,
+  (
+    pacePlan: PacePlansState,
+    hardEndDates: boolean,
+    projectedEndDate: string | undefined
+  ): boolean => {
+    const realEnd = hardEndDates ? pacePlan.end_date : ENV.VALID_DATE_RANGE.end_at.date
+    return !!projectedEndDate && projectedEndDate > realEnd
   }
 )
 
@@ -193,13 +332,14 @@ export default (
 ): PacePlansState => {
   switch (action.type) {
     case PacePlanConstants.SET_PACE_PLAN:
-      return action.payload
+      return {...state, ...action.payload}
     case PacePlanConstants.SET_START_DATE:
       return {...state, start_date: DateHelpers.formatDate(action.payload)}
     case PacePlanConstants.SET_END_DATE:
-      return {...state, end_date: DateHelpers.formatDate(action.payload)}
-    case PacePlanConstants.SET_UNPUBLISHED_CHANGES:
-      return {...state, unpublished_changes: action.payload}
+      return {
+        ...state,
+        end_date: action.payload ? DateHelpers.formatDate(action.payload) : undefined
+      }
     case PacePlanConstants.PLAN_CREATED:
       // Could use a *REFACTOR* to better handle new plans and updating the ui properly
       return {
@@ -209,26 +349,43 @@ export default (
         published_at: action.payload.published_at
       }
     case UIConstants.SET_SELECTED_PLAN_CONTEXT:
-      return action.payload.newSelectedPlan
+      return {...action.payload.newSelectedPlan, originalPlan: action.payload.newSelectedPlan}
     case PacePlanConstants.TOGGLE_EXCLUDE_WEEKENDS:
       if (state.exclude_weekends) {
         return {...state, exclude_weekends: false}
       } else {
-        return {
-          ...state,
-          exclude_weekends: true,
-          start_date: state.start_date
-            ? DateHelpers.adjustDateOnSkipWeekends(state.start_date)
-            : state.start_date,
-          end_date: state.end_date
-            ? DateHelpers.adjustDateOnSkipWeekends(state.end_date)
-            : state.end_date
-        }
+        return {...state, exclude_weekends: true}
       }
     case PacePlanConstants.TOGGLE_HARD_END_DATES:
-      return {...state, hard_end_dates: !state.hard_end_dates}
-    case PacePlanConstants.SET_LINKED_TO_PARENT:
-      return {...state, linked_to_parent: action.payload}
+      if (state.hard_end_dates) {
+        return {...state, hard_end_dates: false, end_date: ''}
+      } else {
+        let endDate = state.originalPlan.end_date
+        if (!endDate) {
+          if (state.course.end_at) {
+            endDate = state.course.end_at
+          } else {
+            endDate = moment(state.start_date).add(30, 'd').format('YYYY-MM-DD')
+          }
+        }
+        return {...state, hard_end_dates: true, end_date: endDate}
+      }
+
+    case PacePlanConstants.RESET_PLAN:
+      return {
+        ...state.originalPlan,
+        originalPlan: state.originalPlan,
+        updated_at: new Date().toISOString() // kicks react into re-rendering the assignment_rows
+      }
+    case PacePlanConstants.SET_PROGRESS:
+      return {...state, publishingProgress: action.payload}
+    case PacePlanConstants.SET_COMPRESSED_ITEM_DATES: {
+      const newState = {...state}
+      newState.compressed_due_dates = action.payload
+      return newState
+    }
+    case PacePlanConstants.UNCOMPRESS_DATES:
+      return {...state, compressed_due_dates: undefined}
     default:
       return {...state, modules: pacePlanItemsReducer(state.modules, action)}
   }

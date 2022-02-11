@@ -18,8 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../../../spec_helper.rb')
-require File.expand_path(File.dirname(__FILE__) + '/answer_parser_spec_helper.rb')
+require_relative "answer_parser_spec_helper"
 
 describe Quizzes::QuizQuestion::AnswerParsers::MultipleAnswers do
   context "#parse" do
@@ -45,7 +44,7 @@ describe Quizzes::QuizQuestion::AnswerParsers::MultipleAnswers do
     end
 
     let(:parser_class) { Quizzes::QuizQuestion::AnswerParsers::MultipleAnswers }
-    let(:question_params) { Hash.new }
+    let(:question_params) { {} }
 
     include_examples "All answer parsers"
   end

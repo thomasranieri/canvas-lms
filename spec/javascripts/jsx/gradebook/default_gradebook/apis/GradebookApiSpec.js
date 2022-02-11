@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 - present Instructure, Inc.
+ * Copyright (C) 2022 - present Instructure, Inc.
  *
  * This file is part of Canvas.
  *
@@ -17,7 +17,7 @@
  */
 
 import _ from 'underscore'
-import GradebookApi from 'ui/features/gradebook/react/default_gradebook/apis/GradebookApi.js'
+import GradebookApi from 'ui/features/gradebook/react/default_gradebook/apis/GradebookApi'
 
 QUnit.module('GradebookApi.createTeacherNotesColumn', {
   setup() {
@@ -50,7 +50,7 @@ QUnit.module('GradebookApi.createTeacherNotesColumn', {
   }
 })
 
-test('sends a post request to the "create teacher notes column" url', function() {
+test('sends a post request to the "create teacher notes column" url', function () {
   return GradebookApi.createTeacherNotesColumn('1201').then(() => {
     const request = this.getRequest()
     equal(request.method, 'POST')
@@ -58,7 +58,7 @@ test('sends a post request to the "create teacher notes column" url', function()
   })
 })
 
-test('includes data to create a teacher notes column', function() {
+test('includes data to create a teacher notes column', function () {
   return GradebookApi.createTeacherNotesColumn('1201').then(() => {
     const bodyData = JSON.parse(this.getRequest().requestBody)
     equal(bodyData.column.title, 'Notes')
@@ -67,7 +67,7 @@ test('includes data to create a teacher notes column', function() {
   })
 })
 
-test('includes required request headers', function() {
+test('includes required request headers', function () {
   return GradebookApi.createTeacherNotesColumn('1201').then(() => {
     const {requestHeaders} = this.getRequest()
     ok(
@@ -82,7 +82,7 @@ test('includes required request headers', function() {
   })
 })
 
-test('sends the column data to the success handler', function() {
+test('sends the column data to the success handler', function () {
   return GradebookApi.createTeacherNotesColumn('1201').then(({data}) => {
     deepEqual(data, this.customColumn)
   })
@@ -113,7 +113,7 @@ QUnit.module('GradebookApi.updateTeacherNotesColumn', {
   }
 })
 
-test('sends a post request to the "create teacher notes column" url', function() {
+test('sends a post request to the "create teacher notes column" url', function () {
   return GradebookApi.updateTeacherNotesColumn('1201', '2401', {hidden: true}).then(() => {
     const request = this.getRequest()
     equal(request.method, 'PUT')
@@ -121,14 +121,14 @@ test('sends a post request to the "create teacher notes column" url', function()
   })
 })
 
-test('includes params for updating a teacher notes column', function() {
+test('includes params for updating a teacher notes column', function () {
   return GradebookApi.updateTeacherNotesColumn('1201', '2401', {hidden: true}).then(() => {
     const bodyData = JSON.parse(this.getRequest().requestBody)
     equal(bodyData.column.hidden, true)
   })
 })
 
-test('includes required request headers', function() {
+test('includes required request headers', function () {
   return GradebookApi.updateTeacherNotesColumn('1201', '2401', {hidden: true}).then(() => {
     const {requestHeaders} = this.getRequest()
     ok(
@@ -143,7 +143,7 @@ test('includes required request headers', function() {
   })
 })
 
-test('sends the column data to the success handler', function() {
+test('sends the column data to the success handler', function () {
   return GradebookApi.updateTeacherNotesColumn('1201', '2401', {hidden: true}).then(({data}) => {
     deepEqual(data, this.customColumn)
   })
@@ -206,5 +206,33 @@ QUnit.module('GradebookApi.updateSubmission', hooks => {
       latePolicyStatus: 'none'
     }).then(({data}) => {
       deepEqual(data, submissionData)
+    }))
+
+  test('sends true for prefer_points_over_scheme param when passed "points"', () =>
+    GradebookApi.updateSubmission(
+      courseId,
+      assignmentId,
+      userId,
+      {
+        latePolicyStatus: 'none'
+      },
+      'points'
+    ).then(() => {
+      const bodyData = JSON.parse(getRequest().requestBody)
+      strictEqual(bodyData.prefer_points_over_scheme, true)
+    }))
+
+  test('sends false for prefer_points_over_scheme param when not passed "points"', () =>
+    GradebookApi.updateSubmission(
+      courseId,
+      assignmentId,
+      userId,
+      {
+        latePolicyStatus: 'none'
+      },
+      'percent'
+    ).then(() => {
+      const bodyData = JSON.parse(getRequest().requestBody)
+      strictEqual(bodyData.prefer_points_over_scheme, false)
     }))
 })

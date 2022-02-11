@@ -92,11 +92,17 @@
     "apply_781a2546": {
         "message": "Rhoi ar waith"
     },
+    "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+        "message": "Gosod newidiadau i bob achos o’r Botymau a’r Eiconau hyn yn y Cwrs."
+    },
     "apps_54d24a47": {
         "message": "Apiau"
     },
     "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
         "message": "Ydych chi’n siŵr eich bod am ddileu’r eitem hon ar gyfer y trefnydd?"
+    },
+    "arrows_464a3e54": {
+        "message": "Saethau"
     },
     "aspect_ratio_will_be_preserved_cb5fdfb8": {
         "message": "Bydd y gymhareb agwedd yn cael ei chadw"
@@ -143,17 +149,23 @@
     "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
         "message": "Does dim modd delio â recordio fideo a sain; defnyddiwch borwr gwahanol."
     },
+    "audio_options_feb58e2c": {
+        "message": "Opsiynau Sain"
+    },
+    "audio_options_tray_33a90711": {
+        "message": "Ardal Opsiynau Sain"
+    },
     "audio_player_for_title_20cc70d": {
         "message": "Chwaraewr sain ar gyfer { title }"
     },
     "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
         "message": "Mae cynnwys sydd wedi’i gadw’n awtomatig yn bodoli. Hoffech chi lwytho’r cynnwys sydd wedi’i gadw’n awtomatig?"
     },
-    "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-        "message": "Agor rhagolwg mewn-llinell yn awtomatig. (Dim ond ar ôl cadw mae''r rhagolwg i''w weld)"
-    },
     "available_folders_694d0436": {
         "message": "Ffolderi sydd ar gael"
+    },
+    "basic_554cdc0a": {
+        "message": "Sylfaenol"
     },
     "beginning_of_your_to_do_history_61ef2dce": {
         "message": "Dechrau’r Hanes Tasgau i’w Gwneud"
@@ -245,6 +257,9 @@
     "close_opportunity_center_popup_9907d981": {
         "message": "Cau neidlen y Ganolfan Gyfleoedd"
     },
+    "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+        "message": "Rhaid i ffeiliau capsiynau caeedig fod yn llai na { maxKb } kb"
+    },
     "closed_captions_subtitles_e6aaa016": {
         "message": "Capsiynau Caeedig/Isdeitlau"
     },
@@ -326,6 +341,12 @@
     "creative_commons_license_725584ae": {
         "message": "Trwydded Creative Commons:"
     },
+    "crop_image_807ebb08": {
+        "message": "Tocio Delwedd"
+    },
+    "current_image_f16c249c": {
+        "message": "Delwedd Bresennol"
+    },
     "custom_6979cd81": {
         "message": "Personol"
     },
@@ -362,6 +383,9 @@
     "delete_a6efa79d": {
         "message": "Dileu"
     },
+    "delimiters_4db4840d": {
+        "message": "Amffinyddion"
+    },
     "describe_the_image_e65d2e32": {
         "message": "(Disgrifio''r ddelwedd)"
     },
@@ -374,14 +398,20 @@
     "details_a6f427c3": {
         "message": "Manylion:"
     },
+    "diamond_b8dfe7ae": {
+        "message": "Diemwnt"
+    },
+    "dimension_type_55c83e4e": {
+        "message": "Math o ddimensiwn"
+    },
     "dimensions_45ddb7b7": {
         "message": "Dimensiynau"
     },
     "directionality_26ae9e08": {
         "message": "Cyfeirioldeb"
     },
-    "disable_in_line_preview_2a675175": {
-        "message": "Analluogi''r rhagolwg mewn-llinell."
+    "directly_edit_latex_b7e9235b": {
+        "message": "Golygu LaTeX yn Uniongyrchol"
     },
     "discussion_6719c51d": {
         "message": "Trafodaeth"
@@ -485,6 +515,9 @@
     "equation_1c5ac93c": {
         "message": "Hafaliad"
     },
+    "equation_editor_39fbc3f1": {
+        "message": "Golygydd Hafaliadau"
+    },
     "error_loading_grades_e0b38f4d": {
         "message": "Gwall wrth lwytho graddau"
     },
@@ -547,6 +580,9 @@
     },
     "feedback_6dcc1991": {
         "message": "Adborth"
+    },
+    "file_name_8fd421ff": {
+        "message": "Enw’r Ffeil"
     },
     "file_url_c12b64be": {
         "message": "URL Ffeil"
@@ -613,6 +649,9 @@
     },
     "grades_loaded_5056277c": {
         "message": "Graddau wedi’u llwytho"
+    },
+    "greek_65c5b3f7": {
+        "message": "Groeg"
     },
     "group_documents_8bfd6ae6": {
         "message": "Dogfennau Grŵp"
@@ -797,6 +836,9 @@
     "loading_please_wait_d276220a": {
         "message": "Wrthi’n llwytho, arhoswch funud"
     },
+    "loading_preview_9f077aa1": {
+        "message": "Wrthi’n llwytho rhagolwg"
+    },
     "location_3b6ff307": {
         "message": "Lleoliad:"
     },
@@ -818,6 +860,9 @@
     "middle_27dc1d5": {
         "message": "Canol"
     },
+    "misc_3b692ea7": {
+        "message": "Amrywiol"
+    },
     "miscellaneous_e9818229": {
         "message": "Amrywiol"
     },
@@ -830,6 +875,12 @@
     "modules_c4325335": {
         "message": "Modiwlau"
     },
+    "multi_color_image_63d7372f": {
+        "message": "Delwedd mwy nag un lliw"
+    },
+    "must_be_at_least_percentage_22e373b6": {
+        "message": "Yn gorfod bod yn { percentage }% o leiaf"
+    },
     "must_be_at_least_width_x_height_px_41dc825e": {
         "message": "Yn gorfod bod o leiaf { width } x { height }px"
     },
@@ -838,9 +889,6 @@
     },
     "my_grades_98834476": {
         "message": "Fy Ngraddau"
-    },
-    "my_images_427f9b0c": {
-        "message": "Fy Nelweddau"
     },
     "name_1aed4a1b": {
         "message": "Enw"
@@ -893,6 +941,9 @@
     "none_3b5e34d2": {
         "message": "Dim"
     },
+    "none_selected_b93d56d2": {
+        "message": "Dim un wedi’i ddewis"
+    },
     "nothing_due_this_week_d45c9ef9": {
         "message": "Dim byd â dyddiad ar gyfer yr wythnos hon"
     },
@@ -932,6 +983,9 @@
     "open_title_application_fd624fc5": {
         "message": "Agor rhaglen { title }"
     },
+    "operators_a2ef9a93": {
+        "message": "Gweithredyddion"
+    },
     "opportunities_popup_f6703842": {
         "message": "neidlen cyfleoedd"
     },
@@ -965,8 +1019,20 @@
     "peer_review_for_itemtitle_358cb413": {
         "message": "Adolygiadau gan Gyd-fyfyrwyr ar gyfer { itemTitle }"
     },
+    "pentagon_17d82ea3": {
+        "message": "Pentagon"
+    },
     "people_b4ebb13c": {
         "message": "Pobl"
+    },
+    "percentage_34ab7c2c": {
+        "message": "Canran"
+    },
+    "percentage_must_be_a_number_8033c341": {
+        "message": "Mae canran yn gorfod bod yn rhif"
+    },
+    "pixels_52ece7d1": {
+        "message": "Picseli"
     },
     "points_bceb5005": {
         "message": "pwynt"
@@ -1028,6 +1094,9 @@
     "redo_363c58b7": {
         "message": "Ail-wneud"
     },
+    "relationships_6602af70": {
+        "message": "Perthynas"
+    },
     "reminder_date_4564d12d": {
         "message": "Nodyn atgoffa: { date }"
     },
@@ -1076,6 +1145,9 @@
     "search_term_b2d2235": {
         "message": "Term Chwilio"
     },
+    "select_crop_shape_d441feeb": {
+        "message": "Dewis siâp tocio"
+    },
     "select_language_7c93a900": {
         "message": "Dewis Iaith"
     },
@@ -1087,6 +1159,9 @@
     },
     "show_all_ae37d610": {
         "message": "Dangos y Cyfan"
+    },
+    "show_audio_options_b489926b": {
+        "message": "Dangos opsiynau sain"
     },
     "show_embed_options_ef8d7ef": {
         "message": "Dangos opsiynau plannu"
@@ -1103,11 +1178,14 @@
     "show_video_options_6ed3721a": {
         "message": "Dangos opsiynau fideo"
     },
+    "single_color_image_4e5d4dbc": {
+        "message": "Delwedd un lliw"
+    },
     "size_b30e1077": {
         "message": "Maint"
     },
-    "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-        "message": "Mae maint { file } yn fwy na’r { max } MB a ganiateir ar gyfer maint y ffeil."
+    "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+        "message": "Mae maint y ffeil capsiynau’n fwy na’r { max } kb a ganiateir ar gyfer maint y ffeil."
     },
     "small_b070434a": {
         "message": "Bach"

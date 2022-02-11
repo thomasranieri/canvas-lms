@@ -18,14 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/../views_helper')
+require_relative "../views_helper"
 
 describe "/submissions/show_preview" do
   it "renders" do
     course_with_student
     view_context
-    a = @course.assignments.create!(:title => "some assignment")
+    a = @course.assignments.create!(title: "some assignment")
     assign(:assignment, a)
     assign(:submission, a.submit_homework(@user))
     render "submissions/show_preview"
@@ -35,18 +34,18 @@ describe "/submissions/show_preview" do
   it "loads an lti launch" do
     course_with_student
     view_context
-    a = @course.assignments.create!(:title => "external assignment", :submission_types => 'basic_lti_launch')
+    a = @course.assignments.create!(title: "external assignment", submission_types: "basic_lti_launch")
     assign(:assignment, a)
-    assign(:submission, a.submit_homework(@user, submission_type: 'basic_lti_launch', url: 'http://www.example.com'))
+    assign(:submission, a.submit_homework(@user, submission_type: "basic_lti_launch", url: "http://www.example.com"))
     render "submissions/show_preview"
-    expect(response.body).to match(/courses\/#{@course.id}\/external_tools\/retrieve/)
+    expect(response.body).to match(%r{courses/#{@course.id}/external_tools/retrieve})
     expect(response.body).to match(/.*www\.example\.com.*/)
   end
 
   it "gives a user-friendly explanation why there's no preview" do
     course_with_student
     view_context
-    a = @course.assignments.create!(:title => "some assignment", :submission_types => 'on_paper')
+    a = @course.assignments.create!(title: "some assignment", submission_types: "on_paper")
     assign(:assignment, a)
     assign(:submission, a.submit_homework(@user))
     render "submissions/show_preview"
@@ -58,7 +57,7 @@ describe "/submissions/show_preview" do
       course_with_student
     end
 
-    before(:each) do
+    before do
       @attachment = Attachment.create!(context: @student, uploaded_data: stub_png_data, filename: "homework.png")
       allow(Canvadocs).to receive(:enabled?).and_return(true)
       allow(Canvadocs).to receive(:config).and_return({ a: 1 })
@@ -85,6 +84,17 @@ describe "/submissions/show_preview" do
       expect(response.body.include?("%22enable_annotations%22:null")).to be false
     end
 
+    it "includes an indicator if unread annotations exist" do
+      @course.root_account.enable_feature! :submission_feedback_indicators
+      assignment = @course.assignments.create!(title: "some assignment", submission_types: "online_upload")
+      submission = assignment.submit_homework(@user, attachments: [@attachment])
+      assign(:assignment, assignment)
+      assign(:submission, submission)
+      @student.mark_submission_annotations_unread!(submission)
+      render template: "submissions/show_preview", locals: { anonymize_students: assignment.anonymize_students? }
+      expect(response.body).to include %(<span class="submission_annotation unread_indicator")
+    end
+
     it "renders an iframe with a src to canvadoc sessions controller when assignment is a student annotation" do
       assignment = @course.assignments.create!(
         annotatable_attachment: @attachment,
@@ -103,7 +113,7 @@ describe "/submissions/show_preview" do
 
       aggregate_failures do
         expect(element).not_to be_nil
-        expect(element["src"]).to match(/\/api\/v1\/canvadoc_session?/)
+        expect(element["src"]).to match(%r{/api/v1/canvadoc_session?})
       end
     end
   end
@@ -117,7 +127,7 @@ describe "/submissions/show_preview" do
 
     let(:output) { Nokogiri::HTML5.fragment(response.body) }
 
-    before(:each) do
+    before do
       allow(assignment).to receive(:turnitin_enabled?).and_return(true)
       user_session(teacher)
 
@@ -128,7 +138,7 @@ describe "/submissions/show_preview" do
     end
 
     context "when the New Gradebook Plagiarism Indicator feature is enabled" do
-      before(:each) { course.root_account.enable_feature!(:new_gradebook_plagiarism_indicator) }
+      before { course.root_account.enable_feature!(:new_gradebook_plagiarism_indicator) }
 
       it "renders a similarity icon if the submission possesses similarity data" do
         submission.originality_reports.create!(

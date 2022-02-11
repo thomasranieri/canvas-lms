@@ -24,7 +24,7 @@ module Types
 
     description "A list of students that an `AssignmentOverride` applies to"
 
-    alias override object
+    alias_method :override, :object
 
     field :students, [UserType], null: true
 
@@ -69,7 +69,7 @@ module Types
     implements Interfaces::TimestampInterface
     implements Interfaces::LegacyIDInterface
 
-    alias :override :object
+    alias_method :override, :object
 
     field :assignment, AssignmentType, null: true
     def assignment
@@ -82,9 +82,10 @@ module Types
           "This object specifies what students this override applies to",
           null: true
     def set
-      if override.set_type == "ADHOC"
+      case override.set_type
+      when "ADHOC"
         override
-      elsif override.set_type == 'Noop'
+      when "Noop"
         Noop.new(override.set_id)
       else
         load_association(:set)

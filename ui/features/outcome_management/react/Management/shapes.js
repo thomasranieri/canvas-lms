@@ -58,3 +58,27 @@ export const outcomePageInfoShape = PropTypes.shape({
   endCursor: PropTypes.string,
   hasNextPage: PropTypes.bool.isRequired
 })
+
+export const ratingsShape = PropTypes.arrayOf(
+  PropTypes.shape({
+    description: PropTypes.string,
+    points: PropTypes.number.isRequired
+  })
+)
+
+export const outcomeEditShape = PropTypes.shape({
+  _id: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  description: PropTypes.string,
+  displayName: PropTypes.string,
+  contextId: PropTypes.string,
+  contextType: PropTypes.string,
+  calculationMethod: PropTypes.string,
+  calculationInt: PropTypes.number,
+  friendlyDescription: PropTypes.shape({
+    description: PropTypes.string.isRequired
+  }),
+  masteryPoints: PropTypes.number,
+  pointsPossible: PropTypes.number,
+  ratings: ratingsShape
+})

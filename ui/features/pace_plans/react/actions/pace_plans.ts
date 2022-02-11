@@ -18,27 +18,30 @@
 
 import {Action} from 'redux'
 import {ThunkAction} from 'redux-thunk'
-import moment from 'moment-timezone'
+import {showFlashAlert} from '@canvas/alerts/react/FlashAlert'
+// @ts-ignore: TS doesn't understand i18n scoped imports
+import I18n from 'i18n!pace_plans_actions'
 
-import {PacePlan, PlanContextTypes, StoreState, PublishOptions} from '../types'
-import {createAction, ActionsUnion, BlackoutDate} from '../shared/types'
+import {PacePlanItemDueDates, PacePlan, PlanContextTypes, Progress, StoreState} from '../types'
+import {createAction, ActionsUnion} from '../shared/types'
 import {actions as uiActions} from './ui'
-import {createAutoSavingAction} from './autosaving'
-import * as DateHelpers from '../utils/date_stuff/date_helpers'
 import * as Api from '../api/pace_plan_api'
-import {getPacePlan} from '../reducers/pace_plans'
+
+export const PUBLISH_STATUS_POLLING_MS = 3000
+const TERMINAL_PROGRESS_STATUSES = ['completed', 'failed']
 
 export enum Constants {
   SET_END_DATE = 'PACE_PLAN/SET_END_DATE',
   SET_START_DATE = 'PACE_PLAN/SET_START_DATE',
   PUBLISH_PLAN = 'PACE_PLAN/PUBLISH_PLAN',
-  SET_PLAN_DAYS = 'PACE_PLAN/SET_PLAN_DAYS',
   TOGGLE_EXCLUDE_WEEKENDS = 'PACE_PLAN/TOGGLE_EXCLUDE_WEEKENDS',
   SET_PACE_PLAN = 'PACE_PLAN/SET_PACE_PLAN',
   PLAN_CREATED = 'PACE_PLAN/PLAN_CREATED',
-  SET_UNPUBLISHED_CHANGES = 'PACE_PLAN/SET_UNPUBLISHED_CHANGES',
   TOGGLE_HARD_END_DATES = 'PACE_PLAN/TOGGLE_HARD_END_DATES',
-  SET_LINKED_TO_PARENT = 'PACE_PLAN/SET_LINKED_TO_PARENT'
+  RESET_PLAN = 'PACE_PLAN/RESET_PLAN',
+  SET_PROGRESS = 'PACE_PLAN/SET_PROGRESS',
+  SET_COMPRESSED_ITEM_DATES = 'PACE_PLAN/SET_COMPRESSED_ITEM_DATES',
+  UNCOMPRESS_DATES = 'PACE_PLAN/UNCOMPRESS_ITEM_DATES'
 }
 
 /* Action creators */
@@ -48,62 +51,73 @@ type LoadingAfterAction = (plan: PacePlan) => any
 type SetEndDate = {type: Constants.SET_END_DATE; payload: string}
 
 const regularActions = {
-  setPacePlan: (plan: PacePlan) => createAction(Constants.SET_PACE_PLAN, plan),
+  setPacePlan: (plan: PacePlan) =>
+    createAction(Constants.SET_PACE_PLAN, {...plan, originalPlan: plan}),
   setStartDate: (date: string) => createAction(Constants.SET_START_DATE, date),
   setEndDate: (date: string): SetEndDate => createAction(Constants.SET_END_DATE, date),
+  setCompressedItemDates: (compressedItemDates: PacePlanItemDueDates) =>
+    createAction(Constants.SET_COMPRESSED_ITEM_DATES, compressedItemDates),
+  uncompressDates: () => createAction(Constants.UNCOMPRESS_DATES),
   planCreated: (plan: PacePlan) => createAction(Constants.PLAN_CREATED, plan),
   toggleExcludeWeekends: () => createAction(Constants.TOGGLE_EXCLUDE_WEEKENDS),
   toggleHardEndDates: () => createAction(Constants.TOGGLE_HARD_END_DATES),
-  setLinkedToParent: (linked: boolean) => createAction(Constants.SET_LINKED_TO_PARENT, linked),
-  setUnpublishedChanges: (unpublishedChanges: boolean) =>
-    createAction(Constants.SET_UNPUBLISHED_CHANGES, unpublishedChanges),
-  setPlanDays: (planDays: number, plan: PacePlan, blackoutDates: BlackoutDate[]): SetEndDate => {
-    // This calculates the new end date based off of the number of plan days specified and invokes
-    // a setEndDate action. This would potentially be better with a thunked action, but I'm not
-    // sure how to get that to work with a typesafe-actions createAction call.
-    let newEndDate: string | undefined
-
-    if (planDays === 0) {
-      newEndDate = plan.start_date
-    } else {
-      // Subtract one day from planDays to make it include the start date
-      const start = moment(plan.start_date).subtract(1, 'day')
-      newEndDate = DateHelpers.addDays(start, planDays, plan.exclude_weekends, blackoutDates)
-    }
-
-    return pacePlanActions.setEndDate(newEndDate)
-  }
+  resetPlan: () => createAction(Constants.RESET_PLAN),
+  setProgress: (progress?: Progress) => createAction(Constants.SET_PROGRESS, progress)
 }
 
 const thunkActions = {
-  publishPlan: (
-    publishForOption: PublishOptions,
-    publishForSectionIds: Array<string>,
-    publishForEnrollmentIds: Array<string>
-  ): ThunkAction<void, StoreState, void, Action> => {
+  publishPlan: (): ThunkAction<Promise<void>, StoreState, void, Action> => {
     return (dispatch, getState) => {
-      dispatch(uiActions.showLoadingOverlay('Publishing...'))
-      dispatch(uiActions.publishPlanStarted())
+      dispatch(uiActions.showLoadingOverlay(I18n.t('Starting publish...')))
+      dispatch(uiActions.clearCategoryError('publish'))
 
-      Api.waitForActionCompletion(() => getState().ui.autoSaving)
-
-      return Api.publish(
-        getState().pacePlan,
-        publishForOption,
-        publishForSectionIds,
-        publishForEnrollmentIds
-      )
-        .then(response => {
-          dispatch(pacePlanActions.setPacePlan(response.new_draft_plan))
+      return Api.publish(getState().pacePlan)
+        .then(responseBody => {
+          if (!responseBody) throw new Error(I18n.t('Response body was empty'))
+          const {pace_plan: updatedPlan, progress} = responseBody
+          dispatch(pacePlanActions.setPacePlan(updatedPlan))
+          dispatch(pacePlanActions.setProgress(progress))
+          dispatch(pacePlanActions.pollForPublishStatus())
           dispatch(uiActions.hideLoadingOverlay())
-          dispatch(uiActions.publishPlanFinished())
         })
         .catch(error => {
           dispatch(uiActions.hideLoadingOverlay())
-          dispatch(uiActions.publishPlanFinished())
-          dispatch(uiActions.setErrorMessage('There was an error publishing your plan.'))
-          console.error(error) // eslint-disable-line no-console
+          dispatch(uiActions.setCategoryError('publish', error?.toString()))
         })
+    }
+  },
+  pollForPublishStatus: (): ThunkAction<void, StoreState, void, Action> => {
+    // Give the thunk function a name so that we can assert on it in tests
+    return function pollingThunk(dispatch, getState) {
+      const progress = getState().pacePlan.publishingProgress
+      if (!progress || TERMINAL_PROGRESS_STATUSES.includes(progress.workflow_state)) return
+
+      const pollingLoop = () =>
+        Api.getPublishProgress(progress.id)
+          .then(updatedProgress => {
+            if (!updatedProgress) throw new Error(I18n.t('Response body was empty'))
+            dispatch(
+              pacePlanActions.setProgress(
+                updatedProgress.workflow_state !== 'completed' ? updatedProgress : undefined
+              )
+            )
+            dispatch(uiActions.clearCategoryError('checkPublishStatus'))
+            if (TERMINAL_PROGRESS_STATUSES.includes(updatedProgress.workflow_state)) {
+              showFlashAlert({
+                message: I18n.t('Finished publishing plan'),
+                err: null,
+                type: 'success',
+                srOnly: true
+              })
+            } else {
+              setTimeout(pollingLoop, PUBLISH_STATUS_POLLING_MS)
+            }
+          })
+          .catch(error => {
+            dispatch(uiActions.setCategoryError('checkPublishStatus', error?.toString()))
+            console.log(error) // eslint-disable-line no-console
+          })
+      return pollingLoop()
     }
   },
   resetToLastPublished: (
@@ -111,20 +125,20 @@ const thunkActions = {
     contextId: string
   ): ThunkAction<void, StoreState, void, Action> => {
     return async (dispatch, getState) => {
-      dispatch(uiActions.showLoadingOverlay('Loading...'))
+      dispatch(uiActions.showLoadingOverlay(I18n.t('Loading...')))
+      dispatch(uiActions.clearCategoryError('resetToLastPublished'))
 
-      await Api.waitForActionCompletion(
-        () => getState().ui.autoSaving || getState().ui.planPublishing
-      )
+      await Api.waitForActionCompletion(() => getState().ui.autoSaving)
 
       return Api.resetToLastPublished(contextType, contextId)
-        .then(response => {
-          dispatch(pacePlanActions.setPacePlan(response.pace_plan))
+        .then(pacePlan => {
+          if (!pacePlan) throw new Error(I18n.t('Response body was empty'))
+          dispatch(pacePlanActions.setPacePlan(pacePlan))
           dispatch(uiActions.hideLoadingOverlay())
         })
         .catch(error => {
           dispatch(uiActions.hideLoadingOverlay())
-          dispatch(uiActions.setErrorMessage('There was an error resetting to the previous plan.'))
+          dispatch(uiActions.setCategoryError('resetToLastPublished', error?.toString()))
           console.error(error) // eslint-disable-line no-console
         })
     }
@@ -135,69 +149,64 @@ const thunkActions = {
     afterAction: LoadingAfterAction = pacePlanActions.setPacePlan
   ): ThunkAction<void, StoreState, void, Action> => {
     return async (dispatch, getState) => {
-      dispatch(uiActions.showLoadingOverlay('Loading...'))
+      dispatch(uiActions.showLoadingOverlay(I18n.t('Loading...')))
+      dispatch(uiActions.clearCategoryError('loading'))
 
       await Api.waitForActionCompletion(() => getState().ui.autoSaving)
 
-      return Api.getLatestDraftFor(contextType, contextId)
-        .then(response => {
-          dispatch(afterAction(response.pace_plan))
+      return Api.getNewPacePlanFor(getState().course.id, contextType, contextId)
+        .then(pacePlan => {
+          if (!pacePlan) throw new Error(I18n.t('Response body was empty'))
+          dispatch(afterAction(pacePlan))
           dispatch(uiActions.hideLoadingOverlay())
         })
         .catch(error => {
           dispatch(uiActions.hideLoadingOverlay())
-          dispatch(uiActions.setErrorMessage('There was an error loading the plan.'))
+          dispatch(uiActions.setCategoryError('loading', error?.toString()))
           console.error(error) // eslint-disable-line no-console
         })
     }
   },
   relinkToParentPlan: (): ThunkAction<void, StoreState, void, Action> => {
     return async (dispatch, getState) => {
-      dispatch(uiActions.showLoadingOverlay('Relinking plans...'))
+      const pacePlanId = getState().pacePlan.id
+      if (!pacePlanId) return Promise.reject(new Error(I18n.t('Cannot relink unsaved plans')))
+
+      dispatch(uiActions.showLoadingOverlay(I18n.t('Relinking plans...')))
+      dispatch(uiActions.clearCategoryError('relinkToParent'))
 
       await Api.waitForActionCompletion(() => getState().ui.autoSaving)
 
-      return Api.relinkToParentPlan(getState().pacePlan.id)
-        .then(response => {
-          dispatch(pacePlanActions.setPacePlan(response.pace_plan))
+      return Api.relinkToParentPlan(pacePlanId)
+        .then(pacePlan => {
+          if (!pacePlan) throw new Error(I18n.t('Response body was empty'))
+          dispatch(pacePlanActions.setPacePlan(pacePlan))
           dispatch(uiActions.hideLoadingOverlay())
         })
         .catch(error => {
           dispatch(uiActions.hideLoadingOverlay())
-          dispatch(uiActions.setErrorMessage('There was an error linking plan.'))
+          dispatch(uiActions.setCategoryError('relinkToParent', error?.toString()))
           console.error(error) // eslint-disable-line no-console
         })
     }
-  }
-}
-
-export const autoSavingActions = {
-  setStartDate: (date: string) => {
-    return createAutoSavingAction(pacePlanActions.setStartDate(date))
   },
-  setEndDate: (date: string) => {
-    return createAutoSavingAction(pacePlanActions.setEndDate(date))
-  },
-  setPlanDays: (planDays: number, plan: PacePlan, blackoutDates: BlackoutDate[]) => {
-    return createAutoSavingAction(pacePlanActions.setPlanDays(planDays, plan, blackoutDates))
-  },
-  toggleExcludeWeekends: (extraSaveParams = {}) => {
-    return createAutoSavingAction(
-      pacePlanActions.toggleExcludeWeekends(),
-      true,
-      false,
-      extraSaveParams
-    )
-  },
-  toggleHardEndDates: (): ThunkAction<void, StoreState, void, Action> => {
+  compressDates: (): ThunkAction<Promise<void>, StoreState, void, Action> => {
     return (dispatch, getState) => {
-      const plan = getPacePlan(getState())
-      // If we're an enrollment plan and we're setting hard end dates, we should block the UI until the backend
-      // re-adjusts the assignment due dates
-      const shouldWaitForSave = plan.context_type === 'Enrollment' && !plan.hard_end_dates
-      dispatch(
-        createAutoSavingAction(pacePlanActions.toggleHardEndDates(), true, shouldWaitForSave)
-      )
+      dispatch(uiActions.showLoadingOverlay(I18n.t('Compressing...')))
+      dispatch(uiActions.clearCategoryError('compress'))
+
+      return Api.compress(getState().pacePlan)
+        .then(responseBody => {
+          if (!responseBody) throw new Error(I18n.t('Response body was empty'))
+          const compressedItemDates = responseBody
+          dispatch(pacePlanActions.setCompressedItemDates(compressedItemDates))
+          dispatch(uiActions.hideLoadingOverlay())
+        })
+        .catch(error => {
+          dispatch(uiActions.hideLoadingOverlay())
+          dispatch(uiActions.setCategoryError('compress', error?.toString()))
+          console.log(error) // eslint-disable-line no-console
+        })
     }
   }
 }

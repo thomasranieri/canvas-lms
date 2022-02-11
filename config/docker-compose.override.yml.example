@@ -8,7 +8,7 @@ services:
       - .:/usr/src/app
       - api_docs:/usr/src/app/public/doc/api
       - brandable_css_brands:/usr/src/app/app/stylesheets/brandable_css_brands
-      - bundler:/home/docker/.bundler/
+      - bundler:/home/docker/.bundle/
       - canvas-docker-gems:/home/docker/.gem/
       - canvas-media_es:/usr/src/app/packages/canvas-media/es
       - canvas-media_lib:/usr/src/app/packages/canvas-media/lib
@@ -54,6 +54,9 @@ services:
       <<: *BASE-ENV
       VIRTUAL_HOST: .canvas.docker
       HTTPS_METHOD: noredirect
+      # AR_QUERY_TRACE: 'true'
+      # AR_QUERY_TRACE_TYPE: 'all' # 'all', 'write', or 'read'
+      # AR_QUERY_TRACE_LINES: 10
 
   postgres:
     volumes:

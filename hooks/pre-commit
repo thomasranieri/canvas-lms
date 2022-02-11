@@ -3,7 +3,7 @@
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
 CANVAS=$(dirname $SCRIPTPATH)
 
-if [ `pwd -P` == $CANVAS ]; then 
+if [ `pwd -P` = $CANVAS ]; then
   if [ -f node_modules/.bin/lint-staged ]; then
     yarn run --silent lint:staged
   else
@@ -13,6 +13,6 @@ if [ `pwd -P` == $CANVAS ]; then
   fi
 fi
 
-$CANVAS/script/rlint ${RLINT_ARGUMENTS:- --auto-correct}
+$CANVAS/script/rlint ${RLINT_ARGUMENTS:- --auto-correct-all}
 
 exit 0

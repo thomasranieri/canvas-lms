@@ -27,23 +27,45 @@ module BasicLTI
       self.body = "<replaceResultResponse />"
       return true unless valid_request?(assignment)
 
-      quiz_lti_submission = QuizzesNextVersionedSubmission.new(assignment, user)
+      quiz_lti_submission = QuizzesNextVersionedSubmission.new(assignment, user, prioritize_non_tool_grade: prioritize_non_tool_grade?)
       quiz_lti_submission = quiz_lti_submission
                             .with_params(
-                              submission_type: 'basic_lti_launch',
+                              submission_type: "basic_lti_launch",
                               submitted_at: submitted_at_date,
                               graded_at: graded_at_date
                             )
-      return quiz_lti_submission.revert_history(result_url, -tool.id) if submission_reopened?
 
-      quiz_lti_submission.commit_history(result_url, grade, -tool.id)
+      unless quiz_lti_submission.active?
+        return report_failure(:submission_deleted, I18n.t("Submission is deleted and cannot be modified."))
+      end
+
+      if submission_reopened?
+        return begin
+          quiz_lti_submission.revert_history(result_url, -tool.id)
+        rescue ActiveRecord::RecordInvalid => e
+          report_failure(:submission_revert_failed, e.record.errors.full_messages.join(", "))
+        end
+      end
+
+      begin
+        quiz_lti_submission.commit_history(result_url, grade, -tool.id)
+      rescue ActiveRecord::RecordInvalid => e
+        report_failure(:submission_save_failed, e.record.errors.full_messages.join(", "))
+      end
     end
 
     private
 
-    def error_message(message)
-      self.code_major = 'failure'
+    # this is an override of parent method
+    def request_type
+      :quizzes
+    end
+
+    def report_failure(code, message)
+      self.code_major = "failure"
       self.description = message
+      self.error_code = code
+      true # signals to caller that request has been handled successfully
     end
 
     def result_url
@@ -84,13 +106,13 @@ module BasicLTI
     end
 
     def raw_score
-      Float(self.result_total_score)
+      Float(result_total_score)
     rescue
       nil
     end
 
     def percentage_score
-      Float(self.result_score)
+      Float(result_score)
     rescue
       nil
     end
@@ -104,7 +126,7 @@ module BasicLTI
       return true if submission_reopened?
 
       if raw_score.blank? && percentage_score.blank?
-        error_message(I18n.t('lib.basic_lti.no_score', "No score given"))
+        report_failure(:no_score, I18n.t("lib.basic_lti.no_score", "No score given"))
         return false
       end
       return true if raw_score.present?
@@ -116,7 +138,7 @@ module BasicLTI
       return false if percentage_score.blank?
 
       unless (0.0..1.0).cover?(percentage_score)
-        error_message(I18n.t('lib.basic_lti.bad_score', "Score is not between 0 and 1"))
+        report_failure(:bad_score, I18n.t("lib.basic_lti.bad_score", "Score is not between 0 and 1"))
         return false
       end
       true
@@ -125,7 +147,7 @@ module BasicLTI
     def valid_points_possible?(assignment)
       return true if assignment.grading_type == "pass_fail" || assignment.points_possible.present?
 
-      error_message(I18n.t('lib.basic_lti.no_points_possible', 'Assignment has no points possible.'))
+      report_failure(:no_points_possible, I18n.t("lib.basic_lti.no_points_possible", "Assignment has no points possible."))
       false
     end
   end

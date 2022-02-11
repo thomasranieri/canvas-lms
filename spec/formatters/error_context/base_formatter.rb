@@ -47,6 +47,7 @@ module ErrorContext
     end
 
     def self.inherited(klass)
+      super
       ::RSpec::Core::Formatters.register klass,
                                          :example_started,
                                          :example_failed,
@@ -87,6 +88,8 @@ module ErrorContext
       def start(example)
         @summary ||= begin
           summary = new(example)
+          @errors_path = nil
+          @base_error_path = nil
           summary.start
           summary
         end
@@ -120,7 +123,7 @@ module ErrorContext
       end
 
       def base_error_path
-        @base_error_path ||= ENV.fetch("ERROR_CONTEXT_BASE_PATH", Rails.root.join("log", "spec_failures"))
+        @base_error_path ||= ENV.fetch("ERROR_CONTEXT_BASE_PATH", Rails.root.join("log/spec_failures/Initial"))
       end
     end
 
@@ -151,7 +154,7 @@ module ErrorContext
         # TODO: does not work with new docker builds
         # discard_video! if capturing_video?
       else
-        save_screenshot! if capture_screenshot?
+        save_screenshot! if capture_screenshot? # rubocop:disable Style/IfInsideElse
         # TODO: does not work with new docker builds
         # save_video! if capturing_video?
       end
@@ -183,7 +186,7 @@ module ErrorContext
     end
 
     def page_html
-      example.metadata[:page_html] || 'Page HTML was not captured.'
+      example.metadata[:page_html] || "Page HTML was not captured."
     end
 
     def capture_screenshot?
@@ -212,7 +215,7 @@ module ErrorContext
     end
 
     def spec_path
-      @spec_path ||= RerunArgument.for(example).sub(/\A[.\/]+/, "")
+      @spec_path ||= RerunArgument.for(example).sub(%r{\A[./]+}, "")
     end
 
     def errors_path

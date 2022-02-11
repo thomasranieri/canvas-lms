@@ -103,12 +103,12 @@ export default class ExternalToolModalLauncher extends React.Component {
     ) {
       const placement = this.props.tool.placements[this.props.launchType]
 
-      if (placement.launch_width) {
-        dimensions.width = placement.launch_width
+      if (placement.launch_width || placement.selection_width) {
+        dimensions.width = placement.launch_width || placement.selection_width
       }
 
-      if (placement.launch_height) {
-        dimensions.height = placement.launch_height
+      if (placement.launch_height || placement.selection_height) {
+        dimensions.height = placement.launch_height || placement.selection_height
       }
     }
 
@@ -149,7 +149,7 @@ export default class ExternalToolModalLauncher extends React.Component {
     const newState = {
       modalLaunchStyle: {
         width: this.iframe.offsetWidth - 4,
-        border: '2px solid #008EE2'
+        border: '2px solid #0374B5'
       }
     }
     if (event.target.className.search('before') > -1) {

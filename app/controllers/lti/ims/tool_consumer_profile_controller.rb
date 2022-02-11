@@ -19,11 +19,11 @@
 #
 
 module Lti
-  module Ims
+  module IMS
     class ToolConsumerProfileController < ApplicationController
-      include Lti::Ims::AccessTokenHelper
+      include Lti::IMS::AccessTokenHelper
 
-      TOOL_CONSUMER_PROFILE_SERVICE = 'ToolConsumerProfile'.freeze
+      TOOL_CONSUMER_PROFILE_SERVICE = "ToolConsumerProfile"
 
       before_action :require_context
       skip_before_action :load_user
@@ -40,12 +40,18 @@ module Lti
           tcp_uuid: tcp_uuid,
           developer_key: dev_key
         ).create
-        render json: profile.to_json, :content_type => 'application/vnd.ims.lti.v2.toolconsumerprofile+json'
+        render json: profile.to_json, content_type: "application/vnd.ims.lti.v2.toolconsumerprofile+json"
       end
 
       def lti2_service_name
         TOOL_CONSUMER_PROFILE_SERVICE
       end
     end
+  end
+
+  # TODO: This alias only should exist while we're changing all the canvas plugins
+  # from "Ims" to "IMS" for zeitwerk. Afterwards this should go away.
+  module Ims
+    ToolConsumerProfileController = ::Lti::IMS::ToolConsumerProfileController
   end
 end

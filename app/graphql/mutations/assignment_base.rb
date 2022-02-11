@@ -89,7 +89,7 @@ class Mutations::AssignmentBase < Mutations::BaseMutation
     end
 
     def load_root_account
-      @domain_root_account = @request.env['canvas.domain_root_account'] || LoadAccount.default_domain_root_account
+      @domain_root_account = @request.env["canvas.domain_root_account"] || LoadAccount.default_domain_root_account
     end
   end
 
@@ -112,6 +112,7 @@ class Mutations::AssignmentBase < Mutations::BaseMutation
   argument :peer_reviews, Mutations::AssignmentPeerReviewsUpdate, required: false
   argument :moderated_grading, Mutations::AssignmentModeratedGradingUpdate, required: false
   argument :grade_group_students_individually, Boolean, required: false
+  argument :group_category_id, ID, required: false
   argument :omit_from_final_grade, Boolean, required: false
   argument :anonymous_instructor_annotations, Boolean, required: false
   argument :post_to_sis, Boolean, required: false
@@ -214,7 +215,7 @@ class Mutations::AssignmentBase < Mutations::BaseMutation
     module_ids_to_add = (required_module_ids - current_module_ids).to_a
     unless module_ids_to_add.empty?
       ContextModule.find(module_ids_to_add).each do |context_module|
-        context_module.add_item(:id => @working_assignment.id, :type => 'assignment')
+        context_module.add_item(id: @working_assignment.id, type: "assignment")
       end
     end
 

@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'tsort'
+require "tsort"
 
 module Autoextend
   Extension = Struct.new(:const_name,
                          :module,
-                         :method,
+                         :method, # rubocop:disable Lint/StructNewOverride
                          :block,
                          :singleton,
                          :after_load,

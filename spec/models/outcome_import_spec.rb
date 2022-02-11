@@ -18,14 +18,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe OutcomeImport, type: :model do
   before :once do
     account_model
   end
 
-  describe 'associations' do
+  describe "associations" do
     it { is_expected.to belong_to(:context).required }
     it { is_expected.to belong_to(:attachment) }
     it { is_expected.to belong_to(:user) }
@@ -33,16 +31,16 @@ describe OutcomeImport, type: :model do
   end
 
   def create_import
-    OutcomeImport.create_with_attachment(@account, 'instructure_csv', stub_file_data('test.csv', 'abc', 'text'), user_factory)
+    OutcomeImport.create_with_attachment(@account, "instructure_csv", stub_file_data("test.csv", "abc", "text"), user_factory)
   end
 
   it "keeps the import in initializing state during create_with_attachment" do
     import = create_import do |imp|
       expect(imp.attachment).not_to be_new_record
-      expect(imp.workflow_state).to eq 'initializing'
+      expect(imp.workflow_state).to eq "initializing"
     end
 
-    expect(import.workflow_state).to eq 'created'
+    expect(import.workflow_state).to eq "created"
     expect(import).not_to be_new_record
     expect(import).not_to be_changed
   end
@@ -62,9 +60,9 @@ describe OutcomeImport, type: :model do
     expect(@account.latest_outcome_import).to eq import
   end
 
-  it 'generates expected json' do
+  it "generates expected json" do
     import = create_import
-    import.outcome_import_errors.create(message: 'Fail!', row: 100)
+    import.outcome_import_errors.create(message: "Fail!", row: 100)
     json = import.as_json
     expect(json["id"]).to eq import.id
     expect(json["created_at"]).to eq import.created_at
@@ -73,33 +71,33 @@ describe OutcomeImport, type: :model do
     expect(json["progress"]).to eq import.progress
     expect(json["workflow_state"]).to eq import.workflow_state
     expect(json["data"]).to eq import.data
-    expect(json["processing_errors"]).to eq [[100, 'Fail!']]
+    expect(json["processing_errors"]).to eq [[100, "Fail!"]]
   end
 
-  it 'limits to 25 processing errors' do
+  it "limits to 25 processing errors" do
     import = create_import
     100.times do
-      import.outcome_import_errors.create(message: 'Fail!')
+      import.outcome_import_errors.create(message: "Fail!")
     end
     json = import.as_json
     expect(json["processing_errors"].length).to eq 25
   end
 
-  describe '.run handles outcome import' do
+  describe ".run handles outcome import" do
     def mock_importer(updates)
-      importer = instance_double(Outcomes::CsvImporter)
+      importer = instance_double(Outcomes::CSVImporter)
       expect(importer).to receive(:run) do |&block|
         updates.each do |up|
           block.call(up)
         end
       end
-      expect(Outcomes::CsvImporter).to receive(:new).and_return(importer)
+      expect(Outcomes::CSVImporter).to receive(:new).and_return(importer)
     end
 
     def mock_importer_error(msg)
-      importer = instance_double(Outcomes::CsvImporter)
+      importer = instance_double(Outcomes::CSVImporter)
       expect(importer).to receive(:run).and_raise(Outcomes::Import::DataFormatError, msg)
-      expect(Outcomes::CsvImporter).to receive(:new).and_return(importer)
+      expect(Outcomes::CSVImporter).to receive(:new).and_return(importer)
     end
 
     def fake_file
@@ -110,18 +108,18 @@ describe OutcomeImport, type: :model do
 
     def fake_attachment(file)
       instance_double(Attachment).tap do |attachment_double|
-        allow(attachment_double).to receive(:open).with(:need_local_file => true).and_return(file)
+        allow(attachment_double).to receive(:open).with(need_local_file: true).and_return(file)
       end
     end
 
     def fake_import(attachment)
       OutcomeImport.create!(context: @account).tap do |import|
-        import.update!(workflow_state: 'created')
+        import.update!(workflow_state: "created")
         allow(import).to receive(:attachment).and_return(attachment)
       end
     end
 
-    it 'sets proper workflow_state on successful completion' do
+    it "sets proper workflow_state on successful completion" do
       mock_importer([
                       { progress: 0, errors: [] },
                       { progress: 100, errors: [] }
@@ -134,10 +132,10 @@ describe OutcomeImport, type: :model do
 
       expect(import.outcome_import_errors.all.to_a).to eq([])
       expect(import.progress).to eq(100)
-      expect(import.workflow_state).to eq('succeeded')
+      expect(import.workflow_state).to eq("succeeded")
     end
 
-    it 'emails user on successful completion' do
+    it "emails user on successful completion" do
       mock_importer([
                       { progress: 0, errors: [] },
                       { progress: 100, errors: [] }
@@ -153,23 +151,23 @@ describe OutcomeImport, type: :model do
       expect(Message).to receive(:new).with({
                                               to: import.user.email,
                                               from: "notifications@instructure.com",
-                                              subject: 'Outcomes Import Completed',
+                                              subject: "Outcomes Import Completed",
                                               body: "Hello #{import.user.name},
 
           Your outcomes were successfully imported. You can now manage them at http://localhost/accounts/#{@account.id}/outcomes
 
           Thank you,
-          Instructure".gsub(/^ +/, ''),
+          Instructure".gsub(/^ +/, ""),
                                               delay_for: 0,
                                               context: nil,
-                                              path_type: 'email',
+                                              path_type: "email",
                                               from_name: "Instructure Canvas"
                                             }).and_return(message)
       expect(message).to receive(:deliver)
       import.run
     end
 
-    it 'emails user on successful completion but with warnings' do
+    it "emails user on successful completion but with warnings" do
       mock_importer([
                       { progress: 0, errors: [] },
                       { progress: 50, errors: [[2, 'The "title" field is required']] },
@@ -186,7 +184,7 @@ describe OutcomeImport, type: :model do
       expect(Message).to receive(:new).with({
                                               to: import.user.email,
                                               from: "notifications@instructure.com",
-                                              subject: 'Outcomes Import Completed',
+                                              subject: "Outcomes Import Completed",
                                               body: "Hello #{import.user.name},
 
           Your outcomes were successfully imported, but with the following issues (up to the first 100 warnings):
@@ -196,18 +194,18 @@ describe OutcomeImport, type: :model do
           You can now manage them at http://localhost/accounts/#{@account.id}/outcomes
 
           Thank you,
-          Instructure".gsub(/^ +/, ''),
+          Instructure".gsub(/^ +/, ""),
                                               delay_for: 0,
                                               context: nil,
-                                              path_type: 'email',
+                                              path_type: "email",
                                               from_name: "Instructure Canvas"
                                             }).and_return(message)
       expect(message).to receive(:deliver)
       import.run
     end
 
-    it 'emails user on failed completion' do
-      mock_importer_error('Very Bad Error')
+    it "emails user on failed completion" do
+      mock_importer_error("Very Bad Error")
 
       attachment = fake_attachment(fake_file)
       import = fake_import(attachment)
@@ -219,7 +217,7 @@ describe OutcomeImport, type: :model do
       expect(Message).to receive(:new).with({
                                               to: import.user.email,
                                               from: "notifications@instructure.com",
-                                              subject: 'Outcomes Import Failed',
+                                              subject: "Outcomes Import Failed",
                                               body: "Hello #{import.user.name},
 
           Your outcomes import failed due to an error with your import. Please examine your file and attempt the upload again at http://localhost/accounts/#{@account.id}/outcomes
@@ -230,18 +228,18 @@ describe OutcomeImport, type: :model do
           To view the proper import format, please review the Canvas API Docs at http://localhost/doc/api/file.outcomes_csv.html
 
           Thank you,
-          Instructure".gsub(/^ +/, ''),
+          Instructure".gsub(/^ +/, ""),
                                               delay_for: 0,
                                               context: nil,
-                                              path_type: 'email',
+                                              path_type: "email",
                                               from_name: "Instructure Canvas"
                                             }).and_return(message)
       expect(message).to receive(:deliver)
       import.run
     end
 
-    it 'sets outcome_import_errors' do
-      mock_importer_error('Very Bad Error')
+    it "sets outcome_import_errors" do
+      mock_importer_error("Very Bad Error")
 
       attachment = fake_attachment(fake_file)
       import = fake_import(attachment)
@@ -249,14 +247,14 @@ describe OutcomeImport, type: :model do
 
       errors = import.outcome_import_errors.all.to_a
       expect(errors.pluck(:row, :message)).to eq([
-                                                   [1, 'Very Bad Error']
+                                                   [1, "Very Bad Error"]
                                                  ])
       expect(import.progress).to eq(nil)
-      expect(import.workflow_state).to eq('failed')
+      expect(import.workflow_state).to eq("failed")
     end
 
-    it 'has a catch-all for unexpected errors' do
-      expect(Outcomes::CsvImporter).to receive(:new).and_return(nil)
+    it "has a catch-all for unexpected errors" do
+      expect(Outcomes::CSVImporter).to receive(:new).and_return(nil)
 
       attachment = fake_attachment(fake_file)
       import = fake_import(attachment)

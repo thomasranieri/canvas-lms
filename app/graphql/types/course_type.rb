@@ -37,7 +37,7 @@ module Types
 
     implements Interfaces::AssetStringInterface
 
-    alias :course :object
+    alias_method :course, :object
 
     class CourseWorkflowState < BaseEnum
       graphql_name "CourseWorkflowState"
@@ -69,10 +69,10 @@ module Types
                required: false
 
       argument :enrollment_states, [CourseFilterableEnrollmentWorkflowState],
-               <<~DESC,
+               <<~MD,
                  only return users with the given enrollment state. defaults
                  to `invited`, `creation_pending`, `active`
-               DESC
+               MD
                required: false
     end
 
@@ -125,21 +125,21 @@ module Types
     field :sections_connection, SectionType.connection_type, null: true
     def sections_connection
       course.active_course_sections
-            .order(CourseSection.best_unicode_collation_key('name'))
+            .order(CourseSection.best_unicode_collation_key("name"))
     end
 
     field :modules_connection, ModuleType.connection_type, null: true
     def modules_connection
       course.modules_visible_to(current_user)
-            .order('name')
+            .order("name")
     end
 
     field :users_connection, UserType.connection_type, null: true do
-      argument :user_ids, [ID], <<~DOC,
+      argument :user_ids, [ID], <<~MD,
         Only include users with the given ids.
 
         **This field is deprecated, use `filter: {userIds}` instead.**
-      DOC
+      MD
                prepare: GraphQLHelpers.relay_or_legacy_ids_prepare_func("User"),
                required: false
 
@@ -163,15 +163,19 @@ module Types
       scope
     end
 
-    field :enrollments_connection, EnrollmentType.connection_type, null: true
-    def enrollments_connection
+    field :enrollments_connection, EnrollmentType.connection_type, null: true do
+      argument :filter, EnrollmentFilterInputType, required: false
+    end
+    def enrollments_connection(filter: {})
       return nil unless course.grants_any_right?(
         current_user, session,
         :read_roster, :view_all_grades, :manage_grades
       )
 
-      course.apply_enrollment_visibility(course.all_enrollments,
-                                         current_user).active
+      scope = course.apply_enrollment_visibility(course.all_enrollments, current_user).active
+      scope = scope.where(associated_user_id: filter[:associated_user_ids]) if filter[:associated_user_ids].present?
+      scope = scope.where(type: filter[:types]) if filter[:types].present?
+      scope
     end
 
     field :grading_periods_connection, GradingPeriodType.connection_type, null: true
@@ -189,14 +193,14 @@ module Types
       argument :filter, SubmissionFilterInputType, required: false
     end
     def submissions_connection(student_ids: nil, order_by: [], filter: {})
-      if course.grants_any_right?(current_user, session, :manage_grades, :view_all_grades)
-        # TODO: make a preloader for this???
-        allowed_user_ids = course.apply_enrollment_visibility(course.all_student_enrollments, current_user).pluck(:user_id)
-      elsif course.grants_right?(current_user, session, :read_grades)
-        allowed_user_ids = [current_user.id]
-      else
-        allowed_user_ids = []
-      end
+      allowed_user_ids = if course.grants_any_right?(current_user, session, :manage_grades, :view_all_grades)
+                           # TODO: make a preloader for this???
+                           course.apply_enrollment_visibility(course.all_student_enrollments, current_user).pluck(:user_id)
+                         elsif course.grants_right?(current_user, session, :read_grades)
+                           [current_user.id]
+                         else
+                           []
+                         end
 
       if student_ids.present?
         allowed_user_ids &= student_ids.map(&:to_i)
@@ -216,11 +220,14 @@ module Types
       if filter[:graded_since]
         submissions = submissions.where("graded_at > ?", filter[:graded_since])
       end
+      if filter[:updated_since]
+        submissions = submissions.where("submissions.updated_at > ?", filter[:updated_since])
+      end
 
-      (order_by || []).each { |order|
-        direction = order[:direction] == 'descending' ? "DESC NULLS LAST" : "ASC"
+      (order_by || []).each do |order|
+        direction = order[:direction] == "descending" ? "DESC NULLS LAST" : "ASC"
         submissions = submissions.order("#{order[:field]} #{direction}")
-      }
+      end
 
       submissions
     end
@@ -237,9 +244,9 @@ module Types
       end
     end
 
-    field :group_sets_connection, GroupSetType.connection_type, <<~DOC, null: true
+    field :group_sets_connection, GroupSetType.connection_type, <<~MD, null: true
       Project group sets for this course.
-    DOC
+    MD
     def group_sets_connection
       if course.grants_any_right?(current_user, :manage_groups, *RoleOverride::GRANULAR_MANAGE_GROUPS_PERMISSIONS)
         course.group_categories.where(role: nil)
@@ -277,9 +284,9 @@ module Types
     end
 
     field :assignment_post_policies, PostPolicyType.connection_type,
-          <<~DOC,
+          <<~MD,
             PostPolicies for assignments within a course
-          DOC
+          MD
           null: true
     def assignment_post_policies
       return nil unless course.grants_right?(current_user, :manage_grades)
@@ -287,10 +294,10 @@ module Types
       course.assignment_post_policies
     end
 
-    field :image_url, UrlType, <<~DOC, null: true
+    field :image_url, UrlType, <<~MD, null: true
       Returns a URL for the course image (this is the image used on dashboard
       course cards)
-    DOC
+    MD
     def image_url
       if course.image_url.present?
         course.image_url
@@ -299,9 +306,9 @@ module Types
           # if `course.image` was a proper AR association, we wouldn't have to
           # do this shard-id stuff
           course.shard.global_id_for(Integer(course.image_id))
-        ).then { |attachment|
+        ).then do |attachment|
           attachment&.public_download_url(1.week)
-        }
+        end
       end
     end
 

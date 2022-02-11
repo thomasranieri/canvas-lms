@@ -49,7 +49,11 @@ const locale = {
   "announcement_list_da155734": { "message": "Elenco annuncio" },
   "announcements_a4b8ed4a": { "message": "Annunci" },
   "apply_781a2546": { "message": "Applica" },
+  "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+    "message": "Applica modifiche a tutte le istanze di questo pulsante e questa icona nel corso"
+  },
   "apps_54d24a47": { "message": "App" },
+  "arrows_464a3e54": { "message": "Frecce" },
   "aspect_ratio_will_be_preserved_cb5fdfb8": {
     "message": "Le proporzioni verranno mantenute"
   },
@@ -58,16 +62,18 @@ const locale = {
   "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
     "message": "Registrazione audio e video non supportata; usa un altro browser."
   },
+  "audio_options_feb58e2c": { "message": "Opzioni audio" },
+  "audio_options_tray_33a90711": {
+    "message": "Area di notifica opzioni audio"
+  },
   "audio_player_for_title_20cc70d": {
     "message": "Riproduttore audio di { title }"
   },
   "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
     "message": "Contenuto salvataggio automatico esistente. Caricare al suo posto il contenuto salvato automaticamente?"
   },
-  "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-    "message": "Aprire automaticamente un’anteprima in linea. (L’anteprima viene visualizzata solo dopo il salvataggio)"
-  },
   "available_folders_694d0436": { "message": "Cartelle disponibili" },
+  "basic_554cdc0a": { "message": "Base" },
   "below_81d4dceb": { "message": "Sotto" },
   "bottom_third_5f5fec1d": { "message": "Terzo inferiore" },
   "button_color_608a0242": { "message": "Colore pulsanti" },
@@ -114,6 +120,9 @@ const locale = {
     "message": "Chiudere un menu o una finestra di dialogo. Consente anche di tornare all’area dell’editor"
   },
   "close_d634289d": { "message": "Chiudi" },
+  "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+    "message": "Il file dei sottotitoli chiusi deve essere inferiore a { maxKb } kb"
+  },
   "closed_captions_subtitles_e6aaa016": {
     "message": "Didascalie/Sottotitoli chiusi"
   },
@@ -147,6 +156,8 @@ const locale = {
   "creative_commons_license_725584ae": {
     "message": "Licenza Creative Commons:"
   },
+  "crop_image_807ebb08": { "message": "Ritaglia immagine" },
+  "current_image_f16c249c": { "message": "Immagine attuale" },
   "custom_6979cd81": { "message": "Personalizzato" },
   "date_added_ed5ad465": { "message": "Data aggiunta" },
   "decorative_image_3c28aa7d": { "message": "Immagine decorativa" },
@@ -157,14 +168,15 @@ const locale = {
   "default_numerical_ordered_list_48dd3548": {
     "message": "elenco ordinato numericamente predefinito"
   },
+  "delimiters_4db4840d": { "message": "Delimitatori" },
   "describe_the_image_e65d2e32": { "message": "(Descrivi l’immagine)" },
   "describe_the_video_2fe8f46a": { "message": "(Descrivi il video)" },
   "details_98a31b68": { "message": "Dettagli" },
+  "diamond_b8dfe7ae": { "message": "Rombo" },
+  "dimension_type_55c83e4e": { "message": "Tipo di dimensione" },
   "dimensions_45ddb7b7": { "message": "Dimensioni" },
   "directionality_26ae9e08": { "message": "Direzionalità" },
-  "disable_in_line_preview_2a675175": {
-    "message": "Disattivare l’anteprima in linea."
-  },
+  "directly_edit_latex_b7e9235b": { "message": "Modifica direttamente LaTeX" },
   "discussions_a5f96392": { "message": "Discussioni" },
   "discussions_index_6c36ced": { "message": "Indice discussioni" },
   "display_options_315aba85": { "message": "Visualizza opzioni" },
@@ -201,6 +213,7 @@ const locale = {
     "message": "Inserisci almeno 3 caratteri per la ricerca"
   },
   "equation_1c5ac93c": { "message": "Equazione" },
+  "equation_editor_39fbc3f1": { "message": "Editor equazione" },
   "expand_preview_by_default_2abbf9f8": {
     "message": "Espandi anteprima per impostazione predefinita"
   },
@@ -242,6 +255,7 @@ const locale = {
     "message": "Vai alla barra degli strumenti dell''editor"
   },
   "grades_a61eba0a": { "message": "Voti" },
+  "greek_65c5b3f7": { "message": "Greco" },
   "group_documents_8bfd6ae6": { "message": "Documenti di gruppo" },
   "group_files_4324f3df": { "message": "File di gruppo" },
   "group_files_82e5dcdb": { "message": "File gruppo" },
@@ -285,6 +299,7 @@ const locale = {
   "invalid_file_type_881cc9b2": { "message": "Tipo file non valido" },
   "invalid_url_cbde79f": { "message": "URL non valido" },
   "keyboard_shortcuts_ed1844bd": { "message": "Scelte rapide da tastiera" },
+  "language_arts_35b79a8b": { "message": "Studio della lingua" },
   "large_9c5e80e7": { "message": "Grande" },
   "left_to_right_e9b4fd06": { "message": "Da sinistra a destra" },
   "link_7262adec": { "message": "Link" },
@@ -300,17 +315,23 @@ const locale = {
   "loading_please_wait_d276220a": {
     "message": "Caricamento in corso, attendere"
   },
+  "loading_preview_9f077aa1": { "message": "Caricamento dell’anteprima" },
   "locked_762f138b": { "message": "Bloccato" },
+  "math_ede93050": { "message": "Matematica" },
   "media_af190855": { "message": "Elementi multimediali" },
   "medium_5a8e9ead": { "message": "Medio" },
   "middle_27dc1d5": { "message": "Centro" },
+  "misc_3b692ea7": { "message": "Varie" },
   "miscellaneous_e9818229": { "message": "Varie" },
   "modules_c4325335": { "message": "Moduli" },
+  "multi_color_image_63d7372f": { "message": "Immagine multicolore" },
+  "must_be_at_least_percentage_22e373b6": {
+    "message": "Deve essere almeno { percentage }%"
+  },
   "must_be_at_least_width_x_height_px_41dc825e": {
     "message": "Deve essere almeno { width } x { height }px"
   },
   "my_files_2f621040": { "message": "I miei file" },
-  "my_images_427f9b0c": { "message": "Le mi immagini" },
   "name_1aed4a1b": { "message": "Nome" },
   "navigate_through_the_menu_or_toolbar_415a4e50": {
     "message": "Naviga attraverso il menu o la barra degli strumenti"
@@ -329,6 +350,7 @@ const locale = {
     "message": "Nessun risultato trovato per { term }."
   },
   "none_3b5e34d2": { "message": "Nessuno" },
+  "none_selected_b93d56d2": { "message": "Nessuna selezionata" },
   "octagon_e48be9f": { "message": "Ottagono" },
   "open_this_keyboard_shortcuts_dialog_9658b83a": {
     "message": "Apri questa finestra di dialogo delle scelte rapide da tastiera"
@@ -336,6 +358,7 @@ const locale = {
   "open_title_application_fd624fc5": {
     "message": "Apri applicazione { title }"
   },
+  "operators_a2ef9a93": { "message": "Operatori" },
   "options_3ab0ea65": { "message": "Opzioni" },
   "ordered_and_unordered_lists_cfadfc38": {
     "message": "Elenchi ordinati e non ordinati"
@@ -348,7 +371,13 @@ const locale = {
   },
   "pages_e5414c2c": { "message": "Pagine" },
   "paragraph_5e5ad8eb": { "message": "Paragrafo" },
+  "pentagon_17d82ea3": { "message": "Pentagono" },
   "people_b4ebb13c": { "message": "Persone" },
+  "percentage_34ab7c2c": { "message": "Percentuale" },
+  "percentage_must_be_a_number_8033c341": {
+    "message": "La percentuale dev’essere un numero"
+  },
+  "pixels_52ece7d1": { "message": "Pixel" },
   "posted_when_a578f5ab": { "message": "Postato: { when }" },
   "preformatted_d0670862": { "message": "Preformattato" },
   "pretty_html_editor_28748756": { "message": "Editor HTML sicuro" },
@@ -367,6 +396,7 @@ const locale = {
   "record_upload_media_5fdce166": {
     "message": "Registra/Carica file multimediali"
   },
+  "relationships_6602af70": { "message": "Relazioni" },
   "remove_link_d1f2f4d0": { "message": "Rimuovi link" },
   "resize_ec83d538": { "message": "Ridimensiona" },
   "restore_auto_save_deccd84b": {
@@ -381,18 +411,21 @@ const locale = {
   "saved_buttons_and_icons_8278eed2": { "message": "Pulsanti e icone salvati" },
   "search_280d00bd": { "message": "Cerca" },
   "search_term_b2d2235": { "message": "Cerca termine" },
+  "select_crop_shape_d441feeb": { "message": "Seleziona forma di ritaglio" },
   "select_language_7c93a900": { "message": "Selezionare la lingua" },
   "selected_274ce24f": { "message": "Selezionato" },
   "shift_o_to_open_the_pretty_html_editor_55ff5a31": {
     "message": "Maiusc+O per aprire l’editor html sicuro."
   },
+  "show_audio_options_b489926b": { "message": "Mostra opzioni audio" },
   "show_embed_options_ef8d7ef": { "message": "Mostra opzioni Incorpora" },
   "show_image_options_1e2ecc6b": { "message": "Mostra opzioni immagine" },
   "show_link_options_545338fd": { "message": "Mostra opzioni link" },
   "show_video_options_6ed3721a": { "message": "Mostra opzioni video" },
+  "single_color_image_4e5d4dbc": { "message": "Immagine monocolore" },
   "size_b30e1077": { "message": "Dimensioni" },
-  "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-    "message": "La dimensione del file { file } è maggiore della dimensione massima consentita di { max } MB."
+  "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+    "message": "La dimensione del file dei sottotitoli è superiore alla dimensione massima consentita di { max } kb."
   },
   "small_b070434a": { "message": "Piccolo" },
   "something_went_wrong_89195131": { "message": "Si è verificato un errore." },

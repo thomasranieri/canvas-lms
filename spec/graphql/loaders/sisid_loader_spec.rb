@@ -18,20 +18,18 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
-
 describe Loaders::SISIDLoader do
   it "works" do
     course_with_student(active_all: true)
     @course.update!(sis_source_id: "importedCourse")
     GraphQL::Batch.batch do
       course_loader = Loaders::SISIDLoader.for(Course)
-      course_loader.load("importedCourse").then { |course|
+      course_loader.load("importedCourse").then do |course|
         expect(course).to eq @course
-      }
-      course_loader.load(-1).then { |course|
+      end
+      course_loader.load(-1).then do |course|
         expect(course).to be_nil
-      }
+      end
     end
   end
 end

@@ -17,8 +17,9 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require_dependency 'canvas/cdn/s3_uploader'
-require_dependency 'config_file'
+require_dependency "canvas/cdn/s3_uploader"
+require_dependency "canvas/cdn/registry"
+require_dependency "config_file"
 
 module Canvas
   module Cdn
@@ -27,27 +28,54 @@ module Canvas
         @config ||= begin
           config = ActiveSupport::OrderedOptions.new
           config.enabled = false
-          yml = ConfigFile.load('canvas_cdn')
+          yml = ConfigFile.load("canvas_cdn")
           config.merge!(yml.symbolize_keys) if yml
           config
         end
       end
 
+      # Provides an instance of Registry for the current Rails environment.
+      #
+      # Set ENV['USE_OPTIMIZED_JS'] to a truthy value to load the optimized
+      # version of the JavaScripts even if you're running a development Rails
+      # server.
+      def registry
+        @registry ||= begin
+          environment = if %w[1 True true].include?(ENV["USE_OPTIMIZED_JS"])
+                          "production"
+                        else
+                          Rails.env
+                        end
+
+          Registry.new(
+            environment: environment,
+            cache: if ActionController::Base.perform_caching
+                     Registry::ProcessCache.new
+                   else
+                     Registry::RequestCache.new
+                   end
+          )
+        end
+      end
+
       def should_be_in_bucket?(source)
-        source.start_with?('/dist/brandable_css') || Canvas::Cdn::RevManifest.include?(source)
+        source.start_with?("/dist/brandable_css") || registry.include?(source)
       end
 
       def asset_host_for(source)
-        return unless config.host # unless you've set a :host in the canvas_cdn.yml file, just serve normally
-
-        config.host if should_be_in_bucket?(source)
-        # Otherwise, return nil & use the same domain the page request came from, like normal.
+        # use the :host specified in canvas_cdn.yml
+        if config.host && should_be_in_bucket?(source)
+          config.host
+        else
+          # Otherwise, use the same domain the page request came from, like normal.
+          nil
+        end
       end
 
-      def push_to_s3!(*args, &block)
+      def push_to_s3!(*args, **kwargs, &block)
         return unless config.bucket
 
-        uploader = Canvas::Cdn::S3Uploader.new(*args)
+        uploader = Canvas::Cdn::S3Uploader.new(*args, **kwargs)
         uploader.upload!(&block)
       end
 

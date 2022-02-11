@@ -18,17 +18,15 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe I18n do
   context "_core_en.js" do
     it "is up-to-date" do
       skip("Rails 6.0 specific") unless CANVAS_RAILS6_0
-      translations = { 'en' => I18n.backend.send(:translations)[:en].slice(*I18nTasks::Utils::CORE_KEYS) }
+      translations = { "en" => I18n.backend.send(:translations)[:en].slice(*I18nTasks::Utils::CORE_KEYS) }
 
       # HINT: if this spec fails, run `rake i18n:generate_js`...
       # it probably means you added a format or a new language
-      expect(File.read('public/javascripts/translations/_core_en.js')).to eq(
+      expect(File.read("public/javascripts/translations/_core_en.js")).to eq(
         I18nTasks::Utils.dump_js(translations)
       )
     end
@@ -45,6 +43,7 @@ describe I18n do
 
   context "interpolation" do
     before { I18n.locale = I18n.default_locale }
+
     after { I18n.locale = I18n.default_locale }
 
     it "falls back to en if the current locale's interpolation is broken" do
@@ -58,9 +57,9 @@ describe I18n do
     end
 
     it "raises an error if the the en interpolation is broken" do
-      expect {
+      expect do
         I18n.t(:__interpolation_test, "Hello %{world}", { foo: "bar" })
-      }.to raise_error(I18n::MissingInterpolationArgument)
+      end.to raise_error(I18n::MissingInterpolationArgument)
     end
 
     it "formats count numbers" do
@@ -75,6 +74,7 @@ describe I18n do
 
   context "genitives" do
     before { I18n.locale = I18n.default_locale }
+
     after { I18n.locale = I18n.default_locale }
 
     it "forms with `'s` in english" do

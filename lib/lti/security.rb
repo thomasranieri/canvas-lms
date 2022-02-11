@@ -34,7 +34,7 @@ module Lti
     # This is the correct way to sign the params, but in the name of not breaking things, we are using the
     # #generate_params_deprecated method by default
     def self.signed_post_params_frd(params, url, key, secret)
-      message = IMS::LTI::Models::Messages::Message.generate(params.merge({ oauth_consumer_key: key }))
+      message = ::IMS::LTI::Models::Messages::Message.generate(params.merge({ oauth_consumer_key: key }))
       message.launch_url = url
       signed_parameters = message.signed_post_params(secret).stringify_keys
 
@@ -54,39 +54,39 @@ module Lti
     def self.generate_params_deprecated(params, url, key, secret)
       uri = URI.parse(url.strip)
 
-      if uri.port == uri.default_port
-        host = uri.host
-      else
-        host = "#{uri.host}:#{uri.port}"
-      end
+      host = if uri.port == uri.default_port
+               uri.host
+             else
+               "#{uri.host}:#{uri.port}"
+             end
 
       consumer = OAuth::Consumer.new(key, secret, {
-                                       :site => "#{uri.scheme}://#{host}",
-                                       :signature_method => 'HMAC-SHA1'
+                                       site: "#{uri.scheme}://#{host}",
+                                       signature_method: "HMAC-SHA1"
                                      })
 
       path = uri.path
-      path = '/' if path.empty?
-      if uri.query && uri.query != ''
+      path = "/" if path.empty?
+      if uri.query && uri.query != ""
         CGI.parse(uri.query).each do |query_key, query_values|
           unless params[query_key]
             params[query_key] = query_values.first
           end
         end
       end
-      options = { :scheme => 'body' }
+      options = { scheme: "body" }
 
       request = consumer.create_signed_request(:post, path, nil, options, params.stringify_keys)
       # the request is made by a html form in the user's browser, so we
       # want to revert the escapage and return the hash of post parameters ready
       # for embedding in a html view
       hash = {}
-      request.body.split(/&/).each do |param|
-        key, val = param.split(/=/).map { |v| CGI.unescape(v) }
+      request.body.split("&").each do |param|
+        key, val = param.split("=").map { |v| CGI.unescape(v) }
         hash[key] = val
       end
 
-      # note that this base string has duplicate oauth parameters in it when logged,
+      # NOTE: this base string has duplicate oauth parameters in it when logged,
       # though these parameters don't affect signature generation and oauth launches (I hope?)
       Lti::Logging.lti_1_launch_generated(request.oauth_helper.signature_base_string)
 
@@ -116,11 +116,11 @@ module Lti
     #  |---nonce_age---Time.now---timestamp---| INVALID
     #
     def self.check_and_store_nonce(cache_key, timestamp, nonce_age)
-      allowed_future_skew = Setting.get('oauth.allowed_timestamp_future_skew', 1.minute.to_s).to_i.seconds
+      allowed_future_skew = Setting.get("oauth.allowed_timestamp_future_skew", 1.minute.to_s).to_i.seconds
       valid = timestamp.to_i > nonce_age.ago.to_i
       valid &&= timestamp.to_i <= (Time.zone.now + allowed_future_skew).to_i
       valid &&= !Rails.cache.exist?(cache_key)
-      Rails.cache.write(cache_key, 'OK', expires_in: nonce_age + allowed_future_skew) if valid
+      Rails.cache.write(cache_key, "OK", expires_in: nonce_age + allowed_future_skew) if valid
       valid
     end
 
@@ -130,7 +130,16 @@ module Lti
       secure_params = Canvas::Security.decode_jwt(secure_params)
       secure_params[:lti_assignment_id]
     rescue Canvas::Security::InvalidToken
-      return nil
+      nil
+    end
+
+    def self.decoded_lti_assignment_description(secure_params)
+      return if secure_params.blank?
+
+      secure_params = Canvas::Security.decode_jwt(secure_params)
+      secure_params[:lti_assignment_description]
+    rescue Canvas::Security::InvalidToken
+      nil
     end
   end
 end

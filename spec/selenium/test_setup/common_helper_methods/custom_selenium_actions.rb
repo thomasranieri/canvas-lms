@@ -19,7 +19,9 @@
 
 module CustomSeleniumActions
   def skip_if_ie(additional_error_text)
-    skip("skipping test, fails in IE : #{additional_error_text}") if driver.browser == :internet_explorer
+    if driver.browser == :internet_explorer
+      skip("skipping test, fails in IE : #{additional_error_text}")
+    end
   end
 
   def skip_if_firefox(additional_error_text)
@@ -55,17 +57,13 @@ module CustomSeleniumActions
   #
   #   expect(f('#content')).not_to contain_css('.this-should-be-gone')
   def f(selector, scope = nil)
-    stale_element_protection do
-      (scope || driver).find_element :css, selector
-    end
+    stale_element_protection { (scope || driver).find_element :css, selector }
   end
-  alias find f
+  alias_method :find, :f
 
   # short for find with link
   def fln(link_text, scope = nil)
-    stale_element_protection do
-      (scope || driver).find_element :link, link_text
-    end
+    stale_element_protection { (scope || driver).find_element :link, link_text }
   end
 
   # short for find with link partial text
@@ -92,17 +90,15 @@ module CustomSeleniumActions
     wait_opts = { method: :fj }
     wait_opts[:timeout] = timeout if timeout
     stale_element_protection do
-      wait_for(**wait_opts) do
-        find_with_jquery selector, scope
-      end or raise Selenium::WebDriver::Error::NoSuchElementError, "Unable to locate element: #{selector.inspect}"
+      wait_for(**wait_opts) { find_with_jquery selector, scope } or
+        raise Selenium::WebDriver::Error::NoSuchElementError,
+              "Unable to locate element: #{selector.inspect}"
     end
   end
 
   # Find an element via xpath
   def fxpath(xpath, scope = nil)
-    stale_element_protection do
-      (scope || driver).find_element :xpath, xpath
-    end
+    stale_element_protection { (scope || driver).find_element :xpath, xpath }
   end
 
   # same as `f`, but returns all matching elements
@@ -110,11 +106,9 @@ module CustomSeleniumActions
   # like other selenium methods, this will wait until it finds elements on
   # the page, and will eventually raise if none are found
   def ff(selector, scope = nil)
-    reloadable_collection do
-      (scope || driver).find_elements(:css, selector)
-    end
+    reloadable_collection { (scope || driver).find_elements(:css, selector) }
   end
-  alias find_all ff
+  alias_method :find_all, :ff
 
   # same as `fj`, but returns all matching elements
   #
@@ -126,24 +120,32 @@ module CustomSeleniumActions
       wait_for(method: :ffj) do
         result = find_all_with_jquery(selector, scope)
         result.present?
-      end or raise Selenium::WebDriver::Error::NoSuchElementError, "Unable to locate element: #{selector.inspect}"
+      end or
+        raise Selenium::WebDriver::Error::NoSuchElementError,
+              "Unable to locate element: #{selector.inspect}"
       result
     end
   end
 
   # Find a collection of elements via xpath
   def ffxpath(xpath, scope = nil)
-    reloadable_collection do
-      (scope || driver).find_elements(:xpath, xpath)
-    end
+    reloadable_collection { (scope || driver).find_elements(:xpath, xpath) }
   end
 
   def find_with_jquery(selector, scope = nil)
-    driver.execute_script("return $(arguments[0], arguments[1] && $(arguments[1]))[0];", selector, scope)
+    driver.execute_script(
+      "return $(arguments[0], arguments[1] && $(arguments[1]))[0];",
+      selector,
+      scope
+    )
   end
 
   def find_all_with_jquery(selector, scope = nil)
-    driver.execute_script("return $(arguments[0], arguments[1] && $(arguments[1])).toArray();", selector, scope)
+    driver.execute_script(
+      "return $(arguments[0], arguments[1] && $(arguments[1])).toArray();",
+      selector,
+      scope
+    )
   end
 
   # pass full selector ex. "#blah td tr" , the attribute ex. "style" type,
@@ -175,45 +177,35 @@ module CustomSeleniumActions
 
   # Find the parent of an element via xpath
   def parent_fxpath(element)
-    stale_element_protection do
-      element.find_element(:xpath, "..")
-    end
+    stale_element_protection { element.find_element(:xpath, "..") }
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "Parent node for given element was not found"
   end
 
   # Find the parent of an element via JS
   def parent_fjs(element)
-    stale_element_protection do
-      driver.execute_script("return arguments[0].parentNode;", element)
-    end
+    stale_element_protection { driver.execute_script("return arguments[0].parentNode;", element) }
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "Parent node for given element was not found"
   end
 
   # Find the grandparent of an element via xpath
   def grandparent_fxpath(element)
-    stale_element_protection do
-      element.find_element(:xpath, "../..")
-    end
+    stale_element_protection { element.find_element(:xpath, "../..") }
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "Grandparent node for given element was not found, please check if parent nodes are present"
   end
 
   # Find an element with reference to another element, via xpath
   def find_from_element_css(element, css)
-    stale_element_protection do
-      element.find_element(:css, css)
-    end
+    stale_element_protection { element.find_element(:css, css) }
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "No element with reference to given element was found. Please recheck the css : #{css}"
   end
 
   # Find an element with reference to another element, via xpath
   def find_from_element_fxpath(element, xpath)
-    stale_element_protection do
-      element.find_element(:xpath, xpath)
-    end
+    stale_element_protection { element.find_element(:xpath, xpath) }
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "No element with reference to given element was found. Please recheck the xpath : #{xpath}"
   end
@@ -276,12 +268,13 @@ module CustomSeleniumActions
 
   def first_selected_option(select_element)
     select = Selenium::WebDriver::Support::Select.new(select_element)
-    option = select.first_selected_option
-    option
+    select.first_selected_option
   end
 
   def dialog_for(node)
-    node.find_element(:xpath, "ancestor-or-self::div[contains(@class, 'ui-dialog')]") rescue false
+    node.find_element(:xpath, "ancestor-or-self::div[contains(@class, 'ui-dialog')]")
+  rescue
+    false
   end
 
   # for when you have something like a textarea's value and you want to match it's contents
@@ -293,7 +286,7 @@ module CustomSeleniumActions
   end
 
   def select_all_in_tiny(tiny_controlling_element)
-    select_in_tiny(tiny_controlling_element, 'body')
+    select_in_tiny(tiny_controlling_element, "body")
   end
 
   def select_in_tiny(tiny_controlling_element, css_selector)
@@ -305,50 +298,46 @@ module CustomSeleniumActions
     # selecting the contents we want to manipulate directly. the reason it looks so
     # cumbersome is because tinymce has it's actual interaction point down in
     # an iframe.
-    src = %Q{
-      var $iframe = $("##{tiny_controlling_element.attribute(:id)}").siblings('[role="application"],[role="document"]').find('iframe');
+    src =
+      "
+      var $iframe = $(\"##{tiny_controlling_element.attribute(:id)}\").siblings('[role=\"application\"],[role=\"document\"]').find('iframe');
       var iframeDoc = $iframe[0].contentDocument;
-      var domElement = iframeDoc.querySelector("#{css_selector}")
+      var domElement = iframeDoc.querySelector(\"#{css_selector}\")
       var selection = iframeDoc.getSelection();
       var range = iframeDoc.createRange();
       range.selectNodeContents(domElement);
       selection.removeAllRanges();
       selection.addRange(range);
-    }
+    "
     driver.execute_script(src)
   end
 
   def assert_can_switch_views!
-    fj('a.switch_views:visible,a.toggle_question_content_views_link:visible')
+    fj("a.switch_views:visible,a.toggle_question_content_views_link:visible")
   rescue Selenium::WebDriver::Error::NoSuchElementError
     raise "switch views is not available!"
   end
 
-  def switch_editor_views(tiny_controlling_element)
-    if Account.default.feature_enabled?(:rce_enhancements)
-      switch_new_editor_views
-    else
-      if !tiny_controlling_element.is_a?(String)
-        tiny_controlling_element = "##{tiny_controlling_element.attribute(:id)}"
-      end
-      selector = tiny_controlling_element.to_s.to_json
-      assert_can_switch_views!
-      driver.execute_script(%Q{
-        $(#{selector}).parent().parent().find("a.switch_views:visible, a.toggle_question_content_views_link:visible").click();
-      })
-    end
+  # controlling_element is a parent of the RCE you're interested in using.
+  # the default controlling_element works fine if there is only 1 RCE on the page
+  # or if you're interested in the first one of many
+  def switch_editor_views(controlling_element = f(".rce-wrapper"))
+    edit_btn = f("[data-btn-id='rce-edit-btn']", controlling_element)
+    edit_btn.click
   end
 
-  # Used for Enhanced RCE
-  def switch_new_editor_views
-    force_click('[data-btn-id="rce-edit-btn"]')
+  def switch_to_raw_html_editor
+    button = f('button[data-btn-id="rce-editormessage-btn"]')
+    if button.text == "Raw HTML Editor"
+      button.click
+    end
   end
 
   def clear_tiny(tiny_controlling_element, iframe_id = nil)
     if iframe_id
       in_frame iframe_id do
         tinymce_element = f("body")
-        while tinymce_element.text.length > 0 do
+        until tinymce_element.text.empty?
           tinymce_element.click
           tinymce_element.send_keys(Array.new(100, :backspace))
           tinymce_element = f("body")
@@ -358,25 +347,29 @@ module CustomSeleniumActions
       assert_can_switch_views!
       switch_editor_views(tiny_controlling_element)
       tiny_controlling_element.clear
-      switch_editor_views(tiny_controlling_element)
     end
   end
 
-  def type_in_tiny(tiny_controlling_element, text, clear: false)
-    selector = tiny_controlling_element.to_s.to_json
-    mce_class = Account.default.feature_enabled?(:rce_enhancements) ? ".tox-tinymce" : ".mce-tinymce"
+  def type_in_tiny(tiny_controlling_element_selector, text, clear: false)
+    selector = tiny_controlling_element_selector.to_s.to_json
+    tiny_controlling_element = fj(tiny_controlling_element_selector)
+    mce_class = ".tox-tinymce"
     keep_trying_until do
       driver.execute_script("return $(#{selector}).siblings('#{mce_class}').length > 0;")
     end
 
-    iframe_id = driver.execute_script("return $(#{selector}).siblings('#{mce_class}').find('iframe')[0];")['id']
+    iframe_id =
+      driver.execute_script("return $(#{selector}).siblings('#{mce_class}').find('iframe')[0];")[
+        "id"
+      ]
     clear_tiny(tiny_controlling_element, iframe_id) if clear
 
     if text.length > 100 || text.lines.size > 1
-      switch_editor_views(tiny_controlling_element)
+      switch_editor_views(
+        fxpath('./ancestor::div[contains(@class, "rce-wrapper")]', tiny_controlling_element)
+      )
       html = "<p>" + ERB::Util.html_escape(text).gsub("\n", "</p><p>") + "</p>"
       driver.execute_script("return $(#{selector}).val(#{html.inspect})")
-      switch_editor_views(tiny_controlling_element)
     else
       in_frame iframe_id do
         tinymce_element = f("body")
@@ -388,7 +381,9 @@ module CustomSeleniumActions
 
   def hover_and_click(element_jquery_finder)
     if fj(element_jquery_finder).present?
-      driver.execute_script(%{$(#{element_jquery_finder.to_s.to_json}).trigger('mouseenter').click()})
+      driver.execute_script(
+        "$(#{element_jquery_finder.to_s.to_json}).trigger('mouseenter').click()"
+      )
     end
   end
 
@@ -414,22 +409,20 @@ module CustomSeleniumActions
   # 3.) This function will likely have trouble clicking links. Use fln instead.
   def force_click(element_jquery_finder)
     fj(element_jquery_finder)
-    driver.execute_script(%{$(#{element_jquery_finder.to_s.to_json}).click()})
+    driver.execute_script("$(#{element_jquery_finder.to_s.to_json}).click()")
   end
 
   def hover(element)
-    element.with_stale_element_protection do
-      driver.action.move_to(element).perform
-    end
+    element.with_stale_element_protection { driver.action.move_to(element).perform }
   end
 
   def set_value(input, value)
     case input.tag_name
-    when 'select'
+    when "select"
       input.find_element(:css, "option[value='#{value}']").click
-    when 'input'
+    when "input"
       case input.attribute(:type)
-      when 'checkbox'
+      when "checkbox"
         input.click if (!input.selected? && value) || (input.selected? && !value)
       else
         replace_content(input, value)
@@ -441,7 +434,7 @@ module CustomSeleniumActions
 
   def click_option(select_css, option_text, select_by = :text)
     element = fj(select_css)
-    if element.tag_name == 'input'
+    if element.tag_name == "input"
       click_INSTUI_Select_option(element, option_text, select_by)
     else
       select = Selenium::WebDriver::Support::Select.new(element)
@@ -450,7 +443,7 @@ module CustomSeleniumActions
   end
 
   def INSTUI_select(elem_or_css)
-    if elem_or_css.is_a?(String) then fj(elem_or_css) else elem_or_css end
+    elem_or_css.is_a?(String) ? fj(elem_or_css) : elem_or_css
   end
 
   # implementation of click_option for use with INSTU's Select
@@ -458,10 +451,10 @@ module CustomSeleniumActions
   # untested with a raw instui Select)
   def click_INSTUI_Select_option(select, option_text, select_by = :text)
     cselect = INSTUI_select(select)
-    option_list_id = cselect.attribute('aria-controls')
+    option_list_id = cselect.attribute("aria-controls")
     if option_list_id.blank?
       cselect.click
-      option_list_id = cselect.attribute('aria-controls')
+      option_list_id = cselect.attribute("aria-controls")
     end
 
     if select_by == :text
@@ -474,48 +467,48 @@ module CustomSeleniumActions
   def INSTUI_Select_options(select)
     cselect = INSTUI_select(select)
     cselect.click # open the options list
-    option_list_id = cselect.attribute('aria-controls')
+    option_list_id = cselect.attribute("aria-controls")
     ff("##{option_list_id} [role='option']")
   end
 
   def INSTUI_Menu_options(menu)
     menu = INSTUI_select(menu)
     menu.click # option the options list
-    ff("[aria-labelledby='#{menu.attribute('id')}'] [role='menuitemradio']")
+    ff("[aria-labelledby='#{menu.attribute("id")}'] [role='menuitemradio']")
   end
 
   def close_visible_dialog
-    visible_dialog_element = fj('.ui-dialog:visible')
-    visible_dialog_element.find_element(:css, '.ui-dialog-titlebar-close').click
+    visible_dialog_element = fj(".ui-dialog:visible")
+    visible_dialog_element.find_element(:css, ".ui-dialog-titlebar-close").click
     expect(visible_dialog_element).not_to be_displayed
   end
 
-  def datepicker_prev(day_text = '15')
-    datepicker = f('#ui-datepicker-div')
-    datepicker.find_element(:css, '.ui-datepicker-prev').click
+  def datepicker_prev(day_text = "15")
+    datepicker = f("#ui-datepicker-div")
+    datepicker.find_element(:css, ".ui-datepicker-prev").click
     fj("#ui-datepicker-div a:contains(#{day_text})").click
     datepicker
   end
 
-  def datepicker_next(day_text = '15')
-    datepicker = f('#ui-datepicker-div')
-    datepicker.find_element(:css, '.ui-datepicker-next').click
+  def datepicker_next(day_text = "15")
+    datepicker = f("#ui-datepicker-div")
+    datepicker.find_element(:css, ".ui-datepicker-next").click
     fj("#ui-datepicker-div a:contains(#{day_text})").click
     datepicker
   end
 
-  def datepicker_current(day_text = '15')
+  def datepicker_current(day_text = "15")
     fj("#ui-datepicker-div a:contains(#{day_text})").click
   end
 
-  MODIFIER_KEY = RUBY_PLATFORM =~ /darwin/ ? :command : :control
+  MODIFIER_KEY = RUBY_PLATFORM.include?("darwin") ? :command : :control
   def replace_content(el, value, options = {})
     # el.clear doesn't work with textboxes that have a pattern attribute that's why we have :backspace.
     # We are treating the chrome browser different because Selenium cannot send :command key to chrome on Mac.
     # This is a known issue and hasn't been solved yet. https://bugs.chromium.org/p/chromedriver/issues/detail?id=30
     if SeleniumDriverSetup.saucelabs_test_run?
       el.click
-      el.send_keys [(driver.browser == :safari ? :command : :control), 'a']
+      el.send_keys [(driver.browser == :safari ? :command : :control), "a"]
       el.send_keys(value)
     else
       driver.execute_script("arguments[0].select();", el)
@@ -523,7 +516,7 @@ module CustomSeleniumActions
       keys << value
       el.send_keys(*keys)
       count = 0
-      until el['value'] == value.to_s
+      until el["value"] == value.to_s
         break if count > 1
 
         count += 1
@@ -532,12 +525,8 @@ module CustomSeleniumActions
       end
     end
 
-    if options[:tab_out]
-      el.send_keys(:tab)
-    end
-    if options[:press_return]
-      el.send_keys(:return)
-    end
+    el.send_keys(:tab) if options[:tab_out]
+    el.send_keys(:return) if options[:press_return]
   end
 
   def replace_and_proceed(el, value, options = {})
@@ -547,14 +536,24 @@ module CustomSeleniumActions
   # can pass in either an element or a forms css
   def submit_form(form)
     submit_button_css = 'button[type="submit"]'
-    button = form.is_a?(Selenium::WebDriver::Element) ? form.find_element(:css, submit_button_css) : f("#{form} #{submit_button_css}")
+    button =
+      if form.is_a?(Selenium::WebDriver::Element)
+        form.find_element(:css, submit_button_css)
+      else
+        f("#{form} #{submit_button_css}")
+      end
     button.click
   end
 
   # can pass in either an element or a forms css
   def scroll_to_submit_button_and_click(form)
     submit_button_css = 'button[type="submit"]'
-    button = form.is_a?(Selenium::WebDriver::Element) ? form.find_element(:css, submit_button_css) : f("#{form} #{submit_button_css}")
+    button =
+      if form.is_a?(Selenium::WebDriver::Element)
+        form.find_element(:css, submit_button_css)
+      else
+        f("#{form} #{submit_button_css}")
+      end
     scroll_to(button)
     driver.action.move_to(button).click.perform
   end
@@ -568,7 +567,13 @@ module CustomSeleniumActions
     # used to be called submit_form, but it turns out that if you're
     # searching for a dialog that doesn't exist it's suuuuuper slow
     submit_button_css = 'button[type="submit"]'
-    button = form.is_a?(Selenium::WebDriver::Element) ? form.find_element(:css, submit_button_css) : f("#{form} #{submit_button_css}")
+    button =
+      if form.is_a?(Selenium::WebDriver::Element)
+        form.find_element(:css, submit_button_css)
+      else
+        f("#{form} #{submit_button_css}")
+      end
+
     # the button may have been hidden via fixDialogButtons
     dialog = dialog_for(button)
     if !button.displayed? && dialog
@@ -588,10 +593,11 @@ module CustomSeleniumActions
   # load the simulate plugin to simulate a drag events (among other things)
   # will only load it once even if its called multiple times
   def load_simulate_js
-    @load_simulate_js ||= begin
-      js = File.read('spec/selenium/helpers/jquery.simulate.js')
-      driver.execute_script js
-    end
+    @load_simulate_js ||=
+      begin
+        js = File.read("spec/selenium/helpers/jquery.simulate.js")
+        driver.execute_script js
+      end
   end
 
   # when selenium fails you, reach for .simulate
@@ -633,7 +639,9 @@ module CustomSeleniumActions
   # returns true if a form validation error message is visible, false otherwise
   def error_displayed?
     # after it fades out, it's still visible, just off the screen
-    driver.execute_script("return $('.error_text:visible').filter(function(){ return $(this).offset().left >= 0 }).length > 0")
+    driver.execute_script(
+      "return $('.error_text:visible').filter(function(){ return $(this).offset().left >= 0 }).length > 0"
+    )
   end
 
   def double_click(selector)
@@ -659,12 +667,12 @@ module CustomSeleniumActions
   end
 
   def scroll_to(element)
-    element_location = "#{element.location['y']}"
-    driver.execute_script('window.scrollTo(0, ' + element_location + ');')
+    element_location = element.location["y"].to_s
+    driver.execute_script("window.scrollTo(0, " + element_location + ");")
   end
 
   def flash_message_selector
-    '#flash_message_holder li'
+    "#flash_message_holder li"
   end
 
   def dismiss_flash_messages
@@ -711,18 +719,17 @@ module CustomSeleniumActions
     driver.execute_script("$(#{selector.to_json}).scrollTo(#{target.to_json})")
   end
 
-  def stale_element_protection
+  def stale_element_protection(&block)
     element = yield
-    element.finder_proc = proc do
-      disable_implicit_wait { yield }
-    end
+    element.finder_proc = proc { disable_implicit_wait(&block) }
     element
   end
 
-  def reloadable_collection
+  def reloadable_collection(&block)
     collection = yield
-    SeleniumExtensions::ReloadableCollection.new(collection, proc do
-      disable_implicit_wait { yield }
-    end)
+    SeleniumExtensions::ReloadableCollection.new(
+      collection,
+      proc { disable_implicit_wait(&block) }
+    )
   end
 end

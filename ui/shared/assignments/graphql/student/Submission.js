@@ -57,6 +57,27 @@ export const SubmissionMocks = {
     }
   },
 
+  basicLtiLaunchReadyToSubmit: {
+    submissionDraft: {
+      activeSubmissionType: 'basic_lti_launch',
+      externalTool: {
+        _id: '1',
+        name: 'some external tool'
+      },
+      ltiLaunchUrl: '/lti-launch',
+      meetsBasicLtiLaunchCriteria: true,
+      resourceLinkLookupUuid: 'some_uuid'
+    }
+  },
+
+  basicLtiLaunchSubmitted: {
+    attempt: 1,
+    resourceLinkLookupUuid: 'some_uuid',
+    state: 'submitted',
+    submissionType: 'basic_lti_launch',
+    url: '/submitted-lti-launch'
+  },
+
   graded: {
     attempt: 1,
     deductedPoints: 0,
@@ -77,12 +98,27 @@ export const SubmissionMocks = {
   },
 
   excused: {
-    attempt: 1,
-    enteredGrade: null,
-    grade: null,
     gradingStatus: 'excused',
+    state: 'graded'
+  },
+
+  missing: {
+    deductedPoints: 0,
+    enteredGrade: '0',
+    grade: '0',
+    gradingStatus: 'graded',
     state: 'graded',
-    submissionStatus: 'submitted',
+    submissionStatus: 'missing'
+  },
+
+  late: {
+    attempt: 1,
+    deductedPoints: 0,
+    enteredGrade: '8',
+    grade: '8',
+    gradingStatus: 'graded',
+    state: 'graded',
+    submissionStatus: 'late',
     submittedAt: new Date().toISOString()
   }
 }

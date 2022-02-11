@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe "acts_as_list" do
   describe "#update_order" do
     it "casts id input" do
@@ -36,11 +34,11 @@ describe "acts_as_list" do
   end
 
   describe "#insert_at" do
-    before :each do
+    before do
       course_factory
-      @module_1 = @course.context_modules.create!(:name => "another module")
-      @module_2 = @course.context_modules.create!(:name => "another module")
-      @module_3 = @course.context_modules.create!(:name => "another module")
+      @module_1 = @course.context_modules.create!(name: "another module")
+      @module_2 = @course.context_modules.create!(name: "another module")
+      @module_3 = @course.context_modules.create!(name: "another module")
 
       @modules = [@module_1, @module_2, @module_3]
     end
@@ -49,19 +47,19 @@ describe "acts_as_list" do
       expect(@modules.map(&:position)).to eq [1, 2, 3]
 
       expect(@module_1.insert_at(3)).to eq true
-      @modules.each { |m| m.reload }
+      @modules.each(&:reload)
       expect(@modules.map(&:position)).to eq [3, 1, 2]
 
       expect(@module_2.insert_at(2)).to eq true
-      @modules.each { |m| m.reload }
+      @modules.each(&:reload)
       expect(@modules.map(&:position)).to eq [3, 2, 1]
 
       expect(@module_3.insert_at(3)).to eq true
-      @modules.each { |m| m.reload }
+      @modules.each(&:reload)
       expect(@modules.map(&:position)).to eq [2, 1, 3]
 
       expect(@module_1.insert_at(1)).to eq true
-      @modules.each { |m| m.reload }
+      @modules.each(&:reload)
       expect(@modules.map(&:position)).to eq [1, 2, 3]
     end
   end
@@ -69,9 +67,9 @@ describe "acts_as_list" do
   describe "#fix_position_conflicts" do
     it "orders null positions last" do
       course_factory
-      module_1 = @course.context_modules.create :name => 'one'
+      module_1 = @course.context_modules.create name: "one"
       ContextModule.where(id: module_1).update_all(position: nil)
-      module_2 = @course.context_modules.create :name => 'two'
+      module_2 = @course.context_modules.create name: "two"
       module_2.position = 1
       module_2.save!
       module_1.fix_position_conflicts
@@ -80,10 +78,10 @@ describe "acts_as_list" do
 
     it "breaks ties by object id" do
       course_factory
-      module_1 = @course.context_modules.create :name => 'one'
+      module_1 = @course.context_modules.create name: "one"
       module_1.position = 1
       module_1.save!
-      module_2 = @course.context_modules.create :name => 'two'
+      module_2 = @course.context_modules.create name: "two"
       module_2.position = 1
       module_2.save!
       module_1.fix_position_conflicts
@@ -92,10 +90,10 @@ describe "acts_as_list" do
 
     it "consolidates gaps" do
       course_factory
-      module_1 = @course.context_modules.create :name => 'one'
+      module_1 = @course.context_modules.create name: "one"
       module_1.position = 1
       module_1.save!
-      module_2 = @course.context_modules.create :name => 'two'
+      module_2 = @course.context_modules.create name: "two"
       module_2.position = 3
       module_2.save!
       module_1.fix_position_conflicts

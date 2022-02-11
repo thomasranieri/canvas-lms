@@ -21,7 +21,7 @@ import fetchMock from 'fetch-mock'
 import Backbone from '@canvas/backbone'
 import Assignment from '@canvas/assignments/backbone/models/Assignment.coffee'
 import Submission from '@canvas/assignments/backbone/models/Submission'
-import AssignmentListItemView from 'ui/features/assignment_index/backbone/views/AssignmentListItemView.coffee'
+import AssignmentListItemView from 'ui/features/assignment_index/backbone/views/AssignmentListItemView'
 import $ from 'jquery'
 import tzInTest from '@canvas/timezone/specHelpers'
 import timezone from 'timezone'
@@ -920,6 +920,66 @@ QUnit.module('AssignmentListItemViewSpec - editing assignments', function (hooks
     })
 
     strictEqual(view.$('.edit_assignment').hasClass('disabled'), true)
+  })
+})
+
+QUnit.module('AssignmentListItemViewSpec - skip to build screen button', function (hooks) {
+  hooks.beforeEach(function () {
+    fakeENV.setup({
+      current_user_roles: ['teacher'],
+      URLS: {assignment_sort_base_url: 'test'},
+      QUIZ_LTI_ENABLED: true,
+      FLAGS: {
+        new_quizzes_skip_to_build_module_button: true
+      }
+    })
+  })
+
+  hooks.afterEach(function () {
+    fakeENV.teardown()
+    genTeardown.call(this)
+  })
+
+  test('canShowBuildLink is true if QUIZ_LTI_ENABLED and the skip to build button are enabled', function () {
+    const view = createView(
+      buildAssignment({
+        id: 1,
+        title: 'Foo',
+        is_quiz_lti_assignment: true
+      })
+    )
+
+    const json = view.toJSON()
+    strictEqual(json.canShowBuildLink, true)
+  })
+
+  test('canShowBuildLink is false if new_quizzes_skip_to_build_module_button is false', function () {
+    ENV.FLAGS = {
+      new_quizzes_skip_to_build_module_button: false
+    }
+    const view = createView(
+      buildAssignment({
+        id: 1,
+        title: 'Foo',
+        is_quiz_lti_assignment: true
+      })
+    )
+
+    const json = view.toJSON()
+    strictEqual(json.canShowBuildLink, false)
+  })
+
+  test('canShowBuildLink is false if the assignment is not a new quiz', function () {
+    const view = createView(
+      buildAssignment({
+        id: 1,
+        title: 'Foo',
+        is_quiz_lti_assignment: false
+      })
+    )
+
+    const json = view.toJSON()
+    strictEqual(json.canShowBuildLink, false)
   })
 })
 

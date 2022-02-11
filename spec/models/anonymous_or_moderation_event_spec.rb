@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe AnonymousOrModerationEvent do
   subject { AnonymousOrModerationEvent.new(params) }
 
@@ -39,14 +37,14 @@ describe AnonymousOrModerationEvent do
     Account.default.context_external_tools.create!(
       name: "Undertow",
       url: "http://www.example.com",
-      consumer_key: '12345',
-      shared_secret: 'secret'
+      consumer_key: "12345",
+      shared_secret: "secret"
     )
   end
 
   it { is_expected.to be_valid }
 
-  describe 'relationships' do
+  describe "relationships" do
     it { is_expected.to belong_to(:assignment) }
     it { is_expected.to belong_to(:user) }
     it { is_expected.to belong_to(:submission) }
@@ -55,7 +53,7 @@ describe AnonymousOrModerationEvent do
     it { is_expected.to belong_to(:context_external_tool) }
   end
 
-  describe 'validations' do
+  describe "validations" do
     it { is_expected.to validate_presence_of(:assignment_id) }
     it { is_expected.to validate_presence_of(:event_type) }
     it { is_expected.to validate_inclusion_of(:event_type).in_array(AnonymousOrModerationEvent::EVENT_TYPES) }
@@ -104,27 +102,27 @@ describe AnonymousOrModerationEvent do
       end
     end
 
-    context 'assignment_created events' do
+    context "assignment_created events" do
       subject { AnonymousOrModerationEvent.new(params) }
 
       it { is_expected.to validate_absence_of(:canvadoc_id) }
       it { is_expected.to validate_absence_of(:submission_id) }
     end
 
-    context 'assignment_updated events' do
+    context "assignment_updated events" do
       subject { AnonymousOrModerationEvent.new(params.merge(event_type: :assignment_updated)) }
 
       it { is_expected.to validate_absence_of(:canvadoc_id) }
       it { is_expected.to validate_absence_of(:submission_id) }
     end
 
-    context 'docviewer events' do
+    context "docviewer events" do
       subject(:event) { AnonymousOrModerationEvent.new(params.merge(event_type: :docviewer_comment_created)) }
 
       it { is_expected.to validate_presence_of(:canvadoc_id) }
       it { is_expected.to validate_presence_of(:submission_id) }
 
-      it 'requires the payload to have an annotation body' do
+      it "requires the payload to have an annotation body" do
         event.validate
         expect(event.errors[:payload]).to include "annotation_body can't be blank"
       end
@@ -143,12 +141,12 @@ describe AnonymousOrModerationEvent do
       it { is_expected.to validate_absence_of(:canvadoc_id) }
       it { is_expected.to validate_presence_of(:submission_id) }
 
-      it 'requires the payload to have an id' do
+      it "requires the payload to have an id" do
         event.validate
         expect(event.errors[:payload]).to include "id can't be blank"
       end
 
-      it 'requires the payload to have a student_id' do
+      it "requires the payload to have a student_id" do
         event.validate
         expect(event.errors[:payload]).to include "student_id can't be blank"
       end
@@ -165,7 +163,7 @@ describe AnonymousOrModerationEvent do
       AnonymousOrModerationEvent.events_for_submission(assignment_id: assignment.id, submission_id: submission.id)
     end
 
-    before :each do
+    before do
       submission.submission_comments.create!(author: teacher, comment: "no")
     end
 
@@ -184,16 +182,16 @@ describe AnonymousOrModerationEvent do
     end
 
     it "does not include AnonymousOrModerationEvents not related to assignment" do
-      expect {
+      expect do
         course.assignments.create!(name: "another assignment", anonymous_grading: true, updating_user: teacher)
-      }.not_to change { events.count }
+      end.not_to change { events.count }
     end
 
     it "does not include AnonymousOrModerationEvents not related to submission" do
       second_student = course_with_user("StudentEnrollment", name: "Student", course: course, active_all: true).user
-      expect {
+      expect do
         assignment.submit_homework(second_student, body: "please give bad grade")
-      }.not_to change { events.count }
+      end.not_to change { events.count }
     end
   end
 end

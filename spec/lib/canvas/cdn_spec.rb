@@ -18,24 +18,22 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe Canvas::Cdn do
-  before :each do
+  before do
     @original_config = Canvas::Cdn.config.dup
   end
 
-  after :each do
+  after do
     Canvas::Cdn.config.replace(@original_config)
   end
 
-  describe '.enabled?' do
-    it 'returns true when the cdn config has a bucket' do
-      Canvas::Cdn.config.merge! enabled: true, bucket: 'bucket_name'
+  describe ".enabled?" do
+    it "returns true when the cdn config has a bucket" do
+      Canvas::Cdn.config.merge! enabled: true, bucket: "bucket_name"
       expect(Canvas::Cdn.enabled?).to eq true
     end
 
-    it 'returns false when the cdn config does not have a bucket' do
+    it "returns false when the cdn config does not have a bucket" do
       Canvas::Cdn.config.merge! enabled: true, bucket: nil
       expect(Canvas::Cdn.enabled?).to eq false
     end

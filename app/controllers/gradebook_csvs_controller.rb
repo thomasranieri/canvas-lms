@@ -24,9 +24,9 @@ class GradebookCsvsController < ApplicationController
 
   def create
     if authorized_action(@context, @current_user, [:manage_grades, :view_all_grades])
-      current_time = Time.zone.now.strftime('%FT%H%M')
-      name = t('grades_filename', "Grades") + "-" + @context.short_name.to_s
-      filename = "#{current_time}_#{name}.csv".gsub(%r{/| }, '_')
+      current_time = Time.zone.now.strftime("%FT%H%M")
+      name = t("grades_filename", "Grades") + "-" + @context.short_name.to_s
+      filename = "#{current_time}_#{name}.csv".gsub(%r{/| }, "_")
 
       csv_options = {
         include_sis_id: @context.grants_any_right?(@current_user, session, :read_sis, :manage_sis),
@@ -35,6 +35,12 @@ class GradebookCsvsController < ApplicationController
 
       if params[:assignment_order]
         csv_options[:assignment_order] = params[:assignment_order].map(&:to_i)
+      end
+
+      if @context.root_account.allow_gradebook_show_first_last_names? &&
+         Account.site_admin.feature_enabled?(:gradebook_show_first_last_names) &&
+         params[:show_student_first_last_name]
+        csv_options[:show_student_first_last_name] = Canvas::Plugin.value_to_boolean(params[:show_student_first_last_name])
       end
 
       attachment_progress = @context.gradebook_to_csv_in_background(filename, @current_user, csv_options)

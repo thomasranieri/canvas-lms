@@ -92,11 +92,17 @@
     "apply_781a2546": {
         "message": "Применить"
     },
+    "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+        "message": "Применить изменения ко всем экземплярам этой кнопки и пиктограммы в курсе"
+    },
     "apps_54d24a47": {
         "message": "Приложения"
     },
     "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
         "message": "Вы уверены, что хотите удалить этот элемент планировщика?"
+    },
+    "arrows_464a3e54": {
+        "message": "Стрелки"
     },
     "aspect_ratio_will_be_preserved_cb5fdfb8": {
         "message": "Соотношение сторон будет сохранено"
@@ -143,17 +149,23 @@
     "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
         "message": "Аудио- и видеозапись не поддерживается; воспользуйтесь другим браузером."
     },
+    "audio_options_feb58e2c": {
+        "message": "Параметры звука"
+    },
+    "audio_options_tray_33a90711": {
+        "message": "Панель настройки параметров звука"
+    },
     "audio_player_for_title_20cc70d": {
         "message": "Аудиоплеер для { title }"
     },
     "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
         "message": "Существует сохраненное в автоматическом режиме содержимое. Вы хотите загрузить сохраненное в автоматическом режиме содержимое?"
     },
-    "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-        "message": "Автоматически открывать встроенный предварительный просмотр. (Предварительный просмотр отображается только после сохранения)"
-    },
     "available_folders_694d0436": {
         "message": "Доступные папки"
+    },
+    "basic_554cdc0a": {
+        "message": "Основной"
     },
     "beginning_of_your_to_do_history_61ef2dce": {
         "message": "Начало вашей истории задач"
@@ -245,6 +257,9 @@
     "close_opportunity_center_popup_9907d981": {
         "message": "Закройте всплывающее окно Центр возможностей"
     },
+    "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+        "message": "Размер закрытого файла субтитров должен быть меньше { maxKb } Кб"
+    },
     "closed_captions_subtitles_e6aaa016": {
         "message": "Закрытые надписи/субтитры"
     },
@@ -326,6 +341,12 @@
     "creative_commons_license_725584ae": {
         "message": "Лицензионное соглашение Creative Commons:"
     },
+    "crop_image_807ebb08": {
+        "message": "Обрезать изображение"
+    },
+    "current_image_f16c249c": {
+        "message": "Текущее изображение"
+    },
     "custom_6979cd81": {
         "message": "Пользовательская"
     },
@@ -362,6 +383,9 @@
     "delete_a6efa79d": {
         "message": "Удалить"
     },
+    "delimiters_4db4840d": {
+        "message": "Разделители"
+    },
     "describe_the_image_e65d2e32": {
         "message": "(Опишите изображение)"
     },
@@ -374,14 +398,20 @@
     "details_a6f427c3": {
         "message": "Сведения:"
     },
+    "diamond_b8dfe7ae": {
+        "message": "Ромб"
+    },
+    "dimension_type_55c83e4e": {
+        "message": "Тип измерения"
+    },
     "dimensions_45ddb7b7": {
         "message": "Размеры"
     },
     "directionality_26ae9e08": {
         "message": "Направленность"
     },
-    "disable_in_line_preview_2a675175": {
-        "message": "Отключить встроенный предварительный просмотр."
+    "directly_edit_latex_b7e9235b": {
+        "message": "Непосредственно редактирование LaTeX"
     },
     "discussion_6719c51d": {
         "message": "Обсуждение"
@@ -485,6 +515,9 @@
     "equation_1c5ac93c": {
         "message": "Формула"
     },
+    "equation_editor_39fbc3f1": {
+        "message": "Редактор уравнений"
+    },
     "error_loading_grades_e0b38f4d": {
         "message": "Ошибка загрузки оценок"
     },
@@ -547,6 +580,9 @@
     },
     "feedback_6dcc1991": {
         "message": "Отзывы"
+    },
+    "file_name_8fd421ff": {
+        "message": "Имя файла"
     },
     "file_url_c12b64be": {
         "message": "URL файла"
@@ -613,6 +649,9 @@
     },
     "grades_loaded_5056277c": {
         "message": "Оценки загружены"
+    },
+    "greek_65c5b3f7": {
+        "message": "Греческий"
     },
     "group_documents_8bfd6ae6": {
         "message": "Документы группы"
@@ -797,6 +836,9 @@
     "loading_please_wait_d276220a": {
         "message": "Выполняется загрузка, подождите..."
     },
+    "loading_preview_9f077aa1": {
+        "message": "Загрузка предпросмотра"
+    },
     "location_3b6ff307": {
         "message": "Местоположение:"
     },
@@ -818,6 +860,9 @@
     "middle_27dc1d5": {
         "message": "Середина"
     },
+    "misc_3b692ea7": {
+        "message": "Различное"
+    },
     "miscellaneous_e9818229": {
         "message": "Разное"
     },
@@ -830,6 +875,12 @@
     "modules_c4325335": {
         "message": "Модули"
     },
+    "multi_color_image_63d7372f": {
+        "message": "Многоцветное изображение"
+    },
+    "must_be_at_least_percentage_22e373b6": {
+        "message": "Должен быть как минимум { percentage }%"
+    },
     "must_be_at_least_width_x_height_px_41dc825e": {
         "message": "Должно быть как минимум { width } x { height }пикселов"
     },
@@ -838,9 +889,6 @@
     },
     "my_grades_98834476": {
         "message": "Мои оценки"
-    },
-    "my_images_427f9b0c": {
-        "message": "Мои изображения"
     },
     "name_1aed4a1b": {
         "message": "Имя"
@@ -893,6 +941,9 @@
     "none_3b5e34d2": {
         "message": "Нет"
     },
+    "none_selected_b93d56d2": {
+        "message": "Нет выбранных элементов"
+    },
     "nothing_due_this_week_d45c9ef9": {
         "message": "На этой неделе не требуется ничего выполнять"
     },
@@ -932,6 +983,9 @@
     "open_title_application_fd624fc5": {
         "message": "Открыть приложение { title }"
     },
+    "operators_a2ef9a93": {
+        "message": "Операторы"
+    },
     "opportunities_popup_f6703842": {
         "message": "всплывающее окно возможностей"
     },
@@ -965,8 +1019,20 @@
     "peer_review_for_itemtitle_358cb413": {
         "message": "Рассмотрение коллегами для { itemTitle }"
     },
+    "pentagon_17d82ea3": {
+        "message": "Пятиугольник"
+    },
     "people_b4ebb13c": {
         "message": "Люди"
+    },
+    "percentage_34ab7c2c": {
+        "message": "Процент"
+    },
+    "percentage_must_be_a_number_8033c341": {
+        "message": "Процентное значение должно быть указано в виде числа"
+    },
+    "pixels_52ece7d1": {
+        "message": "Пиксели"
     },
     "points_bceb5005": {
         "message": "баллы"
@@ -1028,6 +1094,9 @@
     "redo_363c58b7": {
         "message": "Повторить"
     },
+    "relationships_6602af70": {
+        "message": "Отношения"
+    },
     "reminder_date_4564d12d": {
         "message": "Оповещение: { date }"
     },
@@ -1076,6 +1145,9 @@
     "search_term_b2d2235": {
         "message": "критерий поиска"
     },
+    "select_crop_shape_d441feeb": {
+        "message": "Выберите обрезку формы"
+    },
     "select_language_7c93a900": {
         "message": "Выбрать язык"
     },
@@ -1087,6 +1159,9 @@
     },
     "show_all_ae37d610": {
         "message": "Показать все"
+    },
+    "show_audio_options_b489926b": {
+        "message": "Показать параметры звука"
     },
     "show_embed_options_ef8d7ef": {
         "message": "Показать параметры вставки"
@@ -1103,11 +1178,14 @@
     "show_video_options_6ed3721a": {
         "message": "Показать параметры видео"
     },
+    "single_color_image_4e5d4dbc": {
+        "message": "Одноцветное изображение"
+    },
     "size_b30e1077": {
         "message": "Размер"
     },
-    "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-        "message": "Размер { file } больше допустимого максимального размера файла в { max } Мб."
+    "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+        "message": "Размер файла субтитров больше допустимого максимального размера в { max } Кб."
     },
     "small_b070434a": {
         "message": "Маленький"

@@ -50,10 +50,13 @@ export interface PacePlanItem {
   readonly id: string
   readonly duration: number
   readonly assignment_title: string
+  readonly assignment_link: string
+  readonly points_possible?: number | null
   readonly position: number
   readonly module_item_id: string
   readonly module_item_type: string
   readonly published: boolean
+  compressed_due_date?: string
 }
 
 export interface Module {
@@ -65,6 +68,7 @@ export interface Module {
 
 export type PlanContextTypes = 'Course' | 'Section' | 'Enrollment'
 export type WorkflowStates = 'unpublished' | 'active' | 'deleted'
+export type ProgressStates = 'queued' | 'running' | 'completed' | 'failed'
 
 export interface PacePlan {
   readonly id?: string
@@ -73,43 +77,50 @@ export interface PacePlan {
   readonly workflow_state: WorkflowStates
   readonly modules: Module[]
   readonly exclude_weekends: boolean
-  readonly hard_end_dates?: boolean
+  readonly hard_end_dates: boolean
+  readonly course: Course
   readonly course_id: string
   readonly course_section_id?: string
   readonly user_id?: string
   readonly context_type: PlanContextTypes
   readonly context_id: string
   readonly published_at?: string
-  readonly unpublished_changes?: boolean
-  readonly linked_to_parent: boolean
+  readonly compressed_due_dates: PacePlanItemDueDates | undefined
+  readonly updated_at: string
 }
 
-export enum PublishOptions {
-  FUTURE_ONLY = 'future_only',
-  ALL = 'all',
-  SELECTED_SECTIONS = 'selected_sections',
-  SELECTED_STUDENTS = 'selected_students',
-  SINGLE_STUDENT = 'single_student'
+export interface Progress {
+  readonly id: string
+  readonly completion?: number
+  readonly message?: string
+  readonly created_at: string
+  readonly updated_at: string
+  readonly workflow_state: ProgressStates
+  readonly url: string
 }
 
 /* Redux state types */
 
 export type EnrollmentsState = Enrollments
+export type PacePlansState = PacePlan & {
+  originalPlan: PacePlan
+  publishingProgress?: Progress
+}
 export type SectionsState = Sections
-export type PacePlansState = PacePlan
+export type ResponsiveSizes = 'small' | 'large'
+export type CategoryErrors = {[category: string]: string}
 
 export interface UIState {
   readonly autoSaving: boolean
-  readonly errorMessage: string
+  readonly errors: CategoryErrors
   readonly divideIntoWeeks: boolean
-  readonly planPublishing: boolean
   readonly selectedContextType: PlanContextTypes
   readonly selectedContextId: string
   readonly loadingMessage: string
+  readonly responsiveSize: ResponsiveSizes
   readonly showLoadingOverlay: boolean
   readonly showProjections: boolean
   readonly editingBlackoutDates: boolean
-  readonly adjustingHardEndDatesAfter?: number
 }
 
 export interface StoreState {

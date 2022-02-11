@@ -71,6 +71,19 @@ body:not(.ic-no-flex-layout):not(.embedded) .ic-app-main-content {
 
   body.ic-framed-lti-tool & {
     padding: 0 $ic-sp*2;
+
+    @include lti-min-size {
+      .ic-framed-lti-content {
+        overflow-x: visible;
+
+        div.ic-framed-lti-embed-container {
+          width: 100vw;
+          min-width: 100vw;
+          margin-#{direction(left)}: - 2 * $ic-sp;
+          overflow-x: auto;
+        }
+      }
+    }
   }
 
   body.ic-full-screen-lti-tool & {
@@ -298,6 +311,13 @@ body:not(.course-menu-expanded) {
   overscroll-behavior-y: contain;
 }
 
+.ic-sticky-frame.has-scrollbar {
+  padding: direction-sides($ic-sp*2 $ic-sp*0.2 $ic-breadcrumbs-height $ic-sp*2);
+  & .nav-icon{
+      padding: 0 3px;
+  }
+}
+
 .ic-app-nav-toggle-and-crumbs {
   display: flex;
   align-items: center;
@@ -308,6 +328,8 @@ body:not(.course-menu-expanded) {
 
   .right-of-crumbs {
     display: flex;
+    flex: 1;
+    flex-direction: row-reverse;
   }
 
   .right-of-crumbs > * {

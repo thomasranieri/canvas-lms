@@ -29,7 +29,7 @@ module ErrorContext
       super
       write_error_page if summary.example.exception
     rescue
-      $stderr.puts "There was an error generating the error page, sadlol: #{$ERROR_INFO}"
+      warn "There was an error generating the error page, sadlol: #{$ERROR_INFO}"
     end
 
     def escape_code(code)
@@ -55,7 +55,7 @@ module ErrorContext
       @output_buffer = ActionView::OutputBuffer.new
       example = summary.example
       formatted_exception = ::RSpec::Core::Formatters::ExceptionPresenter.new(example.exception, example).fully_formatted(nil)
-      eval(error_template.src, binding, error_template_path)
+      eval(error_template.src, binding, error_template_path) # rubocop:disable Security/Eval
     end
 
     def recent_spec_runs
@@ -82,9 +82,7 @@ module ErrorContext
     end
 
     def error_template
-      @error_template ||= begin
-        ActionView::Template::Handlers::ERB::Erubi.new(File.read(error_template_path))
-      end
+      @error_template ||= ActionView::Template::Handlers::ERB::Erubi.new(File.read(error_template_path))
     end
   end
 end

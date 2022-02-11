@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe "cross listing" do
   describe "user course associations" do
     it "is not kept when a user is not enrolled in that course anymore" do
@@ -61,7 +59,7 @@ describe "cross listing" do
         "C4,S3,active"
       )
 
-      expect(CommunicationChannel.by_path('u1@example.com').first.user.cached_currentish_enrollments.map(&:course).map(&:sis_source_id).sort).to eq ["C1", "X1", "C4"].sort
+      expect(CommunicationChannel.by_path("u1@example.com").first.user.cached_currentish_enrollments.map(&:course).map(&:sis_source_id).sort).to eq %w[C1 X1 C4].sort
     end
   end
 end

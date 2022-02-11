@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require_relative '../sharding_spec_helper'
 describe TermsOfService do
   before :once do
     @ac = account_model
@@ -29,11 +28,11 @@ describe TermsOfService do
   describe "::terms_of_service_workflow_state" do
     it "returns 'deleted' for deleted terms of service" do
       @terms_of_service.destroy!
-      expect(@terms_of_service.workflow_state).to eq 'deleted'
+      expect(@terms_of_service.workflow_state).to eq "deleted"
     end
 
     it "returns 'active' for Terms of Service Content even if its terms has been deleted" do
-      expect(@terms_of_service_content.workflow_state).to eq 'active'
+      expect(@terms_of_service_content.workflow_state).to eq "active"
     end
   end
 
@@ -51,7 +50,7 @@ describe TermsOfService do
   end
 
   describe "#ensure_terms_for_account" do
-    before :each do
+    before do
       TermsOfService.skip_automatic_terms_creation = false
     end
 

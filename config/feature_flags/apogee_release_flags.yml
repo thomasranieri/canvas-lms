@@ -72,11 +72,6 @@ use_cloudfront_for_docviewer:
   applies_to: SiteAdmin
   display_name: Use CloudFront for DocViewer
   description: Request that DocViewer use CloudFront for serving pdf assets.
-annotated_document_submissions:
-  state: hidden
-  applies_to: SiteAdmin
-  display_name: Student Annotation submissions
-  description: Ability to submit student annotation assignments.
 gradebook_csv_export_order_matches_gradebook_grid:
   state: hidden
   applies_to: SiteAdmin
@@ -97,6 +92,7 @@ enhanced_gradebook_filters:
   applies_to: SiteAdmin
   display_name: Enhanced Gradebook Filters
   description: Improved filtering of students and assignments in Gradebook.
+  beta: true
 remove_gradebook_student_search_delay:
   state: hidden
   applies_to: SiteAdmin
@@ -108,8 +104,24 @@ gradebook_assignment_search_and_redesign:
   display_name: Gradebook Assignment Search And Redesign
   description: Search assignments in Gradebook and new design for assignment
     and student search
-visible_assignments_scope_change:
+message_observers_of_students_who:
   state: hidden
   applies_to: SiteAdmin
-  display_name: Visible Assignments Scope Change
-  description: Reverts the visible assignments scope to its original form
+  display_name: Message Observers of Students Who...
+  description: Enables a redesigned Message Students Who... dialog that allows
+    for messaging observers in addition to students.
+apply_score_to_ungraded:
+  state: hidden
+  applies_to: Account
+  display_name: Apply Score to Ungraded
+  description: Allows instructors to apply scores to ungraded submissions en masse from assignment 
+    group and Total column menus in the Gradebook.
+  environments:
+    development:
+      state: allowed
+speedgrader_dialog_for_unposted_comments:
+  state: hidden
+  applies_to: SiteAdmin
+  display_name: Draft Comment Warning Modal in SpeedGrader
+  description: Enables modal to warn user when a draft comment is left unposted
+    in SpeedGrader.

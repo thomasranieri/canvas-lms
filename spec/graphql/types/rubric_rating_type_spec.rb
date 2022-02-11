@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + "/../../spec_helper")
 require_relative "../graphql_spec_helper"
 
 describe Types::RubricRatingType do
@@ -27,29 +26,29 @@ describe Types::RubricRatingType do
   let(:rubric) { rubric_for_course }
   let(:rubric_type) { GraphQLTypeTester.new(rubric, current_user: student) }
 
-  it 'works' do
+  it "works" do
     expect(
-      rubric_type.resolve('criteria { ratings { _id } }')
-    ).to eq rubric.criteria.map { |c| c[:ratings].map { |r| r[:id].to_s } }
+      rubric_type.resolve("criteria { ratings { _id } }")
+    ).to eq(rubric.criteria.map { |c| c[:ratings].pluck(:id).map(&:to_s) })
   end
 
-  describe 'works for the field' do
-    it 'description' do
+  describe "works for the field" do
+    it "description" do
       expect(
-        rubric_type.resolve('criteria { ratings { description } }')
-      ).to eq rubric.criteria.map { |c| c[:ratings].map { |r| r[:description] } }
+        rubric_type.resolve("criteria { ratings { description } }")
+      ).to eq(rubric.criteria.map { |c| c[:ratings].pluck(:description) })
     end
 
-    it 'long_description' do
+    it "long_description" do
       expect(
-        rubric_type.resolve('criteria { ratings { longDescription } }')
-      ).to eq rubric.criteria.map { |c| c[:ratings].map { |r| r[:long_description] } }
+        rubric_type.resolve("criteria { ratings { longDescription } }")
+      ).to eq(rubric.criteria.map { |c| c[:ratings].pluck(:long_description) })
     end
 
-    it 'points' do
+    it "points" do
       expect(
-        rubric_type.resolve('criteria { ratings { points } }')
-      ).to eq rubric.criteria.map { |c| c[:ratings].map { |r| r[:points] } }
+        rubric_type.resolve("criteria { ratings { points } }")
+      ).to eq(rubric.criteria.map { |c| c[:ratings].pluck(:points) })
     end
   end
 end

@@ -18,14 +18,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe StudentViewEnrollment do
-  before(:each) do
-    @student = User.create(:name => "some student")
-    @course = Course.create(:name => "some course")
+  before do
+    @student = User.create(name: "some student")
+    @course = Course.create(name: "some course")
     @se = @course.enroll_student(@student)
-    @assignment = @course.assignments.create!(:title => 'some assignment')
+    @assignment = @course.assignments.create!(title: "some assignment")
     @submission = @assignment.submit_homework(@student)
     @assignment.reload
     @course.save!

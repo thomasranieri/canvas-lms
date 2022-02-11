@@ -20,13 +20,14 @@
 
 class Loaders::AssessmentRequestLoader < GraphQL::Batch::Loader
   def initialize(current_user:)
+    super()
     @current_user = current_user
   end
 
   def perform(assignments)
     assignments.each do |assignment|
       reviews = @current_user.assigned_submission_assessments.shard(assignment.shard).for_assignment(assignment.id)
-      valid_student_ids = assignment.course.participating_students.where(id: reviews.select('user_id'))
+      valid_student_ids = assignment.course.participating_students.where(id: reviews.select("user_id"))
       fulfill(assignment, reviews.where(user_id: valid_student_ids))
     end
   end

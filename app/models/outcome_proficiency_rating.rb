@@ -29,11 +29,11 @@ class OutcomeProficiencyRating < ApplicationRecord
   validates :color, presence: true, format: /\A([A-Fa-f0-9]{6})\z/i
   resolves_root_account through: :outcome_proficiency
 
-  alias original_destroy destroy
+  alias_method :original_destroy, :destroy
   private :original_destroy
   def destroy
-    if self.marked_for_destruction?
-      self.destroy_permanently!
+    if marked_for_destruction?
+      destroy_permanently!
     else
       original_destroy
     end
@@ -41,10 +41,10 @@ class OutcomeProficiencyRating < ApplicationRecord
 
   def as_json(_options = {})
     {}.tap do |h|
-      h['description'] = self.description
-      h['points'] = self.points
-      h['mastery'] = self.mastery
-      h['color'] = self.color
+      h["description"] = description
+      h["points"] = points
+      h["mastery"] = mastery
+      h["color"] = color
     end
   end
 end

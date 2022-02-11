@@ -18,13 +18,13 @@
 #
 module CanvasCassandra
   class Database
-    CONSISTENCY_CLAUSE = %r{%CONSISTENCY% ?}
+    CONSISTENCY_CLAUSE = /%CONSISTENCY% ?/.freeze
 
     def initialize(fingerprint, servers, opts, logger)
       thrift_opts = {}
-      thrift_opts[:retries] = opts.delete(:retries) if opts.has_key?(:retries)
-      thrift_opts[:connect_timeout] = opts.delete(:connect_timeout) if opts.has_key?(:connect_timeout)
-      thrift_opts[:timeout] = opts.delete(:timeout) if opts.has_key?(:timeout)
+      thrift_opts[:retries] = opts.delete(:retries) if opts.key?(:retries)
+      thrift_opts[:connect_timeout] = opts.delete(:connect_timeout) if opts.key?(:connect_timeout)
+      thrift_opts[:timeout] = opts.delete(:timeout) if opts.key?(:timeout)
 
       @db = CassandraCQL::Database.new(servers, opts, thrift_opts)
       @fingerprint = fingerprint
@@ -46,16 +46,16 @@ module CanvasCassandra
         consistency = CanvasCassandra.consistency_level(consistency_text) if consistency_text
 
         if @db.use_cql3? || !consistency
-          query = query.sub(CONSISTENCY_CLAUSE, '')
+          query = query.sub(CONSISTENCY_CLAUSE, "")
         elsif !@db.use_cql3?
           query = query.sub(CONSISTENCY_CLAUSE, "USING CONSISTENCY #{consistency_text} ")
         end
 
-        if @db.use_cql3? && consistency
-          result = @db.execute_with_consistency(query, consistency, *args)
-        else
-          result = @db.execute(query, *args)
-        end
+        result = if @db.use_cql3? && consistency
+                   @db.execute_with_consistency(query, consistency, *args)
+                 else
+                   @db.execute(query, *args)
+                 end
       end
 
       @logger.debug("  #{"CQL (%.2fms)" % [ms]}  #{sanitize(query, args)} #{opts.inspect} [#{fingerprint}]")
@@ -67,13 +67,9 @@ module CanvasCassandra
     end
 
     # private Struct used to store batch information
-    class Batch < Struct.new(:statements, :args, :counter_statements, :counter_args, :execute_options)
+    Batch = Struct.new(:statements, :args, :counter_statements, :counter_args, :execute_options) do
       def initialize
-        self.statements = []
-        self.args = []
-        self.counter_statements = []
-        self.counter_args = []
-        self.execute_options = {}
+        super([], [], [], [], {})
       end
 
       def to_cql_ary(field = nil)
@@ -89,7 +85,7 @@ module CanvasCassandra
           # http://www.datastax.com/docs/1.1/references/cql/BATCH
           # note there's no semicolons between statements in the batch
           cql = []
-          cql << "BEGIN #{'COUNTER ' if field == 'counter_'}BATCH"
+          cql << "BEGIN #{"COUNTER " if field == "counter_"}BATCH"
           cql.concat statements
           cql << "APPLY BATCH"
           # join with spaces rather than newlines, because cassandra doesn't care
@@ -175,7 +171,7 @@ module CanvasCassandra
     # updating columns with nil values, rather than creating tombstone delete
     # records for them
     def insert_record(table_name, primary_key_attrs, changes, ttl_seconds = nil, execute_options: {})
-      changes = changes.reject { |k, v| v.is_a?(Array) ? v.last.nil? : v.nil? }
+      changes = changes.reject { |_k, v| v.is_a?(Array) ? v.last.nil? : v.nil? }
       update_record(table_name, primary_key_attrs, changes, ttl_seconds, execute_options: execute_options)
     end
 
@@ -185,13 +181,13 @@ module CanvasCassandra
     end
 
     def tables
-      if @db.connection.describe_version >= '20.1.0' && @db.execute("SELECT cql_version FROM system.local").first['cql_version'] >= '3.4.4'
+      if @db.connection.describe_version >= "20.1.0" && @db.execute("SELECT cql_version FROM system.local").first["cql_version"] >= "3.4.4"
         @db.execute("SELECT table_name FROM system_schema.tables WHERE keyspace_name=?", keyspace).map do |row|
-          row['table_name']
+          row["table_name"]
         end
       elsif @db.use_cql3?
         @db.execute("SELECT columnfamily_name FROM system.schema_columnfamilies WHERE keyspace_name=?", keyspace).map do |row|
-          row['columnfamily_name']
+          row["columnfamily_name"]
         end
       else
         @db.schema.tables
@@ -204,8 +200,11 @@ module CanvasCassandra
     # => ["name = ? AND state = ?", ["foo", "ut"]]
     def build_where_conditions(conditions)
       where_args = []
-      where_clause = conditions.sort_by { |k, v| k.to_s }.map { |k, v| where_args << v; "#{k} = ?" }.join(" AND ")
-      return where_clause, where_args
+      where_clause = conditions.sort.map do |k, v|
+        where_args << v
+        "#{k} = ?"
+      end.join(" AND ")
+      [where_clause, where_args]
     end
 
     def available?
@@ -213,24 +212,18 @@ module CanvasCassandra
     end
 
     def keyspace
-      db.keyspace.to_s.dup.force_encoding('UTF-8')
+      db.keyspace.to_s.dup.force_encoding("UTF-8")
     end
-    alias :name :keyspace
+    alias_method :name, :keyspace
 
     protected
 
-    def stringify_hash(hash)
-      hash.dup.tap do |new_hash|
-        new_hash.keys.each { |k| new_hash[k.to_s] = new_hash.delete(k) unless k.is_a?(String) }
-      end
-    end
-
     def do_update_record(table_name, primary_key_attrs, changes, ttl_seconds, execute_options: {})
-      primary_key_attrs = stringify_hash(primary_key_attrs)
-      changes = stringify_hash(changes)
+      primary_key_attrs = primary_key_attrs.stringify_keys
+      changes = changes.stringify_keys
       where_clause, where_args = build_where_conditions(primary_key_attrs)
 
-      primary_key_attrs.each do |key, value|
+      primary_key_attrs.each_key do |key|
         if changes[key].is_a?(Array) && !changes[key].first.nil?
           raise ArgumentError, "Cannot change the primary key of a record, attempted to change #{key} #{changes[key].inspect}"
         end
@@ -238,31 +231,34 @@ module CanvasCassandra
 
       deletes, updates = changes.
                          # normalize the values since we accept two formats
-                         map { |key, val| [key, val.is_a?(Array) ? val.last : val] }.
+                         transform_values { |val| val.is_a?(Array) ? val.last : val }.
                          # reject values that are part of the primary key, since those are in the where clause
-                         reject { |key, val| primary_key_attrs.key?(key) }.
+                         except(*primary_key_attrs.keys).
                          # sort, just so the generated cql is deterministic
                          sort_by(&:first).
                          # split changes into updates and deletes
-                         partition { |key, val| val.nil? }
+                         partition { |_key, val| val.nil? }
 
       # inserts and updates in cassandra are equivalent,
       # so no need to differentiate here
-      if updates && !updates.empty?
+      if updates.present?
         args = []
         statement = +"UPDATE #{table_name}"
         if ttl_seconds
           args << ttl_seconds
           statement << " USING TTL ?"
         end
-        update_cql = updates.map { |key, val| args << val; "#{key} = ?" }.join(", ")
+        update_cql = updates.map do |key, val|
+          args << val
+          "#{key} = ?"
+        end.join(", ")
         statement << " SET #{update_cql} WHERE #{where_clause}"
         args.concat where_args
         args.concat [execute_options]
         update(statement, *args)
       end
 
-      if deletes && !deletes.empty?
+      if deletes.present?
         args = []
         delete_cql = deletes.map(&:first).join(", ")
         statement = "DELETE #{delete_cql} FROM #{table_name} WHERE #{where_clause}"

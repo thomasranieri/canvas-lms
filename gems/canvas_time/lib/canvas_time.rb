@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'active_support/all'
+require "active_support/all"
 
 module CanvasTime
   module ClassMethods
-    def _load args
+    def _load(args)
       return super unless args.starts_with?("pre1900:")
 
       # 8 puts us after the colon in "pre1900:"
-      iso8601(args[8..-1])
+      iso8601(args[8..])
     end
   end
 
@@ -43,15 +43,13 @@ module CanvasTime
   end
 
   def self.try_parse(maybe_time, default = nil)
-    begin
-      Time.zone.parse(maybe_time) || default
-    rescue
-      default
-    end
+    Time.zone.parse(maybe_time) || default
+  rescue
+    default
   end
 
   def utc_datetime
-    timestamp = self.getutc
+    timestamp = getutc
     DateTime.civil(timestamp.year,
                    timestamp.month,
                    timestamp.day,

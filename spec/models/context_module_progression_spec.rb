@@ -18,14 +18,12 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe ContextModuleProgression do
   before do
     @course = course_factory(active_all: true)
-    @module = @course.context_modules.create!(:name => "some module")
+    @module = @course.context_modules.create!(name: "some module")
 
-    @user = User.create!(:name => "some name")
+    @user = User.create!(name: "some name")
     @course.enroll_student(@user).accept!
   end
 
@@ -35,18 +33,18 @@ describe ContextModuleProgression do
   end
 
   def setup_modules
-    @assignment = @course.assignments.create!(:title => "some assignment")
-    @tag = @module.add_item({ :id => @assignment.id, :type => 'assignment' })
-    @module.completion_requirements = { @tag.id => { :type => 'must_view' } }
-    @module.workflow_state = 'unpublished'
+    @assignment = @course.assignments.create!(title: "some assignment")
+    @tag = @module.add_item({ id: @assignment.id, type: "assignment" })
+    @module.completion_requirements = { @tag.id => { type: "must_view" } }
+    @module.workflow_state = "unpublished"
     @module.save!
 
-    @module2 = @course.context_modules.create!(:name => "another module")
+    @module2 = @course.context_modules.create!(name: "another module")
     @module2.publish
     @module2.prerequisites = "module_#{@module.id}"
     @module2.save!
 
-    @module3 = @course.context_modules.create!(:name => "another module again")
+    @module3 = @course.context_modules.create!(name: "another module again")
     @module3.publish
     @module3.save!
   end
@@ -56,12 +54,12 @@ describe ContextModuleProgression do
       setup_modules
     end
 
-    it "correctlies ignore already-calculated context_module_prerequisites" do
-      mp = @user.context_module_progressions.create!(:context_module => @module2)
-      mp.workflow_state = 'locked'
+    it "ignores already-calculated context_module_prerequisites correctly" do
+      mp = @user.context_module_progressions.create!(context_module: @module2)
+      mp.workflow_state = "locked"
       mp.save!
-      mp2 = @user.context_module_progressions.create!(:context_module => @module)
-      mp2.workflow_state = 'locked'
+      mp2 = @user.context_module_progressions.create!(context_module: @module)
+      mp2.workflow_state = "locked"
       mp2.save!
 
       expect(ContextModuleProgression.prerequisites_satisfied?(@user, @module2)).to eq true
@@ -83,7 +81,7 @@ describe ContextModuleProgression do
 
     it "is satisfied if dependent on both a published and unpublished module" do
       @module3.prerequisites = "module_#{@module.id}"
-      @module3.prerequisites = [{ :type => "context_module", :id => @module.id, :name => @module.name }, { :type => "context_module", :id => @module2.id, :name => @module2.name }]
+      @module3.prerequisites = [{ type: "context_module", id: @module.id, name: @module.name }, { type: "context_module", id: @module2.id, name: @module2.name }]
       @module3.save!
       @module3.reload
       expect(@module3.prerequisites.count).to eq 2
@@ -92,8 +90,8 @@ describe ContextModuleProgression do
     end
 
     it "skips incorrect prereq hashes" do
-      @module3.prerequisites = [{ :type => "context_module", :id => @module.id },
-                                { :type => "not_context_module", :id => @module2.id, :name => @module2.name }]
+      @module3.prerequisites = [{ type: "context_module", id: @module.id },
+                                { type: "not_context_module", id: @module2.id, name: @module2.name }]
       @module3.save!
 
       expect(@module3.prerequisites.count).to eq 0
@@ -108,62 +106,62 @@ describe ContextModuleProgression do
     end
   end
 
-  context '#evaluate' do
+  context "#evaluate" do
     let(:module_progression) do
-      p = @module.context_module_progressions.create do |p|
-        p.context_module = @module
-        p.user = @user
-        p.current = true
-        p.evaluated_at = 5.minutes.ago
-      end
-      p.workflow_state = 'bogus'
+      p = @module.context_module_progressions.create!(
+        context_module: @module,
+        user: @user,
+        current: true,
+        evaluated_at: 5.minutes.ago
+      )
+      p.workflow_state = "bogus"
       p
     end
 
-    context 'does not evaluate' do
+    context "does not evaluate" do
       before { module_progression.evaluated_at = Time.now }
 
-      it 'when current' do
+      it "when current" do
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).to eq 'bogus'
+        expect(module_progression.workflow_state).to eq "bogus"
       end
 
-      it 'when current and the module has not yet unlocked' do
+      it "when current and the module has not yet unlocked" do
         @module.unlock_at = 10.minutes.from_now
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).to eq 'bogus'
+        expect(module_progression.workflow_state).to eq "bogus"
       end
     end
 
-    context 'does evaluate' do
-      it 'when not current' do
+    context "does evaluate" do
+      it "when not current" do
         module_progression.current = false
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).not_to eq 'bogus'
+        expect(module_progression.workflow_state).not_to eq "bogus"
       end
 
-      it 'when current, but the evaluated_at stamp is missing' do
+      it "when current, but the evaluated_at stamp is missing" do
         module_progression.evaluated_at = nil
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).not_to eq 'bogus'
+        expect(module_progression.workflow_state).not_to eq "bogus"
       end
 
-      it 'when current, but the module has since unlocked' do
+      it "when current, but the module has since unlocked" do
         @module.unlock_at = 1.minute.ago
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).not_to eq 'bogus'
+        expect(module_progression.workflow_state).not_to eq "bogus"
       end
 
-      it 'when current, but the module has been updated' do
+      it "when current, but the module has been updated" do
         module_progression.evaluated_at = 1.minute.ago
         module_progression.evaluate
 
-        expect(module_progression.workflow_state).not_to eq 'bogus'
+        expect(module_progression.workflow_state).not_to eq "bogus"
       end
     end
 
@@ -172,25 +170,25 @@ describe ContextModuleProgression do
       let(:tag) { @module.add_item({ id: assignment.id, type: "assignment" }) }
       let(:min_score) { 90 }
 
-      before(:each) do
+      before do
         @module.update!(completion_requirements: { tag.id => { type: "min_score", min_score: min_score } })
         @submission = assignment.submit_homework(@user, body: "my homework")
       end
 
-      context 'when the score is close enough' do
+      context "when the score is close enough" do
         let(:min_score) { 1 }
         let(:score) { 0.9999999999999999 } # eg 0.3 + 0.3 + 0.3 + 0.1
 
-        it 'evaluates requirement as complete' do
+        it "evaluates requirement as complete" do
           @submission.update!(score: score, posted_at: 1.second.ago)
           progression = @module.context_module_progressions.find_by(user: @user)
-          requirement = { id: tag.id, type: 'min_score', min_score: min_score }
+          requirement = { id: tag.id, type: "min_score", min_score: min_score }
           expect(progression.requirements_met).to include requirement
         end
       end
 
       it "doesn't mark students that haven't submitted as in-progress" do
-        other_student = student_in_course(:course => @course, :active_all => true).user
+        other_student = student_in_course(course: @course, active_all: true).user
         progression = @module.evaluate_for(other_student)
         # yes technically the requirement is "incomplete" if they haven't done anything
         # and the jerk who named the column should feel bad
@@ -228,24 +226,24 @@ describe ContextModuleProgression do
       expect { progression.reload.update_attribute(:updated_at, 10.seconds.from_now) }.to_not raise_error
     end
 
-    it 'raises a stale object error during evaluate' do
+    it "raises a stale object error during evaluate" do
       progression = stale_progression
       expect { progression.evaluate }.to raise_error(ActiveRecord::StaleObjectError)
       expect { progression.reload.evaluate }.to_not raise_error
     end
 
-    it 'does not raise a stale object error during evaluate!' do
+    it "does not raise a stale object error during evaluate!" do
       progression = stale_progression
       expect { progression.evaluate! }.to_not raise_error
     end
 
-    it 'does not raise a stale object error during catastrophic evaluate!' do
+    it "does not raise a stale object error during catastrophic evaluate!" do
       progression = stale_progression
-      allow(progression).to receive(:save).at_least(:once).and_raise(ActiveRecord::StaleObjectError.new(progression, 'Save'))
+      allow(progression).to receive(:save).at_least(:once).and_raise(ActiveRecord::StaleObjectError.new(progression, "Save"))
 
       new_progression = nil
       expect { new_progression = progression.evaluate! }.to_not raise_error
-      expect(new_progression.workflow_state).to eq 'locked'
+      expect(new_progression.workflow_state).to eq "locked"
     end
   end
 
@@ -292,40 +290,40 @@ describe ContextModuleProgression do
 
   it "updates progressions when adding a must_contribute requirement on a topic" do
     @assignment = @course.assignments.create!
-    @tag1 = @module.add_item({ :id => @assignment.id, :type => 'assignment' })
+    @tag1 = @module.add_item({ id: @assignment.id, type: "assignment" })
     @topic = @course.discussion_topics.create!
-    entry = @topic.discussion_entries.create!(:user => @user)
-    @module.completion_requirements = { @tag1.id => { :type => 'must_view' } }
+    @topic.discussion_entries.create!(user: @user)
+    @module.completion_requirements = { @tag1.id => { type: "must_view" } }
 
     progression = @module.evaluate_for(@user)
     expect(progression).to be_unlocked
 
-    @tag2 = @module.add_item({ :id => @topic.id, :type => 'discussion_topic' })
-    @module.update_attribute(:completion_requirements, { @tag1.id => { :type => 'must_view' }, @tag2.id => { :type => 'must_contribute' } })
+    @tag2 = @module.add_item({ id: @topic.id, type: "discussion_topic" })
+    @module.update_attribute(:completion_requirements, { @tag1.id => { type: "must_view" }, @tag2.id => { type: "must_contribute" } })
 
     progression.reload
     expect(progression).to be_started
 
-    expect_any_instantiation_of(@topic).to receive(:recalculate_context_module_actions!).never # doesn't recalculate unless it's a new requirement
-    @module.update_attribute(:completion_requirements, { @tag1.id => { :type => 'must_submit' }, @tag2.id => { :type => 'must_contribute' } })
+    expect_any_instantiation_of(@topic).not_to receive(:recalculate_context_module_actions!) # doesn't recalculate unless it's a new requirement
+    @module.update_attribute(:completion_requirements, { @tag1.id => { type: "must_submit" }, @tag2.id => { type: "must_contribute" } })
   end
 
   context "assignment muting" do
     it "works with muted assignments" do
-      assignment = @course.assignments.create(:title => "some assignment", :points_possible => 100, :submission_types => "online_text_entry")
+      assignment = @course.assignments.create(title: "some assignment", points_possible: 100, submission_types: "online_text_entry")
       assignment.ensure_post_policy(post_manually: true)
-      tag = @module.add_item({ :id => assignment.id, :type => 'assignment' })
-      @module.completion_requirements = { tag.id => { :type => 'min_score', :min_score => 90 } }
+      tag = @module.add_item({ id: assignment.id, type: "assignment" })
+      @module.completion_requirements = { tag.id => { type: "min_score", min_score: 90 } }
       @module.save!
 
       progression = @module.evaluate_for(@user)
       expect(progression).to be_unlocked
 
-      assignment.submit_homework(@user, :body => "blah")
-      assignment.grade_student(@user, :score => 85, :grader => @teacher)
+      assignment.submit_homework(@user, body: "blah")
+      assignment.grade_student(@user, score: 85, grader: @teacher)
       expect(progression.reload).to be_started
       expect(progression.requirements_met).to be_blank
-      assignment.grade_student(@user, :score => 95, :grader => @teacher)
+      assignment.grade_student(@user, score: 95, grader: @teacher)
       expect(progression.reload).to be_started
       expect(progression.requirements_met).to be_blank
 
@@ -334,17 +332,17 @@ describe ContextModuleProgression do
     end
 
     it "completes when the assignment is unmuted after a grade is assigned without a submission" do
-      assignment = @course.assignments.create(:title => "some assignment", :points_possible => 100, :submission_types => "online_text_entry")
+      assignment = @course.assignments.create(title: "some assignment", points_possible: 100, submission_types: "online_text_entry")
       assignment.ensure_post_policy(post_manually: true)
-      tag = @module.add_item({ :id => assignment.id, :type => 'assignment' })
-      @module.completion_requirements = { tag.id => { :type => 'min_score', :min_score => 90 } }
+      tag = @module.add_item({ id: assignment.id, type: "assignment" })
+      @module.completion_requirements = { tag.id => { type: "min_score", min_score: 90 } }
       @module.save!
 
       progression = @module.evaluate_for(@user)
       expect(progression).to be_unlocked
 
       # no submission here
-      assignment.grade_student(@user, :score => 100, :grader => @teacher)
+      assignment.grade_student(@user, score: 100, grader: @teacher)
       expect(progression.reload).to be_started
       expect(progression.requirements_met).to be_blank
 
@@ -353,17 +351,17 @@ describe ContextModuleProgression do
     end
 
     it "works with muted quiz assignments" do
-      quiz = @course.quizzes.create(:title => "some quiz", :quiz_type => "assignment", :scoring_policy => 'keep_highest', :workflow_state => 'available')
+      quiz = @course.quizzes.create(title: "some quiz", quiz_type: "assignment", scoring_policy: "keep_highest", workflow_state: "available")
       quiz.assignment.ensure_post_policy(post_manually: true)
-      tag = @module.add_item({ :id => quiz.id, :type => 'quiz' })
-      @module.completion_requirements = { tag.id => { :type => 'min_score', :min_score => 90 } }
+      tag = @module.add_item({ id: quiz.id, type: "quiz" })
+      @module.completion_requirements = { tag.id => { type: "min_score", min_score: 90 } }
       @module.save!
 
       progression = @module.evaluate_for(@user)
       expect(progression).to be_unlocked
 
       quiz_sub = quiz.generate_submission(@user)
-      quiz_sub.update(:score => 100, :workflow_state => 'complete', :submission_data => nil)
+      quiz_sub.update(score: 100, workflow_state: "complete", submission_data: nil)
       quiz_sub.with_versioning(&:save)
       expect(progression.reload).to be_started
 
@@ -372,23 +370,23 @@ describe ContextModuleProgression do
     end
 
     it "works with muted discussion assignments" do
-      topic = @course.discussion_topics.create(:title => "some topic")
-      assignment = assignment_model(:course => @course, :points_possible => 100)
+      topic = @course.discussion_topics.create(title: "some topic")
+      assignment = assignment_model(course: @course, points_possible: 100)
       topic.assignment = assignment
       topic.save!
       assignment.reload
 
       assignment.ensure_post_policy(post_manually: true)
-      tag = @module.add_item({ :id => topic.id, :type => 'discussion_topic' })
-      @module.completion_requirements = { tag.id => { :type => 'min_score', :min_score => 90 } }
+      tag = @module.add_item({ id: topic.id, type: "discussion_topic" })
+      @module.completion_requirements = { tag.id => { type: "min_score", min_score: 90 } }
       @module.save!
 
       progression = @module.evaluate_for(@user)
       expect(progression).to be_unlocked
 
-      entry = topic.reply_from(:user => @user, :text => "entry")
+      topic.reply_from(user: @user, text: "entry")
       expect(progression.reload).to be_started
-      assignment.grade_student(@user, :score => 100, :grader => @teacher)
+      assignment.grade_student(@user, score: 100, grader: @teacher)
       expect(progression.reload).to be_started
 
       assignment.unmute!

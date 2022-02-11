@@ -111,16 +111,16 @@ module Lti
   #       }
   #     }
   class OriginalityReportsApiController < ApplicationController
-    include Lti::Ims::AccessTokenHelper
+    include Lti::IMS::AccessTokenHelper
 
-    ORIGINALITY_REPORT_SERVICE = 'vnd.Canvas.OriginalityReport'.freeze
+    ORIGINALITY_REPORT_SERVICE = "vnd.Canvas.OriginalityReport"
 
     SERVICE_DEFINITIONS = [
       {
         id: ORIGINALITY_REPORT_SERVICE,
-        endpoint: 'api/lti/assignments/{assignment_id}/submissions/{submission_id}/originality_report',
-        format: ['application/json'].freeze,
-        action: ['POST', 'PUT', 'GET'].freeze
+        endpoint: "api/lti/assignments/{assignment_id}/submissions/{submission_id}/originality_report",
+        format: ["application/json"].freeze,
+        action: %w[POST PUT GET].freeze
       }.freeze
     ].freeze
 
@@ -243,7 +243,8 @@ module Lti
     #
     # @returns OriginalityReport
     def update
-      if @report.update(update_report_params)
+      updates = { error_message: nil }.merge(update_report_params)
+      if @report.update(updates)
         OriginalityReport.delay_if_production.copy_to_group_submissions!(report_id: @report.id, user_id: @report.submission.user_id)
         render json: api_json(@report, @current_user, session)
       else
@@ -278,28 +279,21 @@ module Lti
     end
 
     def create_attributes
-      [
-        :originality_score,
-        :error_message,
-        :file_id,
-        :originality_report_file_id,
-        :originality_report_url,
-        :workflow_state
-      ].freeze
+      (update_attributes + [:file_id]).freeze # rubocop:disable Rails/ActiveRecordAliases not ActiveRecord::Base#update_attributes
     end
 
     def update_attributes
-      [
-        :error_message,
-        :originality_report_file_id,
-        :originality_report_url,
-        :originality_score,
-        :workflow_state
+      %i[
+        error_message
+        originality_report_file_id
+        originality_report_url
+        originality_score
+        workflow_state
       ].freeze
     end
 
     def lti_link_attributes
-      [tool_setting: %i(resource_url resource_type_code)].freeze
+      [tool_setting: %i[resource_url resource_type_code]].freeze
     end
 
     def assignment
@@ -307,13 +301,11 @@ module Lti
     end
 
     def submission
-      @_submission ||= begin
-        if params[:file_id].present?
-          AttachmentAssociation.find_by(attachment_id: params[:file_id])&.context
-        else
-          Submission.active.find(params[:submission_id])
-        end
-      end
+      @_submission ||= if params[:file_id].present?
+                         AttachmentAssociation.find_by(attachment_id: params[:file_id])&.context
+                       else
+                         Submission.active.find(params[:submission_id])
+                       end
     end
 
     def attachment
@@ -346,27 +338,25 @@ module Lti
 
     def update_report_params
       @_update_report_params ||= begin
-        report_attributes = params.require(:originality_report).permit(update_attributes)
+        report_attributes = params.require(:originality_report).permit(update_attributes) # rubocop:disable Rails/ActiveRecordAliases not ActiveRecord::Base#update_attributes
         report_attributes[:lti_link_attributes] = lti_link_params
         report_attributes
       end
     end
 
     def lti_link_params
-      @_lti_link_params ||= begin
-        if lti_link_settings&.dig('tool_setting', 'resource_type_code')
-          lti_link_settings['tool_setting'].merge({
-                                                    id: @report&.lti_link&.id,
-                                                    product_code: tool_proxy.product_family.product_code,
-                                                    vendor_code: tool_proxy.product_family.vendor_code
-                                                  })
-        else
-          {
-            id: @report&.lti_link&.id,
-            _destroy: true
-          }
-        end
-      end
+      @_lti_link_params ||= if lti_link_settings&.dig("tool_setting", "resource_type_code")
+                              lti_link_settings["tool_setting"].merge({
+                                                                        id: @report&.lti_link&.id,
+                                                                        product_code: tool_proxy.product_family.product_code,
+                                                                        vendor_code: tool_proxy.product_family.vendor_code
+                                                                      })
+                            else
+                              {
+                                id: @report&.lti_link&.id,
+                                _destroy: true
+                              }
+                            end
     end
 
     def lti_link_settings
@@ -378,11 +368,11 @@ module Lti
     end
 
     def current_lti_link
-      @report&.lti_link&.as_json(only: [:resource_url, :resource_type_code])&.tap { |v| v['tool_setting'] = v.delete 'link' }
+      @report&.lti_link&.as_json(only: [:resource_url, :resource_type_code])&.tap { |v| v["tool_setting"] = v.delete "link" }
     end
 
     def attachment_required?
-      !submission.assignment.submission_types.include?('online_text_entry')
+      !submission.assignment.submission_types.include?("online_text_entry")
     end
 
     def attachment_in_context
@@ -403,7 +393,7 @@ module Lti
       raise ActiveRecord::RecordNotFound if submission.blank?
 
       @report = OriginalityReport.find_by(id: params[:id])
-      # Note: we could end up looking up by file_id, attachment: nil or attempt
+      # NOTE: we could end up looking up by file_id, attachment: nil or attempt
       # even in the `update` or `show` endpoints, if they give us a bogus report id :/
       @report ||= report_by_attachment(attachment)
       return if params[:originality_report].blank? || attachment.present?

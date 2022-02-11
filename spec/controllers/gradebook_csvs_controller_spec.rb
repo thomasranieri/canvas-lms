@@ -17,8 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe GradebookCsvsController do
   before :once do
     course_with_teacher active_all: true
@@ -37,8 +35,8 @@ describe GradebookCsvsController do
       post :create, params: { course_id: @course.id }, format: :json
       json = json_parse(response.body)
       expect(response).to be_successful
-      expect(json).to have_key 'attachment_id'
-      expect(json).to have_key 'progress_id'
+      expect(json).to have_key "attachment_id"
+      expect(json).to have_key "progress_id"
     end
 
     it "creates the attachment and progress" do
@@ -46,8 +44,8 @@ describe GradebookCsvsController do
 
       post :create, params: { course_id: @course.id }, format: :json
       json = json_parse(response.body)
-      expect(Attachment.find json['attachment_id']).not_to be_nil
-      expect(Progress.find json['progress_id']).not_to be_nil
+      expect(Attachment.find(json["attachment_id"])).not_to be_nil
+      expect(Progress.find(json["progress_id"])).not_to be_nil
     end
 
     it "accepts an assignment_order param to be passed to the CSV exporter" do
@@ -71,7 +69,7 @@ describe GradebookCsvsController do
 
       post :create, params: { course_id: @course.id }, format: :json
       json = json_parse(response.body)
-      attachment = Attachment.find(json['attachment_id'])
+      attachment = Attachment.find(json["attachment_id"])
       expect(File.basename(attachment.filename.split("-").last, ".csv")).to eq("ENG__101")
     end
 
@@ -82,7 +80,7 @@ describe GradebookCsvsController do
         post :create, params: { course_id: @course.id }, format: :json
       end
 
-      filename = Attachment.find(json_parse(response.body)['attachment_id']).filename
+      filename = Attachment.find(json_parse(response.body)["attachment_id"]).filename
       expect(/^#{now.strftime('%FT%H%M')}_Grades/).to match(filename)
     end
   end

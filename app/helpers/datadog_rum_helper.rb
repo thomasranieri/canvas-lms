@@ -64,7 +64,7 @@ module DatadogRumHelper
   end
 
   def randomly_include?
-    self.random <= sample_rate
+    random <= sample_rate
   end
 
   def sample_rate
@@ -72,7 +72,7 @@ module DatadogRumHelper
   end
 
   def datadog_rum_config
-    @datadog_rum_config ||= Canvas::DynamicSettings.find("datadog-rum", tree: "config", service: "canvas")
+    @datadog_rum_config ||= DynamicSettings.find("datadog-rum", tree: "config", service: "canvas")
   end
 
   def complete_config?

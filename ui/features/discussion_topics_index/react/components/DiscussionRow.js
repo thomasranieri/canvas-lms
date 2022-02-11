@@ -111,6 +111,7 @@ const dropTarget = {
 export class DiscussionRow extends Component {
   static propTypes = {
     canPublish: bool.isRequired,
+    canReadAsAdmin: bool.isRequired,
     cleanDiscussionFocus: func.isRequired,
     connectDragPreview: func,
     connectDragSource: func,
@@ -264,7 +265,30 @@ export class DiscussionRow extends Component {
     return result
   }
 
+  isInaccessibleDueToAnonymity = () => {
+    return (
+      (this.props.discussion.anonymous_state === 'full_anonymity' ||
+        this.props.discussion.anonymous_state === 'partial_anonymity') &&
+      !ENV.discussion_anonymity_enabled
+    )
+  }
+
   getAvailabilityString = () => {
+    if (this.isInaccessibleDueToAnonymity()) {
+      return (
+        <Text size="small">
+          {this.props.canReadAsAdmin
+            ? [
+                I18n.t('Enable '),
+                <Link href={ENV.FEATURE_FLAGS_URL} key={this.props.discussion.id} target="_blank">
+                  {I18n.t('Discussions/Announcements Redesign')}
+                </Link>,
+                I18n.t(' to view anonymous discussion')
+              ]
+            : I18n.t('Unavailable')}
+        </Text>
+      )
+    }
     const assignment = this.props.discussion.assignment
 
     const availabilityBegin =
@@ -309,7 +333,8 @@ export class DiscussionRow extends Component {
 
   readCount = () => {
     const readCount =
-      this.props.discussion.discussion_subentry_count > 0 ? (
+      this.props.discussion.discussion_subentry_count > 0 &&
+      !this.isInaccessibleDueToAnonymity() ? (
         <UnreadBadge
           key={`Badge_${this.props.discussion.id}`}
           unreadCount={this.props.discussion.unread_count}
@@ -353,33 +378,34 @@ export class DiscussionRow extends Component {
     }
   }
 
-  subscribeButton = () => (
-    <ToggleIcon
-      key={`Subscribe_${this.props.discussion.id}`}
-      toggled={this.props.discussion.subscribed}
-      OnIcon={
-        <Text color="success">
-          <IconBookmarkSolid
-            title={I18n.t('Unsubscribe from %{title}', {title: this.props.discussion.title})}
-          />
-        </Text>
-      }
-      OffIcon={
-        <Text color="brand">
-          <IconBookmarkLine
-            title={I18n.t('Subscribe to %{title}', {title: this.props.discussion.title})}
-          />
-        </Text>
-      }
-      onToggleOn={() => this.props.toggleSubscriptionState(this.props.discussion)}
-      onToggleOff={() => this.props.toggleSubscriptionState(this.props.discussion)}
-      disabled={this.props.discussion.subscription_hold !== undefined}
-      className="subscribe-button"
-    />
-  )
+  subscribeButton = () =>
+    !this.isInaccessibleDueToAnonymity() && (
+      <ToggleIcon
+        key={`Subscribe_${this.props.discussion.id}`}
+        toggled={this.props.discussion.subscribed}
+        OnIcon={
+          <Text color="success">
+            <IconBookmarkSolid
+              title={I18n.t('Unsubscribe from %{title}', {title: this.props.discussion.title})}
+            />
+          </Text>
+        }
+        OffIcon={
+          <Text color="brand">
+            <IconBookmarkLine
+              title={I18n.t('Subscribe to %{title}', {title: this.props.discussion.title})}
+            />
+          </Text>
+        }
+        onToggleOn={() => this.props.toggleSubscriptionState(this.props.discussion)}
+        onToggleOff={() => this.props.toggleSubscriptionState(this.props.discussion)}
+        disabled={this.props.discussion.subscription_hold !== undefined}
+        className="subscribe-button"
+      />
+    )
 
   publishButton = () =>
-    this.props.canPublish ? (
+    this.props.canPublish && !this.isInaccessibleDueToAnonymity() ? (
       <ToggleIcon
         key={`Publish_${this.props.discussion.id}`}
         toggled={this.props.discussion.published}
@@ -499,7 +525,7 @@ export class DiscussionRow extends Component {
       )
     }
 
-    if (this.props.onMoveDiscussion) {
+    if (this.props.onMoveDiscussion && !this.isInaccessibleDueToAnonymity()) {
       menuList.push(
         this.createMenuItem(
           'moveTo',
@@ -512,7 +538,7 @@ export class DiscussionRow extends Component {
       )
     }
 
-    if (this.props.displayDuplicateMenuItem) {
+    if (this.props.displayDuplicateMenuItem && !this.isInaccessibleDueToAnonymity()) {
       menuList.push(
         this.createMenuItem(
           'duplicate',
@@ -525,7 +551,7 @@ export class DiscussionRow extends Component {
       )
     }
 
-    if (this.props.DIRECT_SHARE_ENABLED) {
+    if (this.props.DIRECT_SHARE_ENABLED && !this.isInaccessibleDueToAnonymity()) {
       menuList.push(
         this.createMenuItem(
           'sendTo',
@@ -549,7 +575,7 @@ export class DiscussionRow extends Component {
     }
 
     // This returns an empty struct if assignment_id is falsey
-    if (this.props.displayMasteryPathsMenuItem) {
+    if (this.props.displayMasteryPathsMenuItem && !this.isInaccessibleDueToAnonymity()) {
       menuList.push(
         this.createMenuItem(
           'masterypaths',
@@ -559,7 +585,7 @@ export class DiscussionRow extends Component {
       )
     }
 
-    if (this.props.discussionTopicMenuTools.length > 0) {
+    if (this.props.discussionTopicMenuTools.length > 0 && !this.isInaccessibleDueToAnonymity()) {
       this.props.discussionTopicMenuTools.forEach(menuTool => {
         menuList.push(
           <Menu.Item
@@ -621,10 +647,21 @@ export class DiscussionRow extends Component {
       return null
     }
 
+    let anonText = null
+    if (this.props.discussion.anonymous_state === 'full_anonymity') {
+      anonText = I18n.t('Anonymous Discussion | ')
+    } else if (this.props.discussion.anonymous_state === 'partial_anonymity') {
+      anonText = I18n.t('Partially Anonymous Discussion | ')
+    }
+
+    const textColor = this.isInaccessibleDueToAnonymity() ? 'secondary' : null
+
     return (
       <SectionsTooltip
         totalUserCount={this.props.discussion.user_count}
         sections={this.props.discussion.sections}
+        prefix={anonText}
+        textColor={textColor}
       />
     )
   }
@@ -636,17 +673,26 @@ export class DiscussionRow extends Component {
     const linkUrl = this.props.discussion.html_url
     return (
       <Heading as="h3" level="h4" margin="0">
-        <Link
-          href={linkUrl}
-          ref={refFn}
-          data-testid={`discussion-link-${this.props.discussion.id}`}
-        >
-          {this.props.discussion.read_state !== 'read' && (
-            <ScreenReaderContent>{I18n.t('unread,')}</ScreenReaderContent>
-          )}
-          <span aria-hidden="true">{this.props.discussion.title}</span>
-          <ScreenReaderContent>{this.getAccessibleTitle()}</ScreenReaderContent>
-        </Link>
+        {this.isInaccessibleDueToAnonymity() ? (
+          <>
+            <Text color="secondary" data-testid={`discussion-title-${this.props.discussion.id}`}>
+              <span aria-hidden="true">{this.props.discussion.title}</span>
+            </Text>
+            <ScreenReaderContent>{this.getAccessibleTitle()}</ScreenReaderContent>
+          </>
+        ) : (
+          <Link
+            href={linkUrl}
+            ref={refFn}
+            data-testid={`discussion-link-${this.props.discussion.id}`}
+          >
+            {this.props.discussion.read_state !== 'read' && (
+              <ScreenReaderContent>{I18n.t('unread,')}</ScreenReaderContent>
+            )}
+            <span aria-hidden="true">{this.props.discussion.title}</span>
+            <ScreenReaderContent>{this.getAccessibleTitle()}</ScreenReaderContent>
+          </Link>
+        )}
       </Heading>
     )
   }
@@ -657,9 +703,12 @@ export class DiscussionRow extends Component {
       return null
     }
     return (
-      <div className="ic-item-row__content-col ic-discussion-row__content last-reply-at">
+      <Text
+        className="ic-item-row__content-col ic-discussion-row__content last-reply-at"
+        color={this.isInaccessibleDueToAnonymity() ? 'secondary' : null}
+      >
         {I18n.t('Last post at %{date}', {date: datetimeString})}
-      </div>
+      </Text>
     )
   }
 
@@ -857,6 +906,7 @@ const mapState = (state, ownProps) => {
     discussion.permissions.update
   const propsFromState = {
     canPublish: state.permissions.publish,
+    canReadAsAdmin: state.permissions.read_as_admin,
     contextType: state.contextType,
     discussionTopicMenuTools: state.discussionTopicMenuTools,
     displayDeleteMenuItem:

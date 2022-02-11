@@ -111,7 +111,12 @@ export default class DatetimeField {
     this.debouncedSRFME = debounce($.screenReaderFlashMessageExclusive, 1000)
 
     // process initial value
-    this.setFromValue()
+    if (options.time) {
+      this.parseValue(options.time)
+      this.update()
+    } else {
+      this.setFromValue()
+    }
   }
 
   processTimeOptions(options) {
@@ -139,6 +144,12 @@ export default class DatetimeField {
   addDatePicker(options) {
     this.$field.wrap('<div class="input-append" />')
     const $wrapper = this.$field.parent('.input-append')
+    // See if we were given an ISO initial value so we don't have to try to parse
+    const initialValue = this.$field.attr('data-initial-value')
+    if (initialValue) {
+      this.$field.removeAttr('data-initial-value')
+      this.$field.data('inputdate', new Date(initialValue))
+    }
     if (!this.isReadonly()) {
       const datepickerOptions = $.extend(
         {},
@@ -183,7 +194,13 @@ export default class DatetimeField {
   setDate(date) {
     if (!this.showDate) {
       this.implicitDate = date
-      this.$field.data('inputdate', date.toISOString())
+      // replace the date portion of what we have with the date we just received
+      // Current computed value is in the 'iso8601' data as an ISO string, so
+      // let's mash the time from that with the new date we're being given,
+      const newDate = date.toISOString().substr(0, 10)
+      const oldTime = (this.$field.data('iso8601') || date.toISOString()).substr(10)
+      const timeWithNewDate = `${newDate}${oldTime}`
+      this.$field.data('inputdate', timeWithNewDate)
       return this.setFromValue()
     } else {
       return this.setFormattedDatetime(date, DATE_FORMAT_OPTIONS)
@@ -237,13 +254,17 @@ export default class DatetimeField {
     }
   }
 
-  parseValue() {
-    if (this.$field.data('inputdate')) {
-      this.datetime = new Date(this.$field.data('inputdate'))
+  parseValue(val) {
+    if (typeof val === 'undefined' && this.$field.data('inputdate')) {
+      const inputdate = this.$field.data('inputdate')
+      this.datetime = inputdate instanceof Date ? inputdate : new Date(inputdate)
       this.blank = false
       this.invalid = this.datetime === null
       this.$field.data('inputdate', null)
     } else {
+      if (val) {
+        this.setFormattedDatetime(val, TIME_FORMAT_OPTIONS)
+      }
       const value = this.normalizeValue(this.$field.val())
       this.datetime = tz.parse(value)
       this.blank = !value
@@ -292,7 +313,7 @@ export default class DatetimeField {
     })
 
     if (this.$hiddenInput) {
-      this.$hiddenInput.val(this.fudged)
+      this.$hiddenInput.val(this.fudged?.toISOString())
     }
 
     // date_fields and time_fields don't have timepicker data fields

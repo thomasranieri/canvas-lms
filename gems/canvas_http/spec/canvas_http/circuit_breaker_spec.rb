@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
+require "spec_helper"
 
 describe CanvasHttp::CircuitBreaker do
   let(:redis_client_klass) do
@@ -57,7 +57,7 @@ describe CanvasHttp::CircuitBreaker do
       end
 
       def setnx(key, value)
-        @state[key] = value unless @state.keys.include?(key)
+        @state[key] = value unless @state.key?(key)
       end
 
       def setex(key, ttl, value)
@@ -73,14 +73,14 @@ describe CanvasHttp::CircuitBreaker do
 
   let(:test_redis) { redis_client_klass.new }
 
-  before(:each) do
+  before do
     @old_redis = CanvasHttp::CircuitBreaker.redis
     test_redis.reset!
     CanvasHttp::CircuitBreaker.redis = -> { test_redis }
     CanvasHttp.logger = NullLogger.new
   end
 
-  after(:each) do
+  after do
     CanvasHttp::CircuitBreaker.redis = @old_redis
     CanvasHttp::CircuitBreaker.threshold = nil
     CanvasHttp.logger = nil
@@ -116,7 +116,7 @@ describe CanvasHttp::CircuitBreaker do
   end
 
   it "uses default values if the configuration block is broken" do
-    CanvasHttp::CircuitBreaker.threshold = ->(domain) { nil }
+    CanvasHttp::CircuitBreaker.threshold = proc {}
     expect(CanvasHttp::CircuitBreaker.threshold("some.domain.com")).to eq(CanvasHttp::CircuitBreaker::DEFAULT_THRESHOLD)
   end
 end

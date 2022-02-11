@@ -28,7 +28,11 @@
   "announcement_list_da155734": { "message": "รายการประกาศ" },
   "announcements_a4b8ed4a": { "message": "ประกาศ" },
   "apply_781a2546": { "message": "ปรับใช้" },
+  "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+    "message": "ปรับใช้การเปลี่ยนแปลงกับส่วนรายการทั้งหมดปุ่มและไอคอนนี้ในบทเรียนนี้"
+  },
   "apps_54d24a47": { "message": "แอพ" },
+  "arrows_464a3e54": { "message": "ลูกศร" },
   "aspect_ratio_will_be_preserved_cb5fdfb8": {
     "message": "สัดส่วนจะถูกรักษาไว้ตามเดิม"
   },
@@ -37,16 +41,16 @@
   "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
     "message": "ไม่รองรับบันทึกเสียงและภาพ กรุณาใช้เบราเซอร์อื่น"
   },
+  "audio_options_feb58e2c": { "message": "ตัวเลือกเสียง" },
+  "audio_options_tray_33a90711": { "message": "ถาดตัวเลือกเสียง" },
   "audio_player_for_title_20cc70d": {
     "message": "เครื่องเล่นเสียงสำหรับ { title }"
   },
   "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
     "message": "มีเนื้อหาบันทึกอัตโนมัติ ต้องการโหลดเนื้อหาบันทึกอัตโนมัติแทนหรือไม่"
   },
-  "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-    "message": "เปิดอัตโนมัติในการแสดงตัวอย่างแบบ in-line (แสดงตัวอย่างหลังจากบันทึกแล้วเท่านั้น)"
-  },
   "available_folders_694d0436": { "message": "โฟลเดอร์ที่ใช้ได้" },
+  "basic_554cdc0a": { "message": "พื้นฐาน" },
   "below_81d4dceb": { "message": "ด้านล่าง" },
   "bottom_third_5f5fec1d": { "message": "อันดับที่สามจากด้านล่าง" },
   "button_color_608a0242": { "message": "สีปุ่ม" },
@@ -85,6 +89,9 @@
     "message": "ปิดเมนูหรือกล่องโต้ตอบ และนำคุณกลับไปที่โปรแกรมแก้ไข"
   },
   "close_d634289d": { "message": "ปิด" },
+  "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+    "message": "ไฟล์คำบรรยายแบบปิดได้จะต้องมีขนาดน้อยกว่า { maxKb } kb"
+  },
   "closed_captions_subtitles_e6aaa016": { "message": "คำบรรยายแบบซ่อนได้" },
   "collaborations_5c56c15f": { "message": "การประสานความร่วมมือ" },
   "collapse_to_hide_types_1ab46d2e": { "message": "ย่อเพื่อซ่อน { types }" },
@@ -114,6 +121,8 @@
   "creative_commons_license_725584ae": {
     "message": "สิทธิ์ใช้งาน Creative Commons:"
   },
+  "crop_image_807ebb08": { "message": "ครอปภาพ" },
+  "current_image_f16c249c": { "message": "ภาพปัจจุบัน" },
   "custom_6979cd81": { "message": "กำหนดเอง" },
   "date_added_ed5ad465": { "message": "วันที่ที่เพิ่ม" },
   "decorative_image_3c28aa7d": { "message": "ภาพตกแต่ง" },
@@ -124,14 +133,15 @@
   "default_numerical_ordered_list_48dd3548": {
     "message": "รายการที่จัดลำดับแบบมีตัวเลขกำกับเริ่มต้น"
   },
+  "delimiters_4db4840d": { "message": "ตัวคั่น" },
   "describe_the_image_e65d2e32": { "message": "(ระบุรายละเอียดภาพ)" },
   "describe_the_video_2fe8f46a": { "message": "(ระบุรายละเอียดวิดีโอ)" },
   "details_98a31b68": { "message": "รายละเอียด" },
+  "diamond_b8dfe7ae": { "message": "เพชร" },
+  "dimension_type_55c83e4e": { "message": "ประเภทขนาด" },
   "dimensions_45ddb7b7": { "message": "ขนาด" },
   "directionality_26ae9e08": { "message": "ทิศทาง" },
-  "disable_in_line_preview_2a675175": {
-    "message": "ปิดในส่วนแสดงตัวอย่างแบบ In-Line"
-  },
+  "directly_edit_latex_b7e9235b": { "message": "แก้ไข LaTeX โดยตรง" },
   "discussions_a5f96392": { "message": "การพูดคุย" },
   "discussions_index_6c36ced": { "message": "ดัชนีการพูดคุย" },
   "display_options_315aba85": { "message": "แสดงตัวเลือก" },
@@ -168,6 +178,7 @@
     "message": "กรอกอย่างน้อย 3 ตัวอักษรเพื่อค้นหา"
   },
   "equation_1c5ac93c": { "message": "สมการ" },
+  "equation_editor_39fbc3f1": { "message": "ตัวแก้ไขสมการ" },
   "expand_preview_by_default_2abbf9f8": {
     "message": "ขยายตัวอย่างเป็นค่าเริ่มต้น"
   },
@@ -207,6 +218,7 @@
     "message": "ไปที่แถบเครื่องมือของโปรแกรมแก้ไข"
   },
   "grades_a61eba0a": { "message": "เกรด" },
+  "greek_65c5b3f7": { "message": "กรีก" },
   "group_documents_8bfd6ae6": { "message": "เอกสารของกลุ่ม" },
   "group_files_4324f3df": { "message": "ไฟล์ของกลุ่ม" },
   "group_files_82e5dcdb": { "message": "ไฟล์ของกลุ่ม" },
@@ -244,6 +256,7 @@
   "invalid_file_type_881cc9b2": { "message": "ประเภทไฟล์ไม่ถูกต้อง" },
   "invalid_url_cbde79f": { "message": "URL ไม่ถูกต้อง" },
   "keyboard_shortcuts_ed1844bd": { "message": "ชอร์ตคัทแป้นพิมพ์" },
+  "language_arts_35b79a8b": { "message": "ศิลปศาสตร์ด้านภาษา" },
   "large_9c5e80e7": { "message": "ใหญ่" },
   "left_to_right_e9b4fd06": { "message": "ซ้ายไปขวา" },
   "link_7262adec": { "message": "ลิงค์" },
@@ -257,17 +270,23 @@
   "loading_failed_e6a9d8ef": { "message": "โหลดล้มเหลว..." },
   "loading_folders_d8b5869e": { "message": "กำลังโหลดโฟลเดอร์" },
   "loading_please_wait_d276220a": { "message": "กำลังโหลด กรุณารอสักครู่" },
+  "loading_preview_9f077aa1": { "message": "กำลังโหลดตัวอย่าง" },
   "locked_762f138b": { "message": "ล็อคแล้ว" },
+  "math_ede93050": { "message": "คณิตศาสตร์" },
   "media_af190855": { "message": "มีเดีย" },
   "medium_5a8e9ead": { "message": "ปานกลาง" },
   "middle_27dc1d5": { "message": "ตรงกลาง" },
+  "misc_3b692ea7": { "message": "เบ็ดเตล็ด" },
   "miscellaneous_e9818229": { "message": "เบ็ดเตล็ด" },
   "modules_c4325335": { "message": "หน่วยการเรียน" },
+  "multi_color_image_63d7372f": { "message": "ภาพหลายสี" },
+  "must_be_at_least_percentage_22e373b6": {
+    "message": "จะต้องเท่ากับอย่างน้อย { percentage }%"
+  },
   "must_be_at_least_width_x_height_px_41dc825e": {
     "message": "จะต้องเท่ากับอย่างน้อย { width } x { height }px"
   },
   "my_files_2f621040": { "message": "ไฟล์ของฉัน" },
-  "my_images_427f9b0c": { "message": "ภาพของฉัน" },
   "name_1aed4a1b": { "message": "ชื่อ" },
   "navigate_through_the_menu_or_toolbar_415a4e50": {
     "message": "ดูรายการเมนูหรือแถบเครื่องมือ"
@@ -286,6 +305,7 @@
     "message": "ไม่พบผลลัพธ์สำหรับ { term }"
   },
   "none_3b5e34d2": { "message": "ไม่มี" },
+  "none_selected_b93d56d2": { "message": "ไม่ได้เลือกรายการใด" },
   "octagon_e48be9f": { "message": "แปดเหลี่ยม" },
   "open_this_keyboard_shortcuts_dialog_9658b83a": {
     "message": "เปิดกล่องโต้ตอบชอร์ตคัทแป้นพิมพ์นี้"
@@ -293,6 +313,7 @@
   "open_title_application_fd624fc5": {
     "message": "เปิดแอพพลิเคชั่น { title }"
   },
+  "operators_a2ef9a93": { "message": "ผู้ดำเนินการ" },
   "options_3ab0ea65": { "message": "ตัวเลือก" },
   "ordered_and_unordered_lists_cfadfc38": {
     "message": "รายการที่จัดลำดับและไม่ได้จัดลำดับ"
@@ -305,7 +326,13 @@
   },
   "pages_e5414c2c": { "message": "เพจ" },
   "paragraph_5e5ad8eb": { "message": "ย่อหน้า" },
+  "pentagon_17d82ea3": { "message": "ห้าเหลี่ยม" },
   "people_b4ebb13c": { "message": "บุคคล" },
+  "percentage_34ab7c2c": { "message": "เปอร์เซ็นต์" },
+  "percentage_must_be_a_number_8033c341": {
+    "message": "เปอร์เซ็นต์จะต้องเป็นตัวเลข"
+  },
+  "pixels_52ece7d1": { "message": "พิกเซล" },
   "posted_when_a578f5ab": { "message": "โพสต์เมื่อ: { when }" },
   "preformatted_d0670862": { "message": "กำหนดรูปแบบไว้ล่วงหน้า" },
   "pretty_html_editor_28748756": { "message": "HTML Editor ที่สวยงาม" },
@@ -322,6 +349,7 @@
   "raw_html_editor_e3993e41": { "message": "Raw HTML Editor" },
   "record_7c9448b": { "message": "บันทึก" },
   "record_upload_media_5fdce166": { "message": "บันทึก/อัพโหลดสื่อ" },
+  "relationships_6602af70": { "message": "ความสัมพันธ์" },
   "remove_link_d1f2f4d0": { "message": "ลบลิงค์" },
   "resize_ec83d538": { "message": "ปรับขนาด" },
   "restore_auto_save_deccd84b": {
@@ -336,18 +364,21 @@
   "saved_buttons_and_icons_8278eed2": { "message": "ปุ่มและไอคอนที่บันทึกไว้" },
   "search_280d00bd": { "message": "ค้นหา" },
   "search_term_b2d2235": { "message": "คำค้นหา" },
+  "select_crop_shape_d441feeb": { "message": "เลือกรูปทรงการครอป" },
   "select_language_7c93a900": { "message": "เลือกภาษา" },
   "selected_274ce24f": { "message": "เลือกแล้ว" },
   "shift_o_to_open_the_pretty_html_editor_55ff5a31": {
     "message": "Shift-O เพื่อเปิด HTML Editor ที่สวยงาม"
   },
+  "show_audio_options_b489926b": { "message": "แสดงตัวเลือกเสียง" },
   "show_embed_options_ef8d7ef": { "message": "แสดงตัวเลือกในการผนวก" },
   "show_image_options_1e2ecc6b": { "message": "แสดงตัวเลือกสำหรับภาพ" },
   "show_link_options_545338fd": { "message": "แสดงตัวเลือกสำหรับลิงค์" },
   "show_video_options_6ed3721a": { "message": "แสดงตัวเลือกสำหรับวิดีโอ" },
+  "single_color_image_4e5d4dbc": { "message": "ภาพสีเดียว" },
   "size_b30e1077": { "message": "ขนาด" },
-  "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-    "message": "ขนาด { file } มากกว่าขนาดไฟล์สูงสุดที่ { max } MB"
+  "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+    "message": "ขนาดของไฟล์คำบรรยายจะต้องมากกว่าขนาดสูงสุดที่อนุญาตที่ { max } kb"
   },
   "small_b070434a": { "message": "เล็ก" },
   "something_went_wrong_89195131": { "message": "มีบางอย่างผิดปกติ" },

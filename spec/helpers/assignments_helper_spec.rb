@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe AssignmentsHelper do
   include TextHelper
   include AssignmentsHelper
@@ -36,7 +34,7 @@ describe AssignmentsHelper do
     end
 
     it "is true if the assignment already has submissions and is unpublished" do
-      @assignment.submissions.find_by!(user_id: @student).update!(submission_type: 'online_url')
+      @assignment.submissions.find_by!(user_id: @student).update!(submission_type: "online_url")
       expect(assignment_publishing_enabled?(@assignment, @teacher)).to be_truthy
     end
 
@@ -59,7 +57,7 @@ describe AssignmentsHelper do
 
     it "renders no due date when none present" do
       @assignment.due_at = nil
-      expect(due_at(@assignment, @teacher)).to eq 'No Due Date'
+      expect(due_at(@assignment, @teacher)).to eq "No Due Date"
     end
 
     context "with multiple due dates" do
@@ -71,7 +69,7 @@ describe AssignmentsHelper do
       end
 
       it "renders multiple dates" do
-        expect(due_at(@assignment, @teacher)).to eq 'Multiple Due Dates'
+        expect(due_at(@assignment, @teacher)).to eq "Multiple Due Dates"
       end
 
       it "renders override date when it applies to all assignees" do
@@ -96,7 +94,7 @@ describe AssignmentsHelper do
                           })
       @context = @assignment.context
       account = @context.account
-      account.turnitin_account_id = 12345
+      account.turnitin_account_id = 12_345
       account.turnitin_shared_secret = "the same combination on my luggage"
       account.settings[:enable_turnitin] = true
       account.save!
@@ -186,7 +184,7 @@ describe AssignmentsHelper do
     let(:reviewee) { course.enroll_student(User.create!, active_all: true).user }
     let(:assessment) { assignment.submission_for_student(reviewer).assigned_assessments.first }
 
-    before(:each) do
+    before do
       assignment.assign_peer_review(reviewer, reviewee)
 
       # Avoid having to go down a rabbit hole of imports

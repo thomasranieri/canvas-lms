@@ -18,12 +18,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe FileInContext do
   before do
     course_model
-    folder_model(:name => 'course files')
+    folder_model(name: "course files")
     @course.folders << @folder
     @course.save!
     @course.reload
@@ -31,27 +29,58 @@ describe FileInContext do
 
   context "#attach" do
     it "creates files with the supplied filename escaped for s3" do
-      # This horrible hack is because we need Attachment to behave like S3 in this case, as far as filename
-      # escaping goes. With attachment_fu, the filename is escaped, without it it is not. Because we're not
-      # able to dynamically switch out the S3 status during specs (see the selenium specs that fork a new process
-      # to test S3), we fake out just the part we care about. Also, we can't use Mocha because we need the
-      # argument of the method. This will be fixed when we've refactored Attachment to allow dynamically
-      # switching between S3 and local.
       s3_storage!
-      unbound_method = Attachment.instance_method(:filename=)
-      class Attachment; def filename=(new_name); write_attribute :filename, sanitize_filename(new_name); end; end
-      filename = File.expand_path(File.join(File.dirname(__FILE__), %w(.. fixtures files escaping_test[0].txt)))
+
+      filename = File.expand_path(File.join(__dir__, "../fixtures/files/escaping_test[0].txt"))
       attachment = FileInContext.attach(@course, filename, folder: @folder)
-      expect(attachment.filename).to eq 'escaping_test%5B0%5D.txt'
+      allow(attachment).to receive(:filename=) do |new_name|
+        write_attribute(:filename, sanitize_filename(new_name))
+      end
+      expect(attachment.filename).to eq "escaping_test%5B0%5D.txt"
       expect(attachment).to be_published
-      Attachment.send(:define_method, :filename=, unbound_method)
+    end
+
+    describe "duplication handling" do
+      before do
+        @filename = File.expand_path(File.join(__dir__, "../fixtures/files/a_file.txt"))
+        @md5 = "2b00042f7481c7b056c4b410d28f33cf"
+        @sha512 = "8d3fffddf79e9a232ffd19f9ccaa4d6b37a6a243dbe0f23137b108a043d9da13121a9b505c804956b22e93c7f93969f4a7ba8ddea45bf4aab0bebc8f814e0991"
+      end
+
+      it "doesn't duplicate attachments if the right hash is provided" do
+        FileInContext.attach(@course, @filename, folder: @folder)
+        FileInContext.attach(@course, @filename, folder: @folder, md5: @md5)
+        expect(@course.attachments.count).to eq 1
+      end
+
+      it "doesn't duplicate attachments by comparing md5 hashes when sha512 finds nothing" do
+        attachment = FileInContext.attach(@course, @filename, folder: @folder)
+        attachment.update(md5: @md5)
+
+        # Making sure no additions to before blocks mess this up
+        expect(@course.attachments.where(md5: @sha512).take).to be_falsey
+
+        FileInContext.attach(@course, @filename, folder: @folder, md5: @sha512)
+        expect(@course.attachments.count).to eq 1
+      end
+
+      it "doesn't duplicate attachments by comparing sha512 hashes when md5 finds nothing" do
+        attachment = FileInContext.attach(@course, @filename, folder: @folder)
+        attachment.update(md5: @sha512)
+
+        # Making sure no additions to before blocks mess this up
+        expect(@course.attachments.where(md5: @md5).take).to be_falsey
+
+        FileInContext.attach(@course, @filename, folder: @folder, md5: @md5)
+        expect(@course.attachments.count).to eq 1
+      end
     end
 
     describe "usage rights required" do
       before do
         @course.usage_rights_required = true
         @course.save!
-        @filename = File.expand_path(File.join(File.dirname(__FILE__), %w(.. fixtures files a_file.txt)))
+        @filename = File.expand_path(File.join(File.dirname(__FILE__), %w[.. fixtures files a_file.txt]))
       end
 
       it "creates files in unpublished state" do

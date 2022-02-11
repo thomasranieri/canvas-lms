@@ -34,19 +34,18 @@ module AuthenticationMethods
     # not a valid one (expired or bad signature) and processing should only
     # continue on the assumption that this is an invalid request.
     def self.parse(token_string)
-      return false unless InstAccess::Token.is_token?(token_string)
+      return false unless InstAccess::Token.token?(token_string)
 
       begin
-        token = InstAccess::Token.from_token_string(token_string)
-        return token
+        InstAccess::Token.from_token_string(token_string)
       rescue InstAccess::InvalidToken, # token didn't pass signature verification
              InstAccess::TokenExpired # token passed signature verification, but is expired
         raise AccessTokenError
-      rescue InstAccess::ConfigError => exception
+      rescue InstAccess::ConfigError => e
         # InstAccess isn't configured. A human should fix that, but this method
         # should recover gracefully.
-        Canvas::Errors.capture_exception(:inst_access, exception, :warn)
-        return false
+        Canvas::Errors.capture_exception(:inst_access, e, :warn)
+        false
       end
     end
 
@@ -65,10 +64,12 @@ module AuthenticationMethods
         real_current_pseudonym: nil
       }
       auth_context[:current_user] = find_user_by_uuid_prefer_local(token.user_uuid)
+      return auth_context unless auth_context[:current_user]
+
       auth_context[:current_pseudonym] = SisPseudonym.for(
         auth_context[:current_user], domain_root_account, type: :implicit, require_sis: false
       )
-      return auth_context unless auth_context[:current_user] && auth_context[:current_pseudonym]
+      return auth_context unless auth_context[:current_pseudonym]
 
       if token.masquerading_user_uuid && token.masquerading_user_shard_id
         Shard.lookup(token.masquerading_user_shard_id).activate do
@@ -81,7 +82,7 @@ module AuthenticationMethods
           )
         end
       end
-      return auth_context
+      auth_context
     end
 
     # generally users should not share uuids.
@@ -89,7 +90,7 @@ module AuthenticationMethods
     # user or similar exists, the local user
     # gets preferred.
     def self.find_user_by_uuid_prefer_local(uuid)
-      User.where(uuid: uuid).order(:id).first
+      User.active.where(uuid: uuid).order(:id).first
     end
     private_class_method :find_user_by_uuid_prefer_local
   end

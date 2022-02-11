@@ -58,13 +58,13 @@ module Quizzes
     def filter(keys)
       keys.select do |key|
         case key
-        when :quiz_submission then sideloads.include?('quiz_submissions')
+        when :quiz_submission then sideloads.include?("quiz_submissions")
         else true
         end
       end
     end
 
-    def serializable_object(options = {})
+    def serializable_object(**)
       super.merge!(
         user_json(object, current_user, session, sideloads)
       )

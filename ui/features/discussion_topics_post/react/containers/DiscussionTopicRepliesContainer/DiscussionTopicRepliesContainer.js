@@ -17,26 +17,24 @@
  */
 
 import {AlertManagerContext} from '@canvas/alerts/react/AlertManager'
+import {AUTO_MARK_AS_READ_DELAY, SearchContext} from '../../utils/constants'
 import {Discussion} from '../../../graphql/Discussion'
 import {DiscussionThreadContainer} from '../DiscussionThreadContainer/DiscussionThreadContainer'
 import I18n from 'i18n!discussion_topics_post'
-import {PER_PAGE, SearchContext} from '../../utils/constants'
 import {updateDiscussionTopicEntryCounts} from '../../utils/index'
 import PropTypes from 'prop-types'
 import React, {useContext, useEffect, useState} from 'react'
+import {SearchResultsCount} from '../../components/SearchResultsCount/SearchResultsCount'
 import {ThreadPagination} from '../../components/ThreadPagination/ThreadPagination'
 import {UPDATE_DISCUSSION_ENTRIES_READ_STATE} from '../../../graphql/Mutations'
 import {useMutation} from 'react-apollo'
 import {View} from '@instructure/ui-view'
-import {SearchResultsCount} from '../../components/SearchResultsCount/SearchResultsCount'
 
 export const DiscussionTopicRepliesContainer = props => {
   const {setOnFailure, setOnSuccess} = useContext(AlertManagerContext)
-  const {filter, searchTerm, setPageNumber} = useContext(SearchContext)
+  const {filter, searchTerm, setPageNumber, setSearchPageNumber} = useContext(SearchContext)
 
   const [discussionEntriesToUpdate, setDiscussionEntriesToUpdate] = useState(new Set())
-
-  const AUTO_MARK_AS_READ_DELAY = 3000
 
   const updateCache = (cache, result) => {
     updateDiscussionTopicEntryCounts(cache, props.discussionTopic.id, {
@@ -55,7 +53,7 @@ export const DiscussionTopicRepliesContainer = props => {
   })
 
   useEffect(() => {
-    if (discussionEntriesToUpdate.size > 0 && filter !== 'drafts') {
+    if (discussionEntriesToUpdate.size > 0 && filter !== 'drafts' && !searchTerm) {
       const interval = setInterval(() => {
         let entryIds = Array.from(discussionEntriesToUpdate)
         const entries = props.discussionTopic.discussionEntriesConnection.nodes.filter(
@@ -83,7 +81,9 @@ export const DiscussionTopicRepliesContainer = props => {
   }, [
     discussionEntriesToUpdate,
     props.discussionTopic.discussionEntriesConnection.nodes,
-    updateDiscussionEntriesReadState
+    updateDiscussionEntriesReadState,
+    filter,
+    searchTerm
   ])
 
   const markAsRead = entryId => {
@@ -94,11 +94,11 @@ export const DiscussionTopicRepliesContainer = props => {
   }
 
   const setPage = pageNum => {
-    setPageNumber(pageNum)
+    props.isSearchResults ? setSearchPageNumber(pageNum) : setPageNumber(pageNum)
   }
 
   return (
-    <View as="div">
+    <View as="div" data-testid="discussion-root-entry-container">
       {searchTerm && <SearchResultsCount resultsFound={props.discussionTopic.searchEntryCount} />}
       {props.discussionTopic.discussionEntriesConnection.nodes.map(thread => {
         return (
@@ -119,7 +119,8 @@ export const DiscussionTopicRepliesContainer = props => {
         <ThreadPagination
           setPage={setPage}
           selectedPage={Math.ceil(
-            atob(props.discussionTopic.discussionEntriesConnection.pageInfo.startCursor) / PER_PAGE
+            atob(props.discussionTopic.discussionEntriesConnection.pageInfo.startCursor) /
+              ENV.per_page
           )}
           totalPages={props.discussionTopic.entriesTotalPages}
         />
@@ -134,7 +135,8 @@ DiscussionTopicRepliesContainer.propTypes = {
   goToTopic: PropTypes.func,
   highlightEntryId: PropTypes.string,
   removeDraftFromDiscussionCache: PropTypes.func,
-  updateDraftCache: PropTypes.func
+  updateDraftCache: PropTypes.func,
+  isSearchResults: PropTypes.bool
 }
 
 export default DiscussionTopicRepliesContainer

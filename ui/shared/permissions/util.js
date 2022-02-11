@@ -127,10 +127,21 @@ export function groupGranularPermissionsInRole(role) {
   if (!role?.permissions) return // some JS tests don't bother to fill this in
 
   const groups = {}
-  Object.values(role.permissions).forEach(permission => {
+  const accountPermissionsByName = ENV.ACCOUNT_PERMISSIONS
+    ? ENV.ACCOUNT_PERMISSIONS.find(
+        el => el.context_type && el.context_type === 'Account'
+      ).group_permissions.map(perm => perm.permission_name)
+    : null
+  const courseRoleTypes = ENV.COURSE_ROLES
+    ? ENV.COURSE_ROLES.map(courseRole => courseRole.base_role_type)
+    : null
+  const accountRoleTypes = ENV.ACCOUNT_ROLES
+    ? ENV.ACCOUNT_ROLES.map(accountRole => accountRole.base_role_type)
+    : null
+
+  Object.entries(role.permissions).forEach(([permissionName, permission]) => {
     // Fix up boolean enabled values to the enabled state
-    if (permission.enabled === false) permission.enabled = ENABLED_FOR_NONE
-    if (permission.enabled === true) permission.enabled = ENABLED_FOR_ALL
+    permission.enabled = permission.enabled === true ? ENABLED_FOR_ALL : ENABLED_FOR_NONE
     const group_name = permission.group
     if (group_name) {
       if (!groups[group_name]) {
@@ -142,14 +153,20 @@ export function groupGranularPermissionsInRole(role) {
           granular_permissions: []
         }
       }
-
-      // We need to get all of hte pemrissions in a group, to determin
-      // what the button status will be for the encompasing permission
-      groups[group_name].enabled.push(permission.enabled)
-      groups[group_name].explicit.push(permission.explicit)
-      groups[group_name].locked.push(permission.locked)
-      groups[group_name].readonly.push(permission.readonly)
-      groups[group_name].granular_permissions.push(permission)
+      // We need to get all of the permissions in a group, to determine
+      // what the button status will be for the encompassing permission
+      if (
+        (courseRoleTypes.includes(role.base_role_type) &&
+          accountPermissionsByName &&
+          !accountPermissionsByName.includes(permissionName)) ||
+        accountRoleTypes.includes(role.base_role_type)
+      ) {
+        groups[group_name].enabled.push(permission.enabled)
+        groups[group_name].explicit.push(permission.explicit)
+        groups[group_name].locked.push(permission.locked)
+        groups[group_name].readonly.push(permission.readonly)
+        groups[group_name].granular_permissions.push(permission)
+      }
     }
   })
 

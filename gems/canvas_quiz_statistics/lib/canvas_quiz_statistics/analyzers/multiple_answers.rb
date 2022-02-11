@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 module CanvasQuizStatistics::Analyzers
-  require 'canvas_quiz_statistics/analyzers/fill_in_multiple_blanks'
+  require "canvas_quiz_statistics/analyzers/fill_in_multiple_blanks"
 
   # Generates statistics for a set of student responses to a multiple-answers
   # question.
@@ -110,7 +110,7 @@ module CanvasQuizStatistics::Analyzers
     end
 
     def answer_ids
-      @answer_ids ||= question_data[:answers].map { |a| "#{a[:id]}" }
+      @answer_ids ||= question_data[:answers].map { |a| (a[:id]).to_s }
     end
 
     def answer_key(id)
@@ -118,7 +118,7 @@ module CanvasQuizStatistics::Analyzers
     end
 
     def chosen?(value)
-      value.to_s == '1'
+      value.to_s == "1"
     end
 
     def extract_chosen_choices(response, answers)

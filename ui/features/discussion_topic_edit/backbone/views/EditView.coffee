@@ -31,7 +31,6 @@ import DiscussionTopic from '@canvas/discussions/backbone/models/DiscussionTopic
 import Announcement from '@canvas/discussions/backbone/models/Announcement.coffee'
 import $ from 'jquery'
 import MissingDateDialog from '@canvas/due-dates/backbone/views/MissingDateDialogView.coffee'
-import KeyboardShortcuts from '@canvas/tinymce-keyboard-shortcuts'
 import ConditionalRelease from '@canvas/conditional-release-editor'
 import deparam from 'deparam'
 import flashMessage from '@canvas/rails-flash-notifications'
@@ -159,7 +158,6 @@ export default class EditView extends ValidatedFormView
   toJSON: ->
     data = super
     json = _.extend data, @options,
-      use_rce_enhancements: ENV.use_rce_enhancements
       showAssignment: !!@assignmentGroupCollection
       useForGrading: @model.get('assignment')?
       isTopic: @isTopic()
@@ -202,16 +200,8 @@ export default class EditView extends ValidatedFormView
     @$textarea = @$('textarea[name=message]').attr('id', _.uniqueId('discussion-topic-message')).css('display', 'none')
 
     unless @lockedItems.content
-      RichContentEditor.initSidebar()
       _.defer =>
         @loadNewEditor(@$textarea)
-        $('.rte_switch_views_link').click (event) =>
-          event.preventDefault()
-          event.stopPropagation()
-          RichContentEditor.callOnRCE(@$textarea, 'toggle')
-          # hide the clicked link, and show the other toggle link.
-          # todo: replace .andSelf with .addBack when JQuery is upgraded.
-          $(event.currentTarget).siblings('.rte_switch_views_link').andSelf().toggle().focus()
     if @assignmentGroupCollection
       (@assignmentGroupFetchDfd ||= @assignmentGroupCollection.fetch()).done @renderAssignmentGroupOptions
 
@@ -220,7 +210,6 @@ export default class EditView extends ValidatedFormView
     _.defer(@renderPeerReviewOptions)
     _.defer(@renderPostToSisOptions) if ENV.POST_TO_SIS
     _.defer(@watchUnload)
-    _.defer(@attachKeyboardShortcuts)
     _.defer(@renderTabs) if @showConditionalRelease()
     _.defer(@loadConditionalRelease) if @showConditionalRelease()
 
@@ -274,10 +263,6 @@ export default class EditView extends ValidatedFormView
           ReactDOM.unmountComponentAtNode(@$('#usage_rights_modal')[0])
     component = React.createElement(UsageRightsIndicator, props, null)
     ReactDOM.render(component, @$('#usage_rights_control')[0])
-
-  attachKeyboardShortcuts: =>
-    if !ENV.use_rce_enhancements
-      $('.rte_switch_views_link').first().before((new KeyboardShortcuts()).render().$el)
 
   renderAssignmentGroupOptions: =>
     @assignmentGroupSelector = new AssignmentGroupSelector
@@ -485,8 +470,12 @@ export default class EditView extends ValidatedFormView
     if isAnnouncement then announcementsFlag else discussionsFlag
 
   validateBeforeSave: (data, errors) =>
+    # The anonymous_state is missing if the fields are disabled. We need the value for edit mode too.
+    data.anonymous_state = $('input[name=anonymous_state]:checked').val()
     if data.delay_posting == "0"
       data.delayed_post_at = null
+    if data.anonymous_state != 'full_anonymity' && data.anonymous_state != 'partial_anonymity'
+      data.anonymous_state = null
     if @isTopic() && data.set_assignment is '1'
       if @assignmentGroupSelector?
         errors = @assignmentGroupSelector.validateBeforeSave(data, errors)
@@ -496,6 +485,8 @@ export default class EditView extends ValidatedFormView
       errors = @dueDateOverrideView.validateBeforeSave(validateBeforeSaveData, errors)
       errors = @_validatePointsPossible(data, errors)
       errors = @_validateTitle(data, errors)
+      if data.anonymous_state != null
+        errors['anonymous_state'] = [{message: I18n.t("You are not allowed to create an anonymous graded discussion")}]
     else
       @model.set 'assignment', @model.createAssignment(set_assignment: false)
 

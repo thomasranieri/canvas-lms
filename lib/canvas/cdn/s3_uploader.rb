@@ -17,16 +17,18 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'parallel'
+require "benchmark"
+require "parallel"
 
 module Canvas
   module Cdn
     class S3Uploader
-      attr_accessor :bucket, :config, :mutex
+      attr_accessor :bucket, :config, :mutex, :verbose
 
-      def initialize(folder = 'dist')
-        require 'aws-sdk-s3'
+      def initialize(folder = "dist", verbose: false)
+        require "aws-sdk-s3"
         @folder = folder
+        @verbose = verbose
         @config = Canvas::Cdn.config
         @s3 = Aws::S3::Resource.new(access_key_id: config.aws_access_key_id,
                                     secret_access_key: config.aws_secret_access_key,
@@ -40,13 +42,16 @@ module Canvas
       end
 
       def upload!
-        return if (local_files - previous_manifest).empty? # nothing to change
+        upload_files = local_files - previous_manifest
 
-        opts = { in_threads: 16, progress: 'uploading to S3' }
+        return if upload_files.empty? # nothing to change
+
+        opts = { in_threads: 16, progress: "uploading to S3" }
         if block_given?
-          opts[:finish] = ->(_, i, _) { yield (100.0 * i / local_files.count) }
+          opts[:finish] = ->(_, i, _) { yield (100.0 * i / upload_files.count) }
         end
-        Parallel.each(local_files, opts) { |file| upload_file(file) }
+        log("will upload #{upload_files.count} / #{local_files.count} files") if @verbose
+        Parallel.each(upload_files, opts) { |file| upload_file(file) }
         # success - we can push the manifest
         push_manifest
       end
@@ -54,7 +59,7 @@ module Canvas
       # tl;dr store a list of assets for a given tag on the bucket itself
       # so we don't have to make 10,000 s3 get calls every time to make sure they're all still there
       def manifest_path
-        tag = ENV['MANIFEST_TAG']
+        tag = ENV["MANIFEST_TAG"]
         tag && "manifests/#{tag}.json"
       end
 
@@ -78,19 +83,17 @@ module Canvas
       end
 
       def mime_for(path)
-        ext = path.extname[1..-1]
+        ext = path.extname[1..]
         # Mime::Type.lookup_by_extension doesn't have some types (like svg), so fall back to others
         content_type = Mime::Type.lookup_by_extension(ext) || Rack::Mime.mime_type(".#{ext}") || MIME::Types.type_for(ext).first
-        content_type = 'text/css; charset=utf-8' if content_type == 'text/css'
+        content_type = "text/css; charset=utf-8" if content_type == "text/css"
         content_type
       end
 
       def options_for(path)
-        options = { acl: 'public-read', content_type: mime_for(path).to_s }
+        options = { acl: "public-read", content_type: mime_for(path).to_s }
         if fingerprinted?(path)
-          options.merge!({
-                           cache_control: "public, max-age=#{1.year}"
-                         })
+          options[:cache_control] = "public, max-age=#{1.year}"
         end
 
         options
@@ -100,12 +103,16 @@ module Canvas
         return if previous_manifest.include?(remote_path)
 
         local_path = Pathname.new("#{Rails.public_path}/#{remote_path}")
-        return if (local_path.extname == '.gz') || local_path.directory?
+        return if (local_path.extname == ".gz") || local_path.directory?
 
         s3_object = mutex.synchronize { bucket.object(remote_path) }
         return log("skipping already existing #{remote_path}") if s3_object.exists?
 
-        s3_object.put(options_for(local_path).merge(body: local_path.binread))
+        time = Benchmark.measure do
+          s3_object.put(options_for(local_path).merge(body: local_path.binread))
+        end
+
+        log("uploaded #{remote_path} (#{local_path.size}) in #{time.real}s") if @verbose
       end
 
       def log(msg)

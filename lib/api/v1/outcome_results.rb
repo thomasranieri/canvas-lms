@@ -18,10 +18,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'csv'
+require "csv"
 
 module Api::V1::OutcomeResults
   include Api::V1::Outcome
+  include Outcomes::OutcomeFriendlyDescriptionResolver
 
   # Public: Serializes OutcomeResults
   #
@@ -37,7 +38,7 @@ module Api::V1::OutcomeResults
   def outcome_result_json(result)
     hash = api_json(result, @current_user, session, {
                       methods: :submitted_or_assessed_at,
-                      only: %w(id score mastery possible percent hide_points hidden)
+                      only: %w[id score mastery possible percent hide_points hidden]
                     })
     hash[:links] = {
       user: result.user.id.to_s,
@@ -66,7 +67,7 @@ module Api::V1::OutcomeResults
     alignment_asset_string_map = {}
     outcomes.each_slice(50).each do |outcomes_slice|
       ActiveRecord::Associations::Preloader.new.preload(outcomes_slice, [:context])
-      ContentTag.learning_outcome_alignments.not_deleted.where(:learning_outcome_id => outcomes_slice)
+      ContentTag.learning_outcome_alignments.not_deleted.where(learning_outcome_id: outcomes_slice)
                 .pluck(:learning_outcome_id, :content_type, :content_id).each do |lo_id, content_type, content_id|
         (alignment_asset_string_map[lo_id] ||= []) << "#{content_type.underscore}_#{content_id}"
       end
@@ -75,15 +76,28 @@ module Api::V1::OutcomeResults
     outcomes.map(&:id).each_slice(100) do |outcome_ids|
       assessed_outcomes += LearningOutcomeResult.active.distinct.where(learning_outcome_id: outcome_ids).pluck(:learning_outcome_id)
     end
+    friendly_descriptions = {}
+    if context.root_account.feature_enabled?(:improved_outcomes_management) && Account.site_admin.feature_enabled?(:outcomes_friendly_description)
+      account = @context.is_a?(Account) ? @context : @context.account
+      course = @context.is_a?(Course) ? @context : nil
+
+      friendly_descriptions_array = outcomes.map(&:id).each_slice(100).flat_map do |outcome_ids|
+        resolve_friendly_descriptions(account, course, outcome_ids).map { |description| [description.learning_outcome_id, description.description] }
+      end
+
+      friendly_descriptions = friendly_descriptions_array.to_h
+    end
+
     outcomes.map do |o|
       hash = outcome_json(
         o,
         @current_user, session,
         assessed_outcomes: assessed_outcomes,
         rating_percents: percents[o.id],
-        context: context
+        context: context,
+        friendly_descriptions: friendly_descriptions
       )
-      hash.merge!(alignments: alignment_asset_string_map[o.id])
+      hash[:alignments] = alignment_asset_string_map[o.id]
       hash
     end
   end
@@ -187,9 +201,9 @@ module Api::V1::OutcomeResults
     # is in multiple sections, they will have multiple rollup results. pagination is
     # still by user, so the counts won't match up. again, this is a very rare thing
     section_ids_func = if @section
-                         ->(user) { [@section.id] }
+                         ->(_user) { [@section.id] }
                        else
-                         enrollments = @context.all_accepted_student_enrollments.where(:user_id => serialized_rollup_pairs.map { |pair| pair[0].context.id }).to_a
+                         enrollments = @context.all_accepted_student_enrollments.where(user_id: serialized_rollup_pairs.map { |pair| pair[0].context.id }).to_a
                          ->(user) { enrollments.select { |e| e.user_id == user.id }.map(&:course_section_id) }
                        end
 
@@ -217,17 +231,17 @@ module Api::V1::OutcomeResults
     }
   end
 
-  def outcome_results_rollups_csv(current_user, context, rollups, outcomes, outcome_paths)
-    options = CsvWithI18n.csv_i18n_settings(current_user)
-    CsvWithI18n.generate(**options) do |csv|
+  def outcome_results_rollups_csv(current_user, _context, rollups, outcomes, outcome_paths)
+    options = CSVWithI18n.csv_i18n_settings(current_user)
+    CSVWithI18n.generate(**options) do |csv|
       row = []
-      row << I18n.t(:student_name, 'Student name')
-      row << I18n.t(:student_id, 'Student ID')
+      row << I18n.t(:student_name, "Student name")
+      row << I18n.t(:student_id, "Student ID")
       outcomes.each do |outcome|
         pathParts = outcome_paths.find { |x| x[:id] == outcome.id }[:parts]
-        path = pathParts.map { |x| x[:name] }.join(' > ')
-        row << I18n.t(:outcome_path_result, "%{path} result", :path => path)
-        row << I18n.t(:outcome_path_mastery_points, "%{path} mastery points", :path => path)
+        path = pathParts.pluck(:name).join(" > ")
+        row << I18n.t(:outcome_path_result, "%{path} result", path: path)
+        row << I18n.t(:outcome_path_mastery_points, "%{path} mastery points", path: path)
       end
       csv << row
       mastery_points = @context.root_account.feature_enabled?(:account_level_mastery_scales) && @context.resolved_outcome_proficiency&.mastery_points

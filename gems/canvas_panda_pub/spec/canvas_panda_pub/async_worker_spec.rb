@@ -18,10 +18,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
+require "spec_helper"
 
 describe CanvasPandaPub::AsyncWorker do
-  before(:each) do
+  before do
     CanvasPandaPub.process_interval = -> { 0.1 }
     CanvasPandaPub.max_queue_size = -> { 100 }
     CanvasPandaPub.logger = double.as_null_object
@@ -42,9 +42,9 @@ describe CanvasPandaPub::AsyncWorker do
 
     it "rejects items when queue is full" do
       CanvasPandaPub.max_queue_size = -> { 5 }
-      5.times { expect(@worker.push "foo", -> {}).to be_truthy }
+      5.times { expect(@worker.push("foo", -> {})).to be_truthy }
 
-      expect(@worker.push "full", -> {}).to be false
+      expect(@worker.push("full", -> {})).to be false
     end
 
     it "only runs the last item pushed for a tag" do

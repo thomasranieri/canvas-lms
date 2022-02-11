@@ -1,19 +1,19 @@
 # frozen_string_literal: true
 
 begin
-  require 'yard'
-  require 'yard-appendix'
-  require 'config/initializers/json'
+  require "yard"
+  require "yard-appendix"
+  require "config/initializers/json"
+
+  DOC_DIR     = File.join(%w[public doc api])
+  API_DOC_DIR = Rails.root.join(DOC_DIR).expand_path
+  DOC_OPTIONS = {
+    # turning this on will show all the appendixes of all
+    # controllers in the All Resources page
+    all_resource_appendixes: false
+  }.freeze
 
   namespace :doc do
-    DOC_DIR     = File.join(%w[public doc api])
-    API_DOC_DIR = File.expand_path(Rails.root + DOC_DIR)
-    DOC_OPTIONS = {
-      # turning this on will show all the appendixes of all
-      # controllers in the All Resources page
-      :all_resource_appendixes => false
-    }.freeze
-
     YARD::Tags::Library.define_tag("A Data Model", :model)
     YARD::Rake::YardocTask.new(:api) do |t|
       t.before = proc { FileUtils.rm_rf(API_DOC_DIR) }
@@ -39,7 +39,8 @@ begin
       # t.options << '--debug'
     end
 
-    task 'api' do |t|
+    desc "generate API docs"
+    task "api" do # rubocop:disable Rails/RakeEnvironment
       puts "API Documentation successfully generated in #{DOC_DIR}\n" \
            "See #{DOC_DIR}/index.html"
     end

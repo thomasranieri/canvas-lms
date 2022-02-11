@@ -65,6 +65,13 @@ $gradebook_header_height: 3.5em;
       width: 230px;
       z-index: 100;
     }
+
+    &:focus-within {
+      // Firefox
+      outline: thin dotted var(--ic-brand-global-nav-menu-item__text-color);
+      // Webkit/Chrome
+      outline: 5px auto -webkit-focus-ring-color;
+    }
   }
 
   /*
@@ -277,7 +284,6 @@ $icon-size: 1.4rem;
 }
 
 #enrollment_inactive_notice, #enrollment_concluded_notice, #closed_gp_notice {
-  width: 100%;
   border-bottom: 1px solid $ic-border-light;
   border-radius: 0;
   text-align: center;
@@ -682,6 +688,9 @@ body .ui-selectmenu-dropdown:hover .ui-selectmenu-icon, body .ui-state-active .u
     font-weight: bold;
     padding: $ic-sp*0.5 0;
   }
+  #submission_attachment_viewed_at_container {
+    margin-top: 40px;
+  }
   .submission_attachment_viewed_at {
     display: inline;
   }
@@ -931,4 +940,20 @@ body .ui-selectmenu-dropdown:hover .ui-selectmenu-icon, body .ui-state-active .u
 
 #library-suggestions {
   float: direction(right);
+}
+
+.secondary_mount_point_container {
+  position: relative;
+
+  #speed_grader_edit_status_secondary_mount_point {
+    position: absolute;
+    right: 24px;
+    top: 33px;
+  }
+}
+
+.do-not-show-again {
+  float: left;
+  display: inline-block;
+  margin-top: 1em;
 }

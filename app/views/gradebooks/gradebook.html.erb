@@ -106,6 +106,7 @@
         <div id="gradebook-assignment-search" style="flex: 1;"></div>
       </div>
     <% end %>
+    <div id="gradebook-filter-nav"></div>
     <div id="gradebook-grid-wrapper" class="use-css-transitions-for-show-hide" style="display:none;">
       <div id="gradebook_grid"></div>
     </div>
@@ -118,6 +119,11 @@
   <span data-component="GridColor"></span>
   <span data-component="StatusesModal"></span>
   <span data-component="AnonymousSpeedGraderAlert"></span>
+  <span data-component="ApplyScoreToUngradedModal"></span>
+
+  <% if show_message_students_with_observers_dialog? %>
+    <span data-component="MessageStudentsWithObserversModal"></span>
+  <% end %>
 
   <div id="assignment-posting-policy-tray"></div>
   <div id="hide-assignment-grades-tray"></div>

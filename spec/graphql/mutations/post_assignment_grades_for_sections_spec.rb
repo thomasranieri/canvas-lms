@@ -60,7 +60,7 @@ describe Mutations::PostAssignmentGradesForSections do
     CanvasSchema.execute(mutation_str, context: context)
   end
 
-  before(:each) do
+  before do
     @section1_student = section1.enroll_user(User.create!, "StudentEnrollment", "active").user
     @section2_student = section2.enroll_user(User.create!, "StudentEnrollment", "active").user
   end
@@ -118,7 +118,7 @@ describe Mutations::PostAssignmentGradesForSections do
       now = Time.zone.now
       assignment.update!(moderated_grading: true, grader_count: 2, final_grader: teacher, grades_published_at: now)
       result = execute_query(mutation_str(assignment_id: assignment.id, section_ids: [section1.id]), context)
-      expect(result.dig("errors")).to be nil
+      expect(result["errors"]).to be nil
     end
 
     describe "posting the grades" do
@@ -180,7 +180,7 @@ describe Mutations::PostAssignmentGradesForSections do
       context "when the poster has limited visibility" do
         let(:ta) { User.create! }
 
-        before(:each) do
+        before do
           course.enroll_ta(ta, enrollment_state: "active", section: section1, limit_privileges_to_course_section: true)
         end
 
@@ -204,7 +204,7 @@ describe Mutations::PostAssignmentGradesForSections do
       let(:section1_user_ids) { section1.enrollments.pluck(:user_id) }
       let(:section1_submissions) { assignment.submissions.where(user_id: section1_user_ids) }
 
-      before(:each) do
+      before do
         @section1_student2 = User.create!
         section1.enroll_user(@section1_student2, "StudentEnrollment", "active")
         @student1_submission = assignment.submissions.find_by(user: @section1_student)
@@ -264,7 +264,7 @@ describe Mutations::PostAssignmentGradesForSections do
         )
       end
 
-      before(:each) do
+      before do
         section1.enroll_user(student, "StudentEnrollment", "active")
         teacher.update!(email: "fakeemail@example.com", workflow_state: :registered)
         teacher.email_channel.update!(workflow_state: :active)
@@ -273,9 +273,9 @@ describe Mutations::PostAssignmentGradesForSections do
 
       it "broadcasts a notification when posting to everyone by sections" do
         execute_query(mutation_str(assignment_id: assignment.id, section_ids: [section1.id]), context)
-        expect {
+        expect do
           post_submissions_job.invoke_job
-        }.to change {
+        end.to change {
           submissions_posted_messages.count
         }.by(1)
       end
@@ -283,9 +283,9 @@ describe Mutations::PostAssignmentGradesForSections do
       it "broadcasts a notification when posting to everyone graded by sections" do
         assignment.grade_student(student, grader: teacher, score: 1)
         execute_query(mutation_str(assignment_id: assignment.id, section_ids: [section1.id], graded_only: true), context)
-        expect {
+        expect do
           post_submissions_job.invoke_job
-        }.to change {
+        end.to change {
           submissions_posted_messages.count
         }.by(1)
       end

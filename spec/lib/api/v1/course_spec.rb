@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require File.expand_path(File.dirname(__FILE__) + '/../../../spec_helper.rb')
 
 describe Api::V1::Course do
   include Api::V1::Course
@@ -53,15 +52,15 @@ describe Api::V1::Course do
     it "works for a logged-out user" do
       course_factory
       hash = course_json(@course, nil, nil, [], nil)
-      expect(hash['id']).to be_present
+      expect(hash["id"]).to be_present
     end
 
     it "includes course locale" do
       course_factory
-      @course.locale = 'tlh'
+      @course.locale = "tlh"
       @course.save
       hash = course_json(@course, nil, nil, [], nil)
-      expect(hash['locale']).to eql @course.locale
+      expect(hash["locale"]).to eql @course.locale
     end
 
     it "includes the image when it is asked for and the feature flag is on" do
@@ -69,15 +68,15 @@ describe Api::V1::Course do
       @course.image_url = "http://image.jpeg"
       @course.save
 
-      hash = course_json(@course, nil, nil, ['course_image'], nil)
-      expect(hash['image_download_url']).to eql 'http://image.jpeg'
+      hash = course_json(@course, nil, nil, ["course_image"], nil)
+      expect(hash["image_download_url"]).to eql "http://image.jpeg"
     end
 
     it "does not include the image if the course_image include is not present" do
       course_factory
 
       hash = course_json(@course, nil, nil, [], nil)
-      expect(hash['image_download_url']).not_to be_present
+      expect(hash["image_download_url"]).not_to be_present
     end
   end
 end

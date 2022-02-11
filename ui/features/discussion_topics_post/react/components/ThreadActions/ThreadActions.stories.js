@@ -26,11 +26,13 @@ export default {
   argTypes: {
     goToTopic: {action: 'goToTopic'},
     goToParent: {action: 'goToParent'},
+    goToQuotedReply: {action: 'goToQuotedReply'},
     onEdit: {action: 'onEdit'},
     onDelete: {action: 'onDelete'},
     onMarkAllAsUnread: {action: 'onMarkAsUnread'},
     onToggleUnread: {action: 'onToggleUnread'},
-    openInSpeedGrader: {action: 'openInSpeedGrader'}
+    openInSpeedGrader: {action: 'openInSpeedGrader'},
+    onReport: {action: 'onReport'}
   }
 }
 
@@ -62,4 +64,9 @@ UnreadThread.args = {
 export const ReadThread = Template.bind({})
 ReadThread.args = {
   isUnread: false
+}
+
+export const Reported = Template.bind({})
+Reported.args = {
+  isReported: true
 }

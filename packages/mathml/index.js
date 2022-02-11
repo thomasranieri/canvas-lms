@@ -16,6 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 import $ from 'jquery'
 
 // configure MathJax to use 'color' extension fo LaTeX coding
@@ -39,7 +40,7 @@ const localConfig = {
 }
 
 const mathml = {
-  loadMathJax(configFile = 'TeX-MML-AM_HTMLorMML', cb = null) {
+  loadMathJax(configFile = 'TeX-MML-AM_SVG', cb = null) {
     if (this.preventMathJax()) {
       return
     }
@@ -143,12 +144,10 @@ const mathml = {
         return true
       }
 
-      if (ENV.FEATURES?.inline_math_everywhere) {
-        // look for latex the user may have entered w/o the equation editor by
-        // looking for mathjax's opening delimiters
-        if (/(?:\$\$|\\\()/.test(elem.textContent)) {
-          return true
-        }
+      // look for latex the user may have entered w/o the equation editor by
+      // looking for mathjax's opening delimiters
+      if (/(?:\$\$|\\\()/.test(elem.textContent)) {
+        return true
       }
     }
     const mathElements = elem.getElementsByTagName('math')
@@ -235,9 +234,14 @@ const mathImageHelper = {
     let equation_text
     const src = img.getAttribute('src')
     if (src) {
-      const srceq = src.split('/equation_images/')[1]
-      if (srceq) {
-        equation_text = decodeURIComponent(decodeURIComponent(srceq))
+      try {
+        const url = new URL(src, 'http://localhost') // we don't care about the host
+        const srceq = url.pathname.split('/equation_images/')[1]
+        if (srceq) {
+          equation_text = decodeURIComponent(decodeURIComponent(srceq))
+        }
+      } catch (_ex) {
+        // If we failed to parse the src URL, something is wrong.
       }
     }
     return equation_text
@@ -248,25 +252,7 @@ const mathImageHelper = {
     const eqimgs = refnode.querySelectorAll('img.equation_image')
     if (eqimgs.length > 0) {
       eqimgs.forEach(img => {
-        if (img.complete && img.naturalWidth) {
-          // only process loaded images
-          img.setAttribute('mathjaxified', '')
-          const equation_text = this.getImageEquationText(img)
-          if (equation_text) {
-            const mathtex = document.createElement('span')
-            mathtex.setAttribute('class', 'math_equation_latex')
-            mathtex.setAttribute('style', img.getAttribute('style'))
-            mathtex.textContent = `\\(${equation_text}\\)`
-            mathtex.style.maxWidth = ''
-            if (img.nextSibling) {
-              img.parentElement.insertBefore(mathtex, img.nextSibling)
-            } else {
-              img.parentElement.appendChild(mathtex)
-            }
-          }
-        } else {
-          img.addEventListener('load', this.dispatchProcessNewMathOnLoad)
-        }
+        const equation_text = this.getImageEquationText(img)
       })
       return true
     }
@@ -279,13 +265,6 @@ const mathImageHelper = {
         img.parentElement.removeChild(img)
       }
     })
-  },
-
-  dispatchProcessNewMathOnLoad(event) {
-    event.target.removeEventListener('load', this.dispatchProcessNewMathOnLoad)
-    window.dispatchEvent(
-      new CustomEvent('process-new-math', {detail: {target: event.target.parentElement}})
-    )
   },
 
   nearlyInfiniteStyleFix(elem) {

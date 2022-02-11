@@ -42,18 +42,27 @@ import OutcomeMoveModal from './OutcomeMoveModal'
 import ManageOutcomesBillboard from './ManageOutcomesBillboard'
 import GroupActionDrillDown from '../shared/GroupActionDrillDown'
 import useLhsTreeBrowserSelectParentGroup from '@canvas/outcomes/react/hooks/useLhsTreeBrowserSelectParentGroup'
+import FindOutcomesModal from '../FindOutcomesModal'
+import {showImportOutcomesModal} from '@canvas/outcomes/react/ImportOutcomesModal'
 
 const OutcomeManagementPanel = ({
   importNumber,
   createdOutcomeGroupIds,
-  onLhsSelectedGroupIdChanged
+  onLhsSelectedGroupIdChanged,
+  handleFileDrop
 }) => {
   const {isCourse, isMobileView, canManage} = useCanvasContext()
   const {setContainerRef, setLeftColumnRef, setDelimiterRef, setRightColumnRef, onKeyDownHandler} =
     useResize()
   const [scrollContainer, setScrollContainer] = useState(null)
-  const {selectedOutcomeIds, selectedOutcomesCount, toggleSelectedOutcomes, clearSelectedOutcomes} =
-    useSelectedOutcomes()
+  const [rhsGroupIdsToRefetch, setRhsGroupIdsToRefetch] = useState([])
+  const {
+    selectedOutcomeIds,
+    selectedOutcomesCount,
+    toggleSelectedOutcomes,
+    removeSelectedOutcome,
+    clearSelectedOutcomes
+  } = useSelectedOutcomes()
   const {
     error,
     isLoading,
@@ -79,10 +88,21 @@ const OutcomeManagementPanel = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const {group, loading, loadMore, removeLearningOutcomes, readLearningOutcomes} = useGroupDetail({
+  useEffect(() => {
+    setRhsGroupIdsToRefetch(ids => [...new Set([...ids, ...createdOutcomeGroupIds])])
+  }, [createdOutcomeGroupIds])
+
+  const {
+    group,
+    loading,
+    loadMore,
+    removeLearningOutcomes,
+    readLearningOutcomes,
+    refetchLearningOutcome
+  } = useGroupDetail({
     id: selectedGroupId,
     searchString: debouncedSearchString,
-    rhsGroupIdsToRefetch: createdOutcomeGroupIds
+    rhsGroupIdsToRefetch
   })
 
   const selectedOutcomes = readLearningOutcomes(selectedOutcomeIds)
@@ -106,8 +126,13 @@ const OutcomeManagementPanel = ({
   const [isOutcomesMoveModalOpen, openOutcomesMoveModal, closeOutcomesMoveModal] = useModal()
   const [isGroupDescriptionModalOpen, openGroupDescriptionModal, closeGroupDescriptionModal] =
     useModal()
+  const [isFindOutcomesModalOpen, openFindOutcomesModal, closeFindOutcomesModal] = useModal()
   const [selectedOutcome, setSelectedOutcome] = useState(null)
   const selectedOutcomeObj = selectedOutcome ? {[selectedOutcome.linkId]: selectedOutcome} : {}
+  const onRemoveLearningOutcome = removableLinkIds => {
+    removeLearningOutcomes(removableLinkIds)
+    removeSelectedOutcome(selectedOutcome)
+  }
   const onCloseOutcomeRemoveModal = () => {
     closeOutcomeRemoveModal()
     setSelectedOutcome(null)
@@ -136,25 +161,52 @@ const OutcomeManagementPanel = ({
     queryCollections
   })
 
-  const onSucessGroupRemove = () => {
+  const onSuccessGroupRemove = () => {
     selectParentGroupInLhs()
     removeGroup(selectedGroupId)
     clearSelectedOutcomes()
   }
 
+  const handleCloseFindOutcomesModal = hasAddedOutcomes => {
+    if (hasAddedOutcomes) {
+      // TODO: refetch the group in LHS and RHS.
+      // For RHS, we need OUT-4634 to set rhsGroupIdsToRefetch variable
+      // For LHS, we need to figure out the correct solution
+      // This will be handled in OUT-4798
+    }
+    closeFindOutcomesModal()
+  }
+
+  const openImportOutcomesModal = useCallback(() => {
+    showImportOutcomesModal({
+      learningOutcomeGroup: group,
+      learningOutcomeGroupAncestorIds: Object.keys(collections),
+      onFileDrop: handleFileDrop
+    })
+  }, [group, collections, handleFileDrop])
+
   const groupMenuHandler = useCallback(
     (_arg, action) => {
-      if (action === 'move') {
-        openGroupMoveModal()
-      } else if (action === 'remove') {
-        openGroupRemoveModal()
-      } else if (action === 'edit') {
-        openGroupEditModal()
-      } else if (action === 'description') {
-        openGroupDescriptionModal()
+      const actions = {
+        move: openGroupMoveModal,
+        remove: openGroupRemoveModal,
+        edit: openGroupEditModal,
+        description: openGroupDescriptionModal,
+        add_outcomes: openFindOutcomesModal,
+        import_outcomes: openImportOutcomesModal
       }
+
+      const callback = actions[action] || function () {}
+      callback()
     },
-    [openGroupDescriptionModal, openGroupEditModal, openGroupMoveModal, openGroupRemoveModal]
+    [
+      openFindOutcomesModal,
+      openGroupDescriptionModal,
+      openGroupEditModal,
+      openGroupMoveModal,
+      openGroupRemoveModal,
+      openImportOutcomesModal
+    ]
   )
 
   const outcomeMenuHandler = useCallback(
@@ -180,12 +232,30 @@ const OutcomeManagementPanel = ({
     [group]
   )
 
-  // After move outcomes, remove from list if the target group isn't
-  // the selected group or isn't children of the selected group
-  const onSuccessMoveOutcomes = ({movedOutcomeLinkIds, targetAncestorsIds}) => {
-    if (!targetAncestorsIds.includes(selectedGroupId)) {
-      removeLearningOutcomes(movedOutcomeLinkIds, false)
+  // set the initial target group as the lhs group
+  let outcomeMoveInitialTargetGroup = collections[selectedGroupId]
+
+  const singleOutcomeSelected =
+    selectedOutcome || (selectedOutcomes.length === 1 && selectedOutcomes[0])
+
+  // if only one outcome is selected (kebab or bulk action)
+  if (singleOutcomeSelected) {
+    // set the initial target group as the outcome parent group
+    outcomeMoveInitialTargetGroup = {
+      name: singleOutcomeSelected.parentGroupTitle,
+      id: singleOutcomeSelected.parentGroupId
     }
+  }
+
+  // After move outcomes, mark all loaded outcomes group to be refetch, since:
+  // 1 - If moving to the group in the LHS or some child, it'll probably change
+  //     its position, so refetch needed
+  // 2 - If moving to a group "outside" the LHS group, we need to remove from the list
+  //     So refetch is needed
+  const onSuccessMoveOutcomes = () => {
+    // we would clear the whole RHS cache.
+    const AllLhsGroupIds = Object.keys(collections)
+    setRhsGroupIdsToRefetch(AllLhsGroupIds)
   }
 
   const hideOutcomesViewHandler = () => {
@@ -301,16 +371,19 @@ const OutcomeManagementPanel = ({
               </View>
             </View>
           </Flex.Item>
-          <Flex.Item as="div" position="relative" width="1%" display="inline-block">
-            {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
+          <Flex.Item
+            as="div"
+            position="relative"
+            width="1%"
+            display="inline-block"
+            tabIndex="0"
+            role="separator"
+            aria-hidden="true"
+            aria-orientation="vertical"
+            onKeyDown={onKeyDownHandler}
+            elementRef={setDelimiterRef}
+          >
             <div
-              tabIndex="0"
-              role="separator"
-              aria-orientation="vertical"
-              minHeight="calc(720px - 10.75rem)"
-              height="calc(100vh - 16.35rem)"
-              onKeyDown={onKeyDownHandler}
-              ref={setDelimiterRef}
               style={{
                 width: '1vw',
                 cursor: 'col-resize',
@@ -320,7 +393,6 @@ const OutcomeManagementPanel = ({
                   '#EEEEEE url("/images/splitpane_handle-ew.gif") no-repeat scroll 50% 50%'
               }}
             />
-            {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
           </Flex.Item>
           <Flex.Item
             as="div"
@@ -390,12 +462,13 @@ const OutcomeManagementPanel = ({
                 isOpen={isOutcomeRemoveModalOpen}
                 onCloseHandler={onCloseOutcomeRemoveModal}
                 onCleanupHandler={onCloseOutcomeRemoveModal}
-                onRemoveLearningOutcomesHandler={removeLearningOutcomes}
+                onRemoveLearningOutcomesHandler={onRemoveLearningOutcome}
               />
               <OutcomeEditModal
                 outcome={selectedOutcome}
                 isOpen={isOutcomeEditModalOpen}
                 onCloseHandler={onCloseOutcomeEditModal}
+                onEditLearningOutcomeHandler={refetchLearningOutcome}
               />
               <OutcomeMoveModal
                 outcomes={selectedOutcomeObj}
@@ -403,7 +476,7 @@ const OutcomeManagementPanel = ({
                 onCloseHandler={onCloseOutcomeMoveModal}
                 onCleanupHandler={onCloseOutcomeMoveModal}
                 onSuccess={onSuccessMoveOutcomes}
-                initialTargetGroup={collections[selectedGroupId]}
+                initialTargetGroup={outcomeMoveInitialTargetGroup}
               />
             </>
           )}
@@ -417,7 +490,7 @@ const OutcomeManagementPanel = ({
             isOpen={isGroupRemoveModalOpen}
             onCloseHandler={closeGroupRemoveModal}
             onCollectionToggle={queryCollections}
-            onSuccess={onSucessGroupRemove}
+            onSuccess={onSuccessGroupRemove}
           />
           <GroupEditModal
             outcomeGroup={group}
@@ -428,6 +501,11 @@ const OutcomeManagementPanel = ({
             outcomeGroup={group}
             isOpen={isGroupDescriptionModalOpen}
             onCloseHandler={closeGroupDescriptionModal}
+          />
+          <FindOutcomesModal
+            open={isFindOutcomesModalOpen}
+            onCloseHandler={handleCloseFindOutcomesModal}
+            targetGroup={group}
           />
         </>
       )}
@@ -446,7 +524,7 @@ const OutcomeManagementPanel = ({
             onCloseHandler={closeOutcomesMoveModal}
             onCleanupHandler={onCloseOutcomesMoveModal}
             onSuccess={onSuccessMoveOutcomes}
-            initialTargetGroup={collections[selectedGroupId]}
+            initialTargetGroup={outcomeMoveInitialTargetGroup}
           />
         </>
       )}
@@ -461,7 +539,8 @@ OutcomeManagementPanel.defaultProps = {
 OutcomeManagementPanel.propTypes = {
   createdOutcomeGroupIds: PropTypes.arrayOf(PropTypes.string),
   onLhsSelectedGroupIdChanged: PropTypes.func,
-  importNumber: PropTypes.number
+  importNumber: PropTypes.number,
+  handleFileDrop: PropTypes.func
 }
 
 export default OutcomeManagementPanel

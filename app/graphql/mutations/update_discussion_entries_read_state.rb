@@ -19,24 +19,32 @@
 #
 
 class Mutations::UpdateDiscussionEntriesReadState < Mutations::BaseMutation
-  graphql_name 'UpdateDiscussionEntriesReadState'
+  graphql_name "UpdateDiscussionEntriesReadState"
 
-  argument :discussion_entry_ids, [ID], required: true, prepare: GraphQLHelpers.relay_or_legacy_ids_prepare_func('DiscussionEntry')
+  argument :discussion_entry_ids, [ID], required: true, prepare: GraphQLHelpers.relay_or_legacy_ids_prepare_func("DiscussionEntry")
   argument :read, Boolean, required: true
 
-  field :discussion_entries, [Types::DiscussionEntryType], null: false
+  field :discussion_entries, [Types::DiscussionEntryType], null: true
   def resolve(input:)
+    return validation_error(I18n.t("Discussion entry ids must have at least one id")) if input[:discussion_entry_ids].blank?
+
     entries = DiscussionEntry.where(id: input[:discussion_entry_ids])
-    raise GraphQL::ExecutionError, 'not found' if entries.count != input[:discussion_entry_ids].count
+    raise GraphQL::ExecutionError, "not found" if entries.count != input[:discussion_entry_ids].count
 
     # return error if provided any ids the user doesn't have permission to read
     entries.each do |entry|
-      raise GraphQL::ExecutionError, 'not found' unless entry.grants_right?(current_user, session, :read)
+      raise GraphQL::ExecutionError, "not found" unless entry.grants_right?(current_user, session, :read)
     end
 
     entry = entries.first
     state = input[:read] ? :read : :unread
-    DiscussionEntryParticipant.upsert_for_entries(entry, current_user, batch: entries, new_state: state, forced: true)
+    ids = DiscussionEntryParticipant.upsert_for_entries(entry, current_user, batch: entries, new_state: state, forced: true)
+
+    # only run this if upsert_for_entries really returned ids
+    if ids
+      offset = state == :read ? -ids.length : ids.length
+      entry.discussion_topic.update_or_create_participant(current_user: current_user, offset: offset)
+    end
 
     {
       discussion_entries: entries

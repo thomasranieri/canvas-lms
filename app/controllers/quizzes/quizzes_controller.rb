@@ -33,24 +33,24 @@ class Quizzes::QuizzesController < ApplicationController
   attr_reader :lock_results_if_needed
 
   before_action :require_context
-  before_action :rce_js_env, only: [:show, :new, :edit]
+  before_action :rce_js_env, only: %i[show new edit]
 
   include K5Mode
 
-  add_crumb(proc { t('#crumbs.quizzes', "Quizzes") }) { |c| c.send :named_context_url, c.instance_variable_get("@context"), :context_quizzes_url }
+  add_crumb(proc { t("#crumbs.quizzes", "Quizzes") }) { |c| c.send :named_context_url, c.instance_variable_get("@context"), :context_quizzes_url }
   before_action { |c| c.active_tab = "quizzes" }
-  before_action :require_quiz, :only => [
-    :statistics,
-    :edit,
-    :show,
-    :history,
-    :update,
-    :destroy,
-    :moderate,
-    :read_only,
-    :managed_quiz_data,
-    :submission_versions,
-    :submission_html
+  before_action :require_quiz, only: %i[
+    statistics
+    edit
+    show
+    history
+    update
+    destroy
+    moderate
+    read_only
+    managed_quiz_data
+    submission_versions
+    submission_html
   ]
   before_action :set_download_submission_dialog_title, only: [:show, :statistics]
   after_action :lock_results, only: [:show, :submission_html]
@@ -59,9 +59,9 @@ class Quizzes::QuizzesController < ApplicationController
   QUIZ_QUESTIONS_DETAIL_LIMIT = 25
   QUIZ_MAX_COMBINATION_COUNT = 200
 
-  QUIZ_TYPE_ASSIGNMENT = 'assignment'
-  QUIZ_TYPE_PRACTICE = 'practice_quiz'
-  QUIZ_TYPE_SURVEYS = ['survey', 'graded_survey'].freeze
+  QUIZ_TYPE_ASSIGNMENT = "assignment"
+  QUIZ_TYPE_PRACTICE = "practice_quiz"
+  QUIZ_TYPE_SURVEYS = ["survey", "graded_survey"].freeze
 
   def index
     GuardRail.activate(:secondary) do
@@ -70,17 +70,20 @@ class Quizzes::QuizzesController < ApplicationController
 
       can_manage = @context.grants_any_right?(@current_user, session, :manage_assignments, :manage_assignments_edit)
 
+      quiz_index = scoped_quizzes_index
+      quiz_index += scoped_new_quizzes_index if quiz_lti_enabled?
+
       quiz_options = Rails.cache.fetch(
         [
-          'quiz_user_permissions', @context.id, @current_user,
-          scoped_quizzes_index.map(&:id), # invalidate on add/delete of quizzes
-          scoped_quizzes_index.map(&:updated_at).sort.last # invalidate on modifications
+          "quiz_user_permissions", @context.id, @current_user,
+          quiz_index.map(&:id), # invalidate on add/delete of quizzes
+          quiz_index.map(&:updated_at).max # invalidate on modifications
         ].cache_key
       ) do
         if can_manage
           Quizzes::Quiz.preload_can_unpublish(scoped_quizzes_index)
         end
-        scoped_quizzes_index.each_with_object({}) do |quiz, quiz_user_permissions|
+        quiz_index.each_with_object({}) do |quiz, quiz_user_permissions|
           quiz_user_permissions[quiz.id] = {
             can_update: can_manage,
             can_unpublish: can_manage && quiz.can_unpublish?
@@ -102,47 +105,49 @@ class Quizzes::QuizzesController < ApplicationController
       sis_integration_settings_enabled = AssignmentUtil.sis_integration_settings_enabled?(@context)
 
       hash = {
-        :QUIZZES => {
+        QUIZZES: {
           assignment: assignment_quizzes_json(serializer_options),
           open: quizzes_json(practice_quizzes, *serializer_options),
           surveys: quizzes_json(surveys, *serializer_options),
           options: quiz_options
         },
-        :URLS => {
+        URLS: {
           new_assignment_url: new_polymorphic_url([@context, :assignment]),
-          new_quiz_url: context_url(@context, :context_quizzes_new_url, :fresh => 1),
+          new_quiz_url: context_url(@context, :context_quizzes_new_url, fresh: 1),
           new_quizzes_selection: api_v1_course_new_quizzes_selection_update_url(@context),
           question_banks_url: context_url(@context, :context_question_banks_url),
           assignment_overrides: api_v1_course_quiz_assignment_overrides_url(@context),
           new_quizzes_assignment_overrides: api_v1_course_new_quizzes_assignment_overrides_url(@context)
         },
-        :PERMISSIONS => {
+        PERMISSIONS: {
           create: can_do(@context.quizzes.temp_record, @current_user, :create),
           manage: can_manage,
           read_question_banks: can_manage || can_do(@context, @current_user, :read_question_banks)
         },
-        :FLAGS => {
+        FLAGS: {
           question_banks: feature_enabled?(:question_banks),
           post_to_sis_enabled: Assignment.sis_grade_export_enabled?(@context),
-          quiz_lti_enabled: quiz_lti_enabled?,
+          quiz_lti_enabled: quiz_lti_on_quizzes_page?,
           new_quizzes_modules_support: Account.site_admin.feature_enabled?(:new_quizzes_modules_support),
-          migrate_quiz_enabled:
-            @context.feature_enabled?(:quizzes_next) &&
-            @context.quiz_lti_tool.present?,
+          new_quizzes_skip_to_build_module_button: Account.site_admin.feature_enabled?(:new_quizzes_skip_to_build_module_button),
+          migrate_quiz_enabled: quiz_lti_enabled?,
           # TODO: remove this since it's set in application controller
           # Will need to update consumers of this in the UI to bring down
           # this permissions check as well
           DIRECT_SHARE_ENABLED: can_manage || @context.grants_right?(@current_user, session, :read_as_admin),
         },
-        :quiz_menu_tools => external_tools_display_hashes(:quiz_menu),
-        :quiz_index_menu_tools => (@domain_root_account&.feature_enabled?(:commons_favorites) ?
-          external_tools_display_hashes(:quiz_index_menu) : []),
-        :SIS_NAME => sis_name,
-        :MAX_NAME_LENGTH => max_name_length,
-        :DUE_DATE_REQUIRED_FOR_ACCOUNT => due_date_required_for_account,
-        :MAX_NAME_LENGTH_REQUIRED_FOR_ACCOUNT => max_name_length_required_for_account,
-        :SIS_INTEGRATION_SETTINGS_ENABLED => sis_integration_settings_enabled,
-        :NEW_QUIZZES_SELECTED => quiz_engine_selection
+        quiz_menu_tools: external_tools_display_hashes(:quiz_menu),
+        quiz_index_menu_tools: (if @domain_root_account&.feature_enabled?(:commons_favorites)
+                                  external_tools_display_hashes(:quiz_index_menu)
+                                else
+                                  []
+                                end),
+        SIS_NAME: sis_name,
+        MAX_NAME_LENGTH: max_name_length,
+        DUE_DATE_REQUIRED_FOR_ACCOUNT: due_date_required_for_account,
+        MAX_NAME_LENGTH_REQUIRED_FOR_ACCOUNT: max_name_length_required_for_account,
+        SIS_INTEGRATION_SETTINGS_ENABLED: sis_integration_settings_enabled,
+        NEW_QUIZZES_SELECTED: quiz_engine_selection
       }
       if @context.is_a?(Course) && @context.grants_right?(@current_user, session, :read)
         hash[:COURSE_ID] = @context.id.to_s
@@ -159,12 +164,12 @@ class Quizzes::QuizzesController < ApplicationController
                                                .grade_by_course(@context)
     end
 
-    log_asset_access(["quizzes", @context], "quizzes", 'other')
+    log_asset_access(["quizzes", @context], "quizzes", "other")
   end
 
   def show
     if @quiz.deleted?
-      flash[:error] = t('errors.quiz_deleted', "That quiz has been deleted")
+      flash[:error] = t("errors.quiz_deleted", "That quiz has been deleted")
       redirect_to named_context_url(@context, :context_quizzes_url)
       return
     end
@@ -175,7 +180,7 @@ class Quizzes::QuizzesController < ApplicationController
 
       if @current_user && !@quiz.visible_to_user?(@current_user)
         if @current_user.quiz_submissions.where(quiz_id: @quiz).any?
-          flash[:notice] = t 'notices.submission_doesnt_count', "This quiz will no longer count towards your grade."
+          flash[:notice] = t "notices.submission_doesnt_count", "This quiz will no longer count towards your grade."
         else
           respond_to do |format|
             flash[:error] = t "You do not have access to the requested quiz."
@@ -190,20 +195,21 @@ class Quizzes::QuizzesController < ApplicationController
 
       setup_headless
 
-      if @quiz.require_lockdown_browser? && @quiz.require_lockdown_browser_for_results? && params[:viewing]
-        return unless check_lockdown_browser(:medium, named_context_url(@context, 'context_quiz_url', @quiz.to_param, :viewing => "1"))
-      end
+      return if (@quiz.require_lockdown_browser? &
+                @quiz.require_lockdown_browser_for_results?) &&
+                params[:viewing] &&
+                !check_lockdown_browser(:medium, named_context_url(@context, "context_quiz_url", @quiz.to_param, viewing: "1"))
 
       if @quiz.require_lockdown_browser? && value_to_boolean(params.delete(:refresh_ldb))
-        return render(:action => "refresh_quiz_after_popup")
+        return render(action: "refresh_quiz_after_popup")
       end
 
       @question_count = @quiz.question_count
       if session[:quiz_id] == @quiz.id && !request.xhr?
         session.delete(:quiz_id)
       end
-      is_observer = @context_enrollment && @context_enrollment.observer?
-      @locked_reason = @quiz.locked_for?(@current_user, :check_policies => true, :deep_check_if_needed => true, :is_observer => is_observer)
+      is_observer = @context_enrollment&.observer?
+      @locked_reason = @quiz.locked_for?(@current_user, check_policies: true, deep_check_if_needed: true, is_observer: is_observer)
       @locked = @locked_reason && !can_preview?
 
       @context_module_tag = ContextModuleItem.find_tag_with_preferred([@quiz, @quiz.assignment], params[:module_item_id])
@@ -217,7 +223,7 @@ class Quizzes::QuizzesController < ApplicationController
       @submission = get_submission
 
       @just_graded = false
-      if @submission && @submission.needs_grading?(!!params[:take])
+      if @submission&.needs_grading?(!!params[:take])
         GuardRail.activate(:primary) do
           Quizzes::SubmissionGrader.new(@submission).grade_submission(
             finished_at: @submission.finished_at_fallback
@@ -227,9 +233,9 @@ class Quizzes::QuizzesController < ApplicationController
         end
       end
       if @submission
-        upload_url = api_v1_quiz_submission_files_path(:course_id => @context.id, :quiz_id => @quiz.id)
-        js_env :UPLOAD_URL => upload_url
-        js_env :SUBMISSION_VERSIONS_URL => course_quiz_submission_versions_url(@context, @quiz) unless hide_quiz?
+        upload_url = api_v1_quiz_submission_files_path(course_id: @context.id, quiz_id: @quiz.id)
+        js_env UPLOAD_URL: upload_url
+        js_env SUBMISSION_VERSIONS_URL: course_quiz_submission_versions_url(@context, @quiz) unless hide_quiz?
         if !@submission.preview? && (!@js_env || !@js_env[:QUIZ_SUBMISSION_EVENTS_URL])
           events_url = api_v1_course_quiz_submission_events_url(@context, @quiz, @submission)
           js_env QUIZ_SUBMISSION_EVENTS_URL: events_url
@@ -241,7 +247,7 @@ class Quizzes::QuizzesController < ApplicationController
       @stored_params = (@submission.temporary_data rescue nil) if params[:take] && @submission && (@submission.untaken? || @submission.preview?)
       @stored_params ||= {}
       hash = {
-        ATTACHMENTS: Hash[@attachments.map { |_, a| [a.id, attachment_hash(a)] }],
+        ATTACHMENTS: @attachments.map { |_, a| [a.id, attachment_hash(a)] }.to_h,
         CONTEXT_ACTION_SOURCE: :quizzes,
         COURSE_ID: @context.id,
         LOCKDOWN_BROWSER: @quiz.require_lockdown_browser?,
@@ -260,7 +266,7 @@ class Quizzes::QuizzesController < ApplicationController
       @can_take = can_take_quiz?
       GuardRail.activate(:primary) do
         if params[:take] && @can_take
-          return false if @quiz.require_lockdown_browser? && !check_lockdown_browser(:highest, named_context_url(@context, 'context_quiz_take_url', @quiz.id))
+          return false if @quiz.require_lockdown_browser? && !check_lockdown_browser(:highest, named_context_url(@context, "context_quiz_take_url", @quiz.id))
 
           # allow starting the quiz via a GET request, but only when using a lockdown browser
           if request.post? || (@quiz.require_lockdown_browser? && !quiz_submission_active?)
@@ -315,47 +321,46 @@ class Quizzes::QuizzesController < ApplicationController
       @quiz.due_at = params[:due_at] if params[:due_at]
       @quiz.assignment_group_id = params[:assignment_group_id] if params[:assignment_group_id]
 
-      student_ids = @context.student_ids
       @banks_hash = get_banks(@quiz)
 
       if (@has_student_submissions = @quiz.has_student_submissions?)
-        flash[:notice] = t('notices.has_submissions_already', "Keep in mind, some students have already taken or started taking this quiz")
+        flash[:notice] = t("notices.has_submissions_already", "Keep in mind, some students have already taken or started taking this quiz")
       end
 
-      regrade_options = Hash[@quiz.current_quiz_question_regrades.map do |qqr|
+      regrade_options = @quiz.current_quiz_question_regrades.map do |qqr|
         [qqr.quiz_question_id, qqr.regrade_option]
-      end]
+      end.to_h
       sections = @context.course_sections.active
 
       max_name_length_required_for_account = AssignmentUtil.name_length_required_for_account?(@context)
       max_name_length = AssignmentUtil.assignment_max_name_length(@context)
 
       hash = {
-        :ASSIGNMENT_ID => @assignment.present? ? @assignment.id : nil,
-        :ASSIGNMENT_OVERRIDES => assignment_overrides_json(@quiz.overrides_for(@current_user,
-                                                                               ensure_set_not_empty: true),
-                                                           @current_user),
-        :DUE_DATE_REQUIRED_FOR_ACCOUNT => AssignmentUtil.due_date_required_for_account?(@context),
-        :QUIZ => quiz_json(@quiz, @context, @current_user, session),
-        :SECTION_LIST => sections.map { |section|
+        ASSIGNMENT_ID: @assignment.present? ? @assignment.id : nil,
+        ASSIGNMENT_OVERRIDES: assignment_overrides_json(@quiz.overrides_for(@current_user,
+                                                                            ensure_set_not_empty: true),
+                                                        @current_user),
+        DUE_DATE_REQUIRED_FOR_ACCOUNT: AssignmentUtil.due_date_required_for_account?(@context),
+        QUIZ: quiz_json(@quiz, @context, @current_user, session),
+        SECTION_LIST: sections.map do |section|
           {
-            :id => section.id,
-            :name => section.name,
-            :start_at => section.start_at,
-            :end_at => section.end_at,
-            :override_course_and_term_dates => section.restrict_enrollments_to_section_dates
+            id: section.id,
+            name: section.name,
+            start_at: section.start_at,
+            end_at: section.end_at,
+            override_course_and_term_dates: section.restrict_enrollments_to_section_dates
           }
-        },
-        :QUIZZES_URL => course_quizzes_url(@context),
-        :QUIZ_IP_FILTERS_URL => api_v1_course_quiz_ip_filters_url(@context, @quiz),
-        :CONTEXT_ACTION_SOURCE => :quizzes,
-        :REGRADE_OPTIONS => regrade_options,
-        :quiz_max_combination_count => QUIZ_MAX_COMBINATION_COUNT,
-        :SHOW_QUIZ_ALT_TEXT_WARNING => true,
-        :VALID_DATE_RANGE => CourseDateRange.new(@context),
-        :HAS_GRADING_PERIODS => @context.grading_periods?,
-        :MAX_NAME_LENGTH_REQUIRED_FOR_ACCOUNT => max_name_length_required_for_account,
-        :MAX_NAME_LENGTH => max_name_length
+        end,
+        QUIZZES_URL: course_quizzes_url(@context),
+        QUIZ_IP_FILTERS_URL: api_v1_course_quiz_ip_filters_url(@context, @quiz),
+        CONTEXT_ACTION_SOURCE: :quizzes,
+        REGRADE_OPTIONS: regrade_options,
+        quiz_max_combination_count: QUIZ_MAX_COMBINATION_COUNT,
+        SHOW_QUIZ_ALT_TEXT_WARNING: true,
+        VALID_DATE_RANGE: CourseDateRange.new(@context),
+        HAS_GRADING_PERIODS: @context.grading_periods?,
+        MAX_NAME_LENGTH_REQUIRED_FOR_ACCOUNT: max_name_length_required_for_account,
+        MAX_NAME_LENGTH: max_name_length
       }
 
       if @context.grading_periods?
@@ -386,27 +391,25 @@ class Quizzes::QuizzesController < ApplicationController
 
       overrides = delete_override_params
 
-      if overrides
-        return render_forbidden unless grading_periods_allow_assignment_overrides_batch_create?(@quiz, overrides)
-      end
+      return render_forbidden if overrides && !grading_periods_allow_assignment_overrides_batch_create?(@quiz, overrides)
 
       quiz_params = get_quiz_params
       quiz_params[:title] = nil if quiz_params[:title] == "undefined"
       quiz_params[:title] ||= t(:default_title, "New Quiz")
       quiz_params[:description] = process_incoming_html_content(quiz_params[:description]) if quiz_params.key?(:description)
-      quiz_params.delete(:points_possible) unless quiz_params[:quiz_type] == 'graded_survey'
+      quiz_params.delete(:points_possible) unless quiz_params[:quiz_type] == "graded_survey"
       quiz_params[:disable_timer_autosubmission] = false if quiz_params[:time_limit].blank?
       quiz_params[:access_code] = nil if quiz_params[:access_code] == ""
-      if quiz_params[:quiz_type] == 'assignment' || quiz_params[:quiz_type] == 'graded_survey'
+      if quiz_params[:quiz_type] == "assignment" || quiz_params[:quiz_type] == "graded_survey"
         quiz_params[:assignment_group_id] ||= @context.assignment_groups.first.id
         if (assignment_group_id = quiz_params.delete(:assignment_group_id)) && assignment_group_id.present?
           @assignment_group = @context.assignment_groups.active.where(id: assignment_group_id).first
         end
         if @assignment_group
-          @assignment = @context.assignments.build(:title => quiz_params[:title], :due_at => quiz_params[:lock_at], :submission_types => 'online_quiz')
+          @assignment = @context.assignments.build(title: quiz_params[:title], due_at: quiz_params[:lock_at], submission_types: "online_quiz")
           @assignment.assignment_group = @assignment_group
           @assignment.saved_by = :quiz
-          @assignment.workflow_state = 'unpublished'
+          @assignment.workflow_state = "unpublished"
           @assignment.save
           quiz_params[:assignment_id] = @assignment.id
         end
@@ -421,7 +424,7 @@ class Quizzes::QuizzesController < ApplicationController
       end
 
       if params[:post_to_sis]
-        @quiz.assignment.post_to_sis = params[:post_to_sis] == '1'
+        @quiz.assignment.post_to_sis = params[:post_to_sis] == "1"
       end
 
       if Account.site_admin.feature_enabled?(:important_dates)
@@ -430,14 +433,13 @@ class Quizzes::QuizzesController < ApplicationController
 
       @quiz.did_edit if @quiz.created?
       @quiz.reload
-      render :json => @quiz.as_json(:include => { :assignment => { :include => :assignment_group } })
+      render json: @quiz.as_json(include: { assignment: { include: :assignment_group } })
     end
   rescue
-    render :json => @quiz.errors, :status => :bad_request
+    render json: @quiz.errors, status: :bad_request
   end
 
   def update
-    n = Time.now.to_f
     if authorized_action(@quiz, @current_user, :update)
       quiz_params = get_quiz_params
       params[:quiz] ||= {}
@@ -459,10 +461,10 @@ class Quizzes::QuizzesController < ApplicationController
       quiz_params[:title] = t("New Quiz") if quiz_params[:title] == "undefined"
       quiz_params[:description] = process_incoming_html_content(quiz_params[:description]) if quiz_params.key?(:description)
 
-      quiz_params.delete(:points_possible) unless quiz_params[:quiz_type] == 'graded_survey'
+      quiz_params.delete(:points_possible) unless quiz_params[:quiz_type] == "graded_survey"
       quiz_params[:disable_timer_autosubmission] = false if quiz_params[:time_limit].blank?
       quiz_params[:access_code] = nil if quiz_params[:access_code] == ""
-      if quiz_params[:quiz_type] == 'assignment' || quiz_params[:quiz_type] == 'graded_survey' # 'new' && params[:quiz][:assignment_group_id]
+      if quiz_params[:quiz_type] == "assignment" || quiz_params[:quiz_type] == "graded_survey" # 'new' && params[:quiz][:assignment_group_id]
         if (assignment_group_id = quiz_params.delete(:assignment_group_id)) && assignment_group_id.present?
           @assignment_group = @context.assignment_groups.active.where(id: assignment_group_id).first
         end
@@ -472,7 +474,7 @@ class Quizzes::QuizzesController < ApplicationController
         quiz_params[:assignment_group_id] = @assignment_group && @assignment_group.id
       end
 
-      quiz_params[:lock_at] = nil if quiz_params.delete(:do_lock_at) == 'false'
+      quiz_params[:lock_at] = nil if quiz_params.delete(:do_lock_at) == "false"
       created_quiz = @quiz.created?
 
       Assignment.suspend_due_date_caching do
@@ -494,7 +496,7 @@ class Quizzes::QuizzesController < ApplicationController
               old_assignment = @quiz.assignment.clone
               old_assignment.id = @quiz.assignment.id
 
-              @quiz.assignment.post_to_sis = params[:post_to_sis] == '1'
+              @quiz.assignment.post_to_sis = params[:post_to_sis] == "1"
               @quiz.assignment.validate_overrides_for_sis(overrides) unless overrides.nil?
 
               if Account.site_admin.feature_enabled?(:important_dates)
@@ -512,7 +514,7 @@ class Quizzes::QuizzesController < ApplicationController
               @quiz.content_being_saved_by(@current_user)
               if auto_publish
                 @quiz.generate_quiz_data
-                @quiz.workflow_state = 'available'
+                @quiz.workflow_state = "available"
                 @quiz.published_at = Time.now
               end
               @quiz.save!
@@ -567,10 +569,10 @@ class Quizzes::QuizzesController < ApplicationController
       respond_to do |format|
         if @quiz.destroy
           format.html { redirect_to course_quizzes_url(@context) }
-          format.json { render :json => @quiz }
+          format.json { render json: @quiz }
         else
           format.html { redirect_to course_quiz_url(@context, @quiz) }
-          format.json { render :json => @quiz.errors }
+          format.json { render json: @quiz.errors }
         end
       end
     end
@@ -581,31 +583,31 @@ class Quizzes::QuizzesController < ApplicationController
       @quizzes = @context.quizzes.active.where(id: params[:quizzes])
       @quizzes.each(&:publish!)
 
-      flash[:notice] = t('notices.quizzes_published',
-                         { :one => "1 quiz successfully published!",
-                           :other => "%{count} quizzes successfully published!" },
-                         :count => @quizzes.length)
+      flash[:notice] = t("notices.quizzes_published",
+                         { one: "1 quiz successfully published!",
+                           other: "%{count} quizzes successfully published!" },
+                         count: @quizzes.length)
 
       respond_to do |format|
         format.html { redirect_to named_context_url(@context, :context_quizzes_url) }
-        format.json { render :json => {}, :status => :ok }
+        format.json { render json: {}, status: :ok }
       end
     end
   end
 
   def unpublish
     if authorized_action(@context, @current_user, [:manage_assignments, :manage_assignments_edit])
-      @quizzes = @context.quizzes.active.where(id: params[:quizzes]).select { |q| q.available? }
+      @quizzes = @context.quizzes.active.where(id: params[:quizzes]).select(&:available?)
       @quizzes.each(&:unpublish!)
 
-      flash[:notice] = t('notices.quizzes_unpublished',
-                         { :one => "1 quiz successfully unpublished!",
-                           :other => "%{count} quizzes successfully unpublished!" },
-                         :count => @quizzes.length)
+      flash[:notice] = t("notices.quizzes_unpublished",
+                         { one: "1 quiz successfully unpublished!",
+                           other: "%{count} quizzes successfully unpublished!" },
+                         count: @quizzes.length)
 
       respond_to do |format|
         format.html { redirect_to named_context_url(@context, :context_quizzes_url) }
-        format.json { render :json => {}, :status => :ok }
+        format.json { render json: {}, status: :ok }
       end
     end
   end
@@ -614,7 +616,7 @@ class Quizzes::QuizzesController < ApplicationController
   def statistics
     if authorized_action(@quiz, @current_user, :read_statistics)
       respond_to do |format|
-        format.html {
+        format.html do
           add_crumb(@quiz.title, named_context_url(@context, :context_quiz_url, @quiz))
           add_crumb(t(:statistics_crumb, "Statistics"), named_context_url(@context, :context_quiz_statistics_url, @quiz))
 
@@ -626,7 +628,7 @@ class Quizzes::QuizzesController < ApplicationController
                  })
 
           render :statistics_cqs
-        }
+        end
       end
     end
   end
@@ -642,7 +644,7 @@ class Quizzes::QuizzesController < ApplicationController
 
       @submissions_from_users = @quiz.quiz_submissions.for_user_ids(students.map(&:id)).not_settings_only.to_a
 
-      @submissions_from_users = Hash[@submissions_from_users.map { |s| [s.user_id, s] }]
+      @submissions_from_users = @submissions_from_users.index_by(&:user_id)
 
       # include logged out submissions
       @submissions_from_logged_out = @quiz.quiz_submissions.logged_out.not_settings_only
@@ -663,9 +665,9 @@ class Quizzes::QuizzesController < ApplicationController
         unsubmitted_students_json = @unsubmitted_students.map { |u| user_json(u, @current_user, session) }
       end
 
-      @quiz_submission_list = { :UNSUBMITTED_STUDENTS => unsubmitted_students_json,
-                                :SUBMITTED_STUDENTS => submitted_students_json }.to_json
-      render :layout => false
+      @quiz_submission_list = { UNSUBMITTED_STUDENTS: unsubmitted_students_json,
+                                SUBMITTED_STUDENTS: submitted_students_json }.to_json
+      render layout: false
     end
   end
 
@@ -689,9 +691,9 @@ class Quizzes::QuizzesController < ApplicationController
       if @submission && !@submission.user_id && (logged_out_index = params[:u_index])
         @logged_out_user_index = logged_out_index
       end
-      @submission = nil if @submission && @submission.settings_only?
-      @user = @submission && @submission.user
-      if @submission && @submission.needs_grading?
+      @submission = nil if @submission&.settings_only?
+      @user = @submission&.user
+      if @submission&.needs_grading?
         Quizzes::SubmissionGrader.new(@submission).grade_submission(
           finished_at: @submission.finished_at_fallback
         )
@@ -699,36 +701,36 @@ class Quizzes::QuizzesController < ApplicationController
       end
       setup_attachments
       if @quiz.deleted?
-        flash[:error] = t('errors.quiz_deleted', "That quiz has been deleted")
+        flash[:error] = t("errors.quiz_deleted", "That quiz has been deleted")
         redirect_to named_context_url(@context, :context_quizzes_url)
         return
       end
-      if !@submission
-        flash[:notice] = t('notices.no_submission_for_user', "There is no submission available for that user")
+      unless @submission
+        flash[:notice] = t("notices.no_submission_for_user", "There is no submission available for that user")
         redirect_to named_context_url(@context, :context_quiz_url, @quiz)
         return
       end
       if hide_quiz? && !@quiz.grants_right?(@current_user, session, :review_grades)
-        flash[:notice] = t('notices.cant_view_submission_while_muted', "You cannot view the quiz history while the quiz is muted.")
+        flash[:notice] = t("notices.cant_view_submission_while_muted", "You cannot view the quiz history while the quiz is muted.")
         redirect_to named_context_url(@context, :context_quiz_url, @quiz)
         return
       end
       if params[:score_updated]
-        js_env :SCORE_UPDATED => true
+        js_env SCORE_UPDATED: true
       end
-      js_env :GRADE_BY_QUESTION => @current_user&.preferences&.dig(:enable_speedgrader_grade_by_question)
+      js_env GRADE_BY_QUESTION: @current_user&.preferences&.dig(:enable_speedgrader_grade_by_question)
       if authorized_action(@submission, @current_user, :read)
         if @current_user && !@quiz.visible_to_user?(@current_user)
-          flash[:notice] = t 'notices.submission_doesnt_count', "This quiz will no longer count towards your grade."
+          flash[:notice] = t "notices.submission_doesnt_count", "This quiz will no longer count towards your grade."
         end
         dont_show_user_name = @submission.quiz.anonymous_submissions || (!@submission.user || @submission.user == @current_user)
         add_crumb((dont_show_user_name ? t(:default_history_crumb, "History") : @submission.user.name))
         @headers = !params[:headless]
         unless @headers
-          @body_classes << 'quizzes-speedgrader'
+          @body_classes << "quizzes-speedgrader"
         end
         @current_submission = @submission
-        @version_instances = @submission.submitted_attempts.sort_by { |v| v.version_number }
+        @version_instances = @submission.submitted_attempts.sort_by(&:version_number)
         @versions = get_versions
         params[:version] ||= @version_instances[0].version_number if @submission.untaken? && !@version_instances.empty?
         @current_version = true
@@ -745,11 +747,13 @@ class Quizzes::QuizzesController < ApplicationController
           @submission&.submission&.mark_read(@current_user)
         end
 
-        log_asset_access(@quiz, "quizzes", 'quizzes')
+        log_asset_access(@quiz, "quizzes", "quizzes")
 
-        if @quiz.require_lockdown_browser? && @quiz.require_lockdown_browser_for_results? && params[:viewing]
-          return unless check_lockdown_browser(:medium, named_context_url(@context, 'context_quiz_history_url', @quiz.to_param, :viewing => "1", :version => params[:version]))
-        end
+        return if @quiz.require_lockdown_browser? &&
+                  @quiz.require_lockdown_browser_for_results? &&
+                  params[:viewing] &&
+                  !check_lockdown_browser(:medium, named_context_url(@context, "context_quiz_history_url", @quiz.to_param, viewing: "1", version: params[:version]))
+
         js_bundle :quiz_history
         @google_analytics_page_title = @quiz.survey? ? "User's Survey History" : "User's Quiz History"
         render stream: can_stream_template?
@@ -773,7 +777,7 @@ class Quizzes::QuizzesController < ApplicationController
         format.json do
           @students = Api.paginate(@students, self, course_quiz_moderate_url(@context, @quiz), default_per_page: 50)
           @submissions = @quiz.quiz_submissions.updated_after(last_updated_at).for_user_ids(@students.map(&:id))
-          render :json => @submissions.map { |s| s.as_json(include_root: false, except: [:submission_data, :quiz_data], methods: ['extendable?', :finished_in_words, :attempts_left]) }
+          render json: @submissions.map { |s| s.as_json(include_root: false, except: [:submission_data, :quiz_data], methods: ["extendable?", :finished_in_words, :attempts_left]) }
         end
       end
     end
@@ -784,8 +788,8 @@ class Quizzes::QuizzesController < ApplicationController
       @submission = get_submission
       @versions   = @submission ? get_versions : []
 
-      if @versions.size > 0 && !hide_quiz?
-        render :layout => false
+      if !@versions.empty? && !hide_quiz?
+        render layout: false
       else
         head :ok
       end
@@ -806,7 +810,7 @@ class Quizzes::QuizzesController < ApplicationController
   def submission_html
     @submission = get_submission
     setup_attachments
-    if @submission && @submission.completed?
+    if @submission&.completed?
       @lock_results_if_needed = true
       render layout: false
     else
@@ -849,18 +853,16 @@ class Quizzes::QuizzesController < ApplicationController
   end
 
   def setup_attachments
-    if @submission
-      @attachments = Hash[@submission.attachments.map do |attachment|
-        [attachment.id, attachment]
-      end
-      ]
-    else
-      @attachments = {}
-    end
+    @attachments = if @submission
+                     @submission.attachments.index_by(&:id)
+
+                   else
+                     {}
+                   end
   end
 
   def attachment_hash(attachment)
-    { :id => attachment.id, :display_name => attachment.display_name }
+    { id: attachment.id, display_name: attachment.display_name }
   end
 
   def delete_override_params
@@ -875,7 +877,7 @@ class Quizzes::QuizzesController < ApplicationController
   end
 
   def force_user
-    if !@current_user
+    unless @current_user
       session[:return_to] = course_quiz_path(@context, @quiz)
       redirect_to login_path
     end
@@ -898,12 +900,12 @@ class Quizzes::QuizzesController < ApplicationController
       redirect_to(plugin.redirect_url(self, redirect_return_url))
       return false
     elsif !plugin.authorized?(self)
-      redirect_to(:action => 'lockdown_browser_required', :quiz_id => @quiz.id)
+      redirect_to(action: "lockdown_browser_required", quiz_id: @quiz.id)
       return false
-    elsif !session['lockdown_browser_popup'] && (@query_params = plugin.popup_window(self, security_level))
+    elsif !session["lockdown_browser_popup"] && (@query_params = plugin.popup_window(self, security_level))
       @security_level = security_level
-      session['lockdown_browser_popup'] = true
-      render(:action => 'take_quiz_in_popup')
+      session["lockdown_browser_popup"] = true
+      render(action: "take_quiz_in_popup")
       return false
     end
     @lockdown_browser_authorized_to_view = true
@@ -931,7 +933,7 @@ class Quizzes::QuizzesController < ApplicationController
       user_code = nil if preview
       user_code ||= temporary_user_code
       @submission = @quiz.generate_submission(user_code, !!preview)
-      log_asset_access(@quiz, 'quizzes', 'quizzes', 'participate')
+      log_asset_access(@quiz, "quizzes", "quizzes", "participate")
     end
     if quiz_submission_active?
       if request.get?
@@ -939,10 +941,10 @@ class Quizzes::QuizzesController < ApplicationController
         take_quiz
       else
         # redirect to avoid refresh issues
-        redirect_to course_quiz_take_url(@context, @quiz, quiz_redirect_params(:preview => params[:preview]))
+        redirect_to course_quiz_take_url(@context, @quiz, quiz_redirect_params(preview: params[:preview]))
       end
     else
-      flash[:error] = t('errors.no_more_attempts', "You have no quiz attempts left") unless @just_graded
+      flash[:error] = t("errors.no_more_attempts", "You have no quiz attempts left") unless @just_graded
       redirect_to named_context_url(@context, :context_quiz_url, @quiz, quiz_redirect_params)
     end
   end
@@ -951,7 +953,7 @@ class Quizzes::QuizzesController < ApplicationController
     return unless quiz_submission_active?
 
     @show_embedded_chat = false
-    flash[:notice] = t('notices.less_than_allotted_time', "You started this quiz near when it was due, so you won't have the full amount of time to take the quiz.") if @submission.less_than_allotted_time?
+    flash[:notice] = t("notices.less_than_allotted_time", "You started this quiz near when it was due, so you won't have the full amount of time to take the quiz.") if @submission.less_than_allotted_time?
     if params[:question_id] && !valid_question?(@submission, params[:question_id])
       redirect_to course_quiz_url(@context, @quiz) and return
     end
@@ -970,8 +972,8 @@ class Quizzes::QuizzesController < ApplicationController
 
     @quiz_presenter = Quizzes::TakeQuizPresenter.new(@quiz, @submission, params)
     if params[:persist_headless]
-      add_meta_tag(:name => "viewport", :id => "vp", :content => "initial-scale=1.0,user-scalable=yes,width=device-width")
-      js_env :MOBILE_UI => true
+      add_meta_tag(name: "viewport", id: "vp", content: "initial-scale=1.0,user-scalable=yes,width=device-width")
+      js_env MOBILE_UI: true
     end
     render :take_quiz
   end
@@ -983,7 +985,7 @@ class Quizzes::QuizzesController < ApplicationController
   def can_take_quiz?
     return true if params[:preview] && can_preview?
     return false if params[:take] && !@quiz.grants_right?(@current_user, :submit)
-    return false if @submission && @submission.completed? && @submission.attempts_left == 0
+    return false if @submission&.completed? && @submission.attempts_left == 0
 
     @quiz_eligibility = Quizzes::QuizEligibility.new(course: @context,
                                                      quiz: @quiz,
@@ -1015,8 +1017,8 @@ class Quizzes::QuizzesController < ApplicationController
   end
 
   def set_download_submission_dialog_title
-    js_env SUBMISSION_DOWNLOAD_DIALOG_TITLE: I18n.t('#quizzes.download_all_quiz_file_upload_submissions',
-                                                    'Download All Quiz File Upload Submissions')
+    js_env SUBMISSION_DOWNLOAD_DIALOG_TITLE: I18n.t("#quizzes.download_all_quiz_file_upload_submissions",
+                                                    "Download All Quiz File Upload Submissions")
   end
 
   # Handler for quiz option: one_time_results
@@ -1051,12 +1053,15 @@ class Quizzes::QuizzesController < ApplicationController
     end
   end
 
-  def quiz_lti_enabled?
-    quiz_lti_tool = @context.quiz_lti_tool
+  def quiz_lti_on_quizzes_page?
     @context.root_account.feature_enabled?(:newquizzes_on_quiz_page) &&
-      @context.feature_enabled?(:quizzes_next) &&
-      quiz_lti_tool.present? &&
-      quiz_lti_tool.url != 'http://void.url.inseng.net'
+      quiz_lti_enabled? &&
+      @context.quiz_lti_tool.url != "http://void.url.inseng.net"
+  end
+
+  def quiz_lti_enabled?
+    @context.feature_enabled?(:quizzes_next) &&
+      @context.quiz_lti_tool.present?
   end
 
   def assignment_quizzes_json(serializer_options)
@@ -1065,9 +1070,8 @@ class Quizzes::QuizzesController < ApplicationController
       return quizzes_json(old_quizzes, *serializer_options)
     end
 
-    new_quizzes = Assignments::ScopedToUser.new(@context, @current_user).scope.preload(:duplicate_of).type_quiz_lti
     quizzes_next_json(
-      sort_quizzes(old_quizzes + new_quizzes),
+      sort_quizzes(old_quizzes + scoped_new_quizzes_index),
       *serializer_options
     )
   end
@@ -1117,6 +1121,12 @@ class Quizzes::QuizzesController < ApplicationController
     scope = DifferentiableAssignment.scope_filter(scope, @current_user, @context)
 
     @_quizzes_index = sort_quizzes(scope)
+  end
+
+  def scoped_new_quizzes_index
+    return @_new_quizzes_index if @_new_quizzes_index
+
+    @_new_quizzes_index = Assignments::ScopedToUser.new(@context, @current_user).scope.preload(:duplicate_of).type_quiz_lti
   end
 
   def scoped_quizzes

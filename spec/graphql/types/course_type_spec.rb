@@ -18,24 +18,27 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::CourseType do
-  let_once(:course) { course_with_student(active_all: true); @course }
+  let_once(:course) do
+    course_with_student(active_all: true)
+    @course
+  end
   let(:course_type) { GraphQLTypeTester.new(course, current_user: @student) }
+
   let_once(:other_section) { course.course_sections.create! name: "other section" }
-  let_once(:other_teacher) {
+  let_once(:other_teacher) do
     course.enroll_teacher(user_factory, section: other_section, limit_privileges_to_course_section: true).user
-  }
+  end
 
   it "works" do
     expect(course_type.resolve("_id")).to eq course.id.to_s
     expect(course_type.resolve("name")).to eq course.name
   end
 
-  it 'works for root_outcome_group' do
-    expect(course_type.resolve('rootOutcomeGroup { _id }')).to eq course.root_outcome_group.id.to_s
+  it "works for root_outcome_group" do
+    expect(course_type.resolve("rootOutcomeGroup { _id }")).to eq course.root_outcome_group.id.to_s
   end
 
   context "top-level permissions" do
@@ -56,7 +59,10 @@ describe Types::CourseType do
   end
 
   context "sis fields" do
-    let_once(:sis_course) { course.update!(sis_course_id: "SIScourseID"); course }
+    let_once(:sis_course) do
+      course.update!(sis_course_id: "SIScourseID")
+      course
+    end
 
     let(:admin) { account_admin_user_with_role_changes(role_changes: { read_sis: false }) }
 
@@ -86,9 +92,9 @@ describe Types::CourseType do
   end
 
   describe "assignmentsConnection" do
-    let_once(:assignment) {
+    let_once(:assignment) do
       course.assignments.create! name: "asdf", workflow_state: "unpublished"
-    }
+    end
 
     it "only returns visible assignments" do
       expect(course_type.resolve("assignmentsConnection { edges { node { _id } } }", current_user: @teacher).size).to eq 1
@@ -102,12 +108,12 @@ describe Types::CourseType do
         course.enrollment_term.update grading_period_group: gpg
         @term1 = gpg.grading_periods.create! title: "past grading period",
                                              start_date: 2.weeks.ago,
-                                             end_date: 1.weeks.ago
+                                             end_date: 1.week.ago
         @term2 = gpg.grading_periods.create! title: "current grading period",
                                              start_date: 2.days.ago,
                                              end_date: 2.days.from_now
         @term1_assignment1 = course.assignments.create! name: "asdf",
-                                                        due_at: (1.5).weeks.ago
+                                                        due_at: 1.5.weeks.ago
         @term2_assignment1 = course.assignments.create! name: ";lkj",
                                                         due_at: Date.today
       end
@@ -152,29 +158,29 @@ describe Types::CourseType do
           course_type.resolve(<<~GQL, current_user: @student)
             assignmentsConnection(filter: {gradingPeriodId: null}) { edges { node { _id } } }
           GQL
-        ).to eq [
+        ).to eq([
           other_ag_assignment,
           @term2_assignment1,
           @term1_assignment1,
-        ].map { |a| a.id.to_s }
+        ].map { |a| a.id.to_s })
       end
     end
   end
 
   describe "outcomeProficiency" do
-    it 'resolves to the account proficiency' do
+    it "resolves to the account proficiency" do
       outcome_proficiency_model(course.account)
       expect(
-        course_type.resolve('outcomeProficiency { _id }', current_user: @teacher)
+        course_type.resolve("outcomeProficiency { _id }", current_user: @teacher)
       ).to eq course.account.outcome_proficiency.id.to_s
     end
   end
 
   describe "outcomeCalculationMethod" do
-    it 'resolves to the account calculation method' do
+    it "resolves to the account calculation method" do
       outcome_calculation_method_model(course.account)
       expect(
-        course_type.resolve('outcomeCalculationMethod { _id }', current_user: @teacher)
+        course_type.resolve("outcomeCalculationMethod { _id }", current_user: @teacher)
       ).to eq course.account.outcome_calculation_method.id.to_s
     end
   end
@@ -326,6 +332,17 @@ describe Types::CourseType do
           GQL
         ).to eq [@student2a1_submission.id.to_s]
       end
+
+      it "updated_since" do
+        @student2a1_submission.update_attribute(:updated_at, 1.week.from_now)
+        expect(
+          course_type.resolve(<<~GQL, current_user: @teacher)
+            submissionsConnection(
+              filter: { updatedSince: "#{1.day.from_now.iso8601}" }
+            ) { nodes { _id } }
+          GQL
+        ).to eq [@student2a1_submission.id.to_s]
+      end
     end
   end
 
@@ -333,12 +350,8 @@ describe Types::CourseType do
     before(:once) do
       @student1 = @student
       @student2 = student_in_course(active_all: true).user
-      @inactive_user = student_in_course.tap { |enrollment|
-        enrollment.invite
-      }.user
-      @concluded_user = student_in_course.tap { |enrollment|
-        enrollment.complete
-      }.user
+      @inactive_user = student_in_course.tap(&:invite).user
+      @concluded_user = student_in_course.tap(&:complete).user
     end
 
     describe "usersConnection" do
@@ -392,7 +405,7 @@ describe Types::CourseType do
         expect(
           course_type.resolve(
             "enrollmentsConnection { nodes { _id } }",
-            current_user: @teacher,
+            current_user: @teacher
           )
         ).to match_array @course.all_enrollments.map(&:to_param)
       end
@@ -408,12 +421,45 @@ describe Types::CourseType do
           other_teacher.enrollments.first.id.to_s,
         ]
       end
+
+      describe "filtering" do
+        it "returns only enrollments of the specified types if included" do
+          ta_enrollment = course.enroll_ta(User.create!, enrollment_state: :active)
+
+          expect(
+            course_type.resolve(
+              "enrollmentsConnection(filter: {types: [TeacherEnrollment, TaEnrollment]}) { nodes { _id } }",
+              current_user: @teacher
+            )
+          ).to match_array([
+                             @teacher.enrollments.first.id.to_s,
+                             other_teacher.enrollments.first.id.to_s,
+                             ta_enrollment.id.to_s
+                           ])
+        end
+
+        it "returns only enrollments with the specified associated_user_ids if included" do
+          observer = User.create!
+          observer_enrollment = observer_in_course(course: @course, user: observer)
+          observer_enrollment.update!(associated_user: @student1)
+
+          other_observer_enrollment = observer_in_course(course: @course, user: observer)
+          other_observer_enrollment.update!(associated_user: @student2)
+
+          expect(
+            course_type.resolve(
+              "enrollmentsConnection(filter: {associatedUserIds: [#{@student1.id}]}) { nodes { _id } }",
+              current_user: @teacher
+            )
+          ).to eq [observer_enrollment.id.to_s]
+        end
+      end
     end
   end
 
   describe "AssignmentGroupConnection" do
     it "returns assignment groups" do
-      ag = course.assignment_groups.create!(name: 'a group')
+      ag = course.assignment_groups.create!(name: "a group")
       expect(
         course_type.resolve("assignmentGroupsConnection { edges { node { _id } } }")
       ).to eq [ag.to_param]
@@ -530,37 +576,37 @@ describe Types::CourseType do
     end
   end
 
-  describe 'Account' do
-    it 'works' do
+  describe "Account" do
+    it "works" do
       expect(course_type.resolve("account { _id }")).to eq course.account.id.to_s
     end
   end
 
-  describe 'imageUrl' do
-    it 'returns a url from an uploaded image' do
+  describe "imageUrl" do
+    it "returns a url from an uploaded image" do
       course.image_id = attachment_model(context: @course).id
       course.save!
       expect(course_type.resolve("imageUrl")).to_not be_nil
     end
 
-    it 'returns a url from id when url is blank' do
-      course.image_url = ''
+    it "returns a url from id when url is blank" do
+      course.image_url = ""
       course.image_id = attachment_model(context: @course).id
       course.save!
       expect(course_type.resolve("imageUrl")).to_not be_nil
       expect(course_type.resolve("imageUrl")).to_not eq ""
     end
 
-    it 'returns a url from settings' do
+    it "returns a url from settings" do
       course.image_url = "http://some.cool/gif.gif"
       course.save!
       expect(course_type.resolve("imageUrl")).to eq "http://some.cool/gif.gif"
     end
   end
 
-  describe 'AssetString' do
-    it 'returns the asset string' do
-      result = course_type.resolve('assetString')
+  describe "AssetString" do
+    it "returns the asset string" do
+      result = course_type.resolve("assetString")
       expect(result).to eq @course.asset_string
     end
   end

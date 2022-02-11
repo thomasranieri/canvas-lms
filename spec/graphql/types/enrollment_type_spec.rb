@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::EnrollmentType do
@@ -42,7 +41,7 @@ describe Types::EnrollmentType do
     it "uses the current grading period by default" do
       expect(
         enrollment_type.resolve(
-          "grades { gradingPeriod { _id } }",
+          "grades { gradingPeriod { _id } }"
         )
       ).to eq @gp1.id.to_s
     end
@@ -117,6 +116,21 @@ describe Types::EnrollmentType do
       expect(
         enrollment_type.resolve("section { _id }")
       ).to eq enrollment.course_section.id.to_s
+    end
+  end
+
+  describe "associated_user" do
+    it "returns the associated user when one exists" do
+      observer = User.create!
+      observer_enrollment = observer_in_course(course: @course, user: observer)
+      observer_enrollment.update!(associated_user: @student)
+
+      tester = GraphQLTypeTester.new(observer_enrollment, current_user: @observer)
+      expect(tester.resolve("associatedUser { _id }")).to eq @student.id.to_s
+    end
+
+    it "returns nil when no associated user exists" do
+      expect(enrollment_type.resolve("associatedUser { _id }")).to be nil
     end
   end
 end

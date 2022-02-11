@@ -74,7 +74,7 @@ class AuditLogFieldExtension < GraphQL::Schema::FieldExtension
     # this method will have to know how to resolve a root account for every
     # object that is logged by a mutation
     def root_account_ids_for(entry)
-      if Progress === entry
+      if entry.is_a?(Progress)
         entry = entry.context
       end
 
@@ -131,7 +131,7 @@ class AuditLogFieldExtension < GraphQL::Schema::FieldExtension
     Setting.get("graphql_mutations_ddb_table_name", "graphql_mutations")
   end
 
-  def resolve(object:, arguments:, context:, **rest)
+  def resolve(object:, arguments:, context:, **)
     yield(object, arguments).tap do |value|
       next unless AuditLogFieldExtension.enabled?
 

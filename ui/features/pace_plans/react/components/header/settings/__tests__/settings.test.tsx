@@ -17,7 +17,8 @@
  */
 
 import React from 'react'
-import {act, render, screen} from '@testing-library/react'
+import moment from 'moment-timezone'
+import {act, screen} from '@testing-library/react'
 
 import {COURSE, PRIMARY_PLAN} from '../../../../__tests__/fixtures'
 import {renderConnected} from '../../../../__tests__/utils'
@@ -29,68 +30,67 @@ const setEditingBlackoutDates = jest.fn()
 const showLoadingOverlay = jest.fn()
 const toggleExcludeWeekends = jest.fn()
 const toggleHardEndDates = jest.fn()
+const setEndDate = jest.fn()
 
 const defaultProps = {
+  course: COURSE,
   courseId: COURSE.id,
   excludeWeekends: PRIMARY_PLAN.exclude_weekends,
   pacePlan: PRIMARY_PLAN,
+  planPublishing: false,
   loadLatestPlanByContext,
   setEditingBlackoutDates,
   showLoadingOverlay,
   toggleExcludeWeekends,
-  toggleHardEndDates
+  toggleHardEndDates,
+  setEndDate
 }
 
+beforeAll(() => {
+  window.ENV.VALID_DATE_RANGE = {
+    end_at: {date: COURSE.start_at, date_context: 'course'},
+    start_at: {date: COURSE.end_at, date_context: 'course'}
+  }
+})
 afterEach(() => {
   jest.clearAllMocks()
 })
 
 describe('Settings', () => {
   it('renders a settings menu with toggles and a button to open the blackout dates modal', () => {
-    const {getByRole} = render(<Settings {...defaultProps} />)
+    const {getByRole} = renderConnected(<Settings {...defaultProps} />)
     const settingsButton = getByRole('button', {name: 'Modify Settings'})
     expect(settingsButton).toBeInTheDocument()
 
     act(() => settingsButton.click())
 
     expect(screen.getByRole('checkbox', {name: 'Skip Weekends'})).toBeInTheDocument()
-    expect(
-      screen.getByRole('checkbox', {name: 'Require Completion by Specified End Date'})
-    ).toBeInTheDocument()
-    expect(screen.getByRole('button', {name: 'View Blackout Dates'})).toBeInTheDocument()
+    // Commented out since we're not implementing these features yet
+    // expect(screen.getByRole('button', {name: 'View Blackout Dates'})).toBeInTheDocument()
   })
 
   it('toggles the associated setting when the checkboxes are clicked', () => {
-    const {getByRole} = render(<Settings {...defaultProps} />)
+    const {getByRole} = renderConnected(<Settings {...defaultProps} />)
     const settingsButton = getByRole('button', {name: 'Modify Settings'})
     act(() => settingsButton.click())
 
     const skipWeekendsToggle = screen.getByRole('checkbox', {name: 'Skip Weekends'})
-    expect(skipWeekendsToggle).not.toHaveAttribute('disabled')
+    expect(skipWeekendsToggle).not.toBeDisabled()
     act(() => skipWeekendsToggle.click())
     expect(toggleExcludeWeekends).toHaveBeenCalled()
-
-    const hardEndDatesToggle = screen.getByRole('checkbox', {
-      name: 'Require Completion by Specified End Date'
-    })
-    expect(hardEndDatesToggle).not.toHaveAttribute('disabled')
-    act(() => hardEndDatesToggle.click())
-    expect(toggleHardEndDates).toHaveBeenCalled()
   })
 
-  it('disables hard end dates toggle if the pace plan does not have an end date', () => {
-    const props = {...defaultProps, pacePlan: {...PRIMARY_PLAN, end_date: undefined}}
-    const {getByRole} = render(<Settings {...props} />)
+  it('disables all settings while publishing', () => {
+    const {getByRole} = renderConnected(<Settings {...defaultProps} planPublishing />)
     const settingsButton = getByRole('button', {name: 'Modify Settings'})
     act(() => settingsButton.click())
 
-    const hardEndDatesToggle = screen.getByRole('checkbox', {
-      name: 'Require Completion by Specified End Date'
-    })
-    expect(hardEndDatesToggle).toHaveAttribute('disabled')
+    const skipWeekendsToggle = screen.getByRole('checkbox', {name: 'Skip Weekends'})
+    expect(skipWeekendsToggle).toBeDisabled()
   })
 
-  it('shows and hides the blackout dates modal correctly', () => {
+  // Skipped since we're not implementing this feature yet
+  it.skip('shows and hides the blackout dates modal correctly', () => {
     const {getByRole} = renderConnected(<Settings {...defaultProps} />)
     const settingsButton = getByRole('button', {name: 'Modify Settings'})
     act(() => settingsButton.click())

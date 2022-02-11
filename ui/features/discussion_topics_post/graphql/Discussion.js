@@ -17,6 +17,7 @@
  */
 
 import {arrayOf, bool, number, shape, string} from 'prop-types'
+import {AnonymousUser} from './AnonymousUser'
 import {Assignment} from './Assignment'
 import {Attachment} from './Attachment'
 import {Section} from './Section'
@@ -45,13 +46,17 @@ export const Discussion = {
       isSectionSpecific
       isAnnouncement
       discussionType
+      anonymousState
       allowRating
       onlyGradersCanRate
       delayedPostAt
       subscribed
       published
       canUnpublish
+      canReplyAnonymously
       lockAt
+      availableForUser
+      userCount
       entryCounts {
         unreadCount
         repliesCount
@@ -100,6 +105,7 @@ export const Discussion = {
     isSectionSpecific: bool,
     isAnnouncement: bool,
     discussionType: string,
+    anonymousState: string,
     allowRating: bool,
     onlyGradersCanRate: bool,
     delayedPostAt: string,
@@ -107,12 +113,16 @@ export const Discussion = {
     subscribed: bool,
     published: bool,
     canUnpublish: bool,
+    canReplyAnonymously: bool,
     searchEntryCount: number,
+    availableForUser: bool,
+    userCount: number,
     entryCounts: shape({
       unreadCount: number,
       repliesCount: number
     }),
     author: User.shape,
+    anonymousAuthor: AnonymousUser.shape,
     editor: User.shape,
     attachment: Attachment.shape,
     assignment: Assignment.shape,
@@ -138,6 +148,7 @@ export const Discussion = {
     isSectionSpecific = false,
     isAnnouncement = false,
     discussionType = 'threaded',
+    anonymousState = null,
     allowRating = true,
     onlyGradersCanRate = false,
     delayedPostAt = null,
@@ -145,13 +156,17 @@ export const Discussion = {
     subscribed = true,
     published = true,
     canUnpublish = false,
+    canReplyAnonymously = false,
     searchEntryCount = 3,
+    availableForUser = true,
+    userCount = 4,
     entryCounts = {
       unreadCount: 2,
       repliesCount: 56,
       __typename: 'DiscussionEntryCounts'
     },
     author = User.mock({_id: '1', displayName: 'Charles Xavier'}),
+    anonymousAuthor = null,
     editor = User.mock({_id: '1', displayName: 'Charles Xavier'}),
     attachment = Attachment.mock(),
     assignment = Assignment.mock(),
@@ -184,6 +199,7 @@ export const Discussion = {
     isSectionSpecific,
     isAnnouncement,
     discussionType,
+    anonymousState,
     allowRating,
     onlyGradersCanRate,
     delayedPostAt,
@@ -191,8 +207,12 @@ export const Discussion = {
     subscribed,
     published,
     canUnpublish,
+    canReplyAnonymously,
     entryCounts,
+    availableForUser,
+    userCount,
     author,
+    anonymousAuthor,
     editor,
     attachment,
     assignment,

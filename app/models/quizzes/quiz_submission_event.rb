@@ -23,12 +23,12 @@ class Quizzes::QuizSubmissionEvent < ActiveRecord::Base
   include CanvasPartman::Concerns::Partitioned
 
   # An event describing the student choosing an answer to a question.
-  EVT_QUESTION_ANSWERED = "question_answered".freeze
-  EVT_QUESTION_FLAGGED = "question_flagged".freeze
+  EVT_QUESTION_ANSWERED = "question_answered"
+  EVT_QUESTION_FLAGGED = "question_flagged"
   # An event for every new submission created
-  EVT_SUBMISSION_CREATED = "submission_created".freeze
+  EVT_SUBMISSION_CREATED = "submission_created"
 
-  belongs_to :quiz_submission, class_name: 'Quizzes::QuizSubmission'
+  belongs_to :quiz_submission, class_name: "Quizzes::QuizSubmission"
   resolves_root_account through: :quiz_submission
 
   serialize :event_data, JSON
@@ -47,9 +47,9 @@ class Quizzes::QuizSubmissionEvent < ActiveRecord::Base
   #
   # If this returns true, you can safely skip storing this event.
   def empty?
-    case self.event_type
+    case event_type
     when EVT_QUESTION_ANSWERED
-      self.answers.nil? || self.answers.empty?
+      answers.blank?
     else
       false
     end

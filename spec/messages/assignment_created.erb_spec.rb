@@ -18,14 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'assignment_created' do
+describe "assignment_created" do
   include MessagesCommon
 
   before :once do
-    assignment_model(:title => "Quiz 2")
+    assignment_model(title: "Quiz 2")
   end
 
   let(:notification_name) { :assignment_created }
@@ -33,6 +32,7 @@ describe 'assignment_created' do
 
   context ".email" do
     let(:path_type) { :email }
+
     it "renders" do
       msg = generate_message(notification_name, path_type, asset)
       expect(msg.subject).to match(/Quiz 2/)
@@ -43,6 +43,7 @@ describe 'assignment_created' do
 
   context ".sms" do
     let(:path_type) { :sms }
+
     it "renders" do
       generate_message(notification_name, path_type, asset)
     end
@@ -50,6 +51,7 @@ describe 'assignment_created' do
 
   context ".summary" do
     let(:path_type) { :summary }
+
     it "renders" do
       generate_message(notification_name, path_type, asset)
     end

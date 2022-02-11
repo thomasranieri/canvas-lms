@@ -20,23 +20,41 @@ import React from 'react'
 import {render as rtlRender} from '@testing-library/react'
 import OutcomeDescription from '../OutcomeDescription'
 import OutcomesContext from '@canvas/outcomes/react/contexts/OutcomesContext'
+import {defaultRatingsAndCalculationMethod} from './helpers'
 
 describe('OutcomeDescription', () => {
   const empty = ''
   const truncatedTestId = 'description-truncated'
   const truncatedTestContentId = 'description-truncated-content'
+  const ratingsTestId = 'outcome-management-ratings'
   const expandedTestId = 'description-expanded'
   const friendlyExpandedTestId = 'friendly-description-expanded'
+  const {calculationMethod, calculationInt, masteryPoints, pointsPossible, ratings} =
+    defaultRatingsAndCalculationMethod
   const defaultProps = (props = {}) => ({
     truncated: true,
     description: 'Description',
     friendlyDescription: '',
+    calculationMethod,
+    calculationInt,
+    masteryPoints,
+    pointsPossible,
+    ratings,
     ...props
   })
 
-  const render = (children, {friendlyDescriptionFF = false, isStudent = false} = {}) => {
+  const render = (
+    children,
+    {
+      friendlyDescriptionFF = false,
+      individualOutcomeRatingAndCalculationFF = false,
+      isStudent = false
+    } = {}
+  ) => {
     return rtlRender(
-      <OutcomesContext.Provider value={{env: {friendlyDescriptionFF, isStudent}}}>
+      <OutcomesContext.Provider
+        value={{env: {friendlyDescriptionFF, individualOutcomeRatingAndCalculationFF, isStudent}}}
+      >
         {children}
       </OutcomesContext.Provider>
     )
@@ -144,6 +162,41 @@ describe('OutcomeDescription', () => {
         expect(getByTestId(expandedTestId)).toBeInTheDocument()
         expect(queryByTestId(friendlyExpandedTestId)).not.toBeInTheDocument()
         expect(queryByText('Friendly Description')).not.toBeInTheDocument()
+      })
+    })
+  })
+
+  describe('individual outcome rating and calculation FF', () => {
+    describe('when feature flag enabled', () => {
+      it('renders ratings when description prop not provided/null and expanded', () => {
+        const {queryByTestId} = render(
+          <OutcomeDescription {...defaultProps({description: null, truncated: false})} />,
+          {
+            individualOutcomeRatingAndCalculationFF: true
+          }
+        )
+        expect(queryByTestId(ratingsTestId)).toBeInTheDocument()
+      })
+
+      it('displays calculation method if description expanded', () => {
+        const {getByText} = render(<OutcomeDescription {...defaultProps({truncated: false})} />, {
+          individualOutcomeRatingAndCalculationFF: true
+        })
+        expect(getByText('Proficiency Calculation:')).toBeInTheDocument()
+      })
+
+      it('hides calculation method if description truncated', () => {
+        const {queryByText} = render(<OutcomeDescription {...defaultProps()} />, {
+          individualOutcomeRatingAndCalculationFF: true
+        })
+        expect(queryByText('Proficiency Calculation:')).not.toBeInTheDocument()
+      })
+    })
+
+    describe('when feature flag disabled', () => {
+      it('hides calculation method', () => {
+        const {queryByText} = render(<OutcomeDescription {...defaultProps({truncated: false})} />)
+        expect(queryByText('Proficiency Calculation:')).not.toBeInTheDocument()
       })
     })
   })

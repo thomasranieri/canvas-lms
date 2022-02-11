@@ -41,7 +41,7 @@ module SupportHelpers
       if params[:id]
         run_fixer(SupportHelpers::Tii::AssignmentFixer, params[:id].to_i)
       else
-        render plain: "Missing assignment `id` parameter", status: 400
+        render plain: "Missing assignment `id` parameter", status: :bad_request
       end
     end
 
@@ -58,7 +58,7 @@ module SupportHelpers
       if (params.keys & param_keys).present?
         ids = param_keys.map do |key|
           error = { text: "Missing `#{key}` parameter", status: 400 }
-          render error and return unless params[key]
+          return render error unless params[key]
 
           params[key].to_i
         end

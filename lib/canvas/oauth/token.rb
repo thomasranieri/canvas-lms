@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-module Canvas::Oauth
+module Canvas::OAuth
   class Token
     attr_reader :key, :code
 
-    REDIS_PREFIX = 'oauth2:'
-    USER_KEY = 'user'
-    REAL_USER_KEY = 'real_user'
-    CLIENT_KEY = 'client_id'
-    SCOPES_KEY = 'scopes'
-    PURPOSE_KEY = 'purpose'
-    REMEMBER_ACCESS = 'remember_access'
+    REDIS_PREFIX = "oauth2:"
+    USER_KEY = "user"
+    REAL_USER_KEY = "real_user"
+    CLIENT_KEY = "client_id"
+    SCOPES_KEY = "scopes"
+    PURPOSE_KEY = "purpose"
+    REMEMBER_ACCESS = "remember_access"
 
     def initialize(key, code, access_token = nil)
       @key = key
@@ -94,10 +94,13 @@ module Canvas::Oauth
                                                })
         @access_token.real_user = real_user if real_user && real_user != user
 
+        expires_in = key.tokens_expire_in
+        @access_token.permanent_expires_at = Time.now.utc + expires_in if expires_in
+
         @access_token.save!
 
-        @access_token.clear_full_token! if @access_token.scoped_to?(['userinfo'])
-        @access_token.clear_plaintext_refresh_token! if @access_token.scoped_to?(['userinfo'])
+        @access_token.clear_full_token! if @access_token.scoped_to?(["userinfo"])
+        @access_token.clear_plaintext_refresh_token! if @access_token.scoped_to?(["userinfo"])
       end
     end
 
@@ -118,28 +121,28 @@ module Canvas::Oauth
 
     def as_json(_options = {})
       json = {
-        'access_token' => access_token.full_token,
-        'token_type' => 'Bearer',
-        'user' => {
-          'id' => user.id,
-          'name' => user.name,
-          'global_id' => user.global_id.to_s,
-          'effective_locale' => I18n.locale&.to_s
+        "access_token" => access_token.full_token,
+        "token_type" => "Bearer",
+        "user" => {
+          "id" => user.id,
+          "name" => user.name,
+          "global_id" => user.global_id.to_s,
+          "effective_locale" => I18n.locale&.to_s
         }
       }
 
       unless real_user == user
-        json['real_user'] = {
-          'id' => real_user.id,
-          'name' => real_user.name,
-          'global_id' => real_user.global_id.to_s
+        json["real_user"] = {
+          "id" => real_user.id,
+          "name" => real_user.name,
+          "global_id" => real_user.global_id.to_s
         }
       end
 
-      json['refresh_token'] = access_token.plaintext_refresh_token if access_token.plaintext_refresh_token
+      json["refresh_token"] = access_token.plaintext_refresh_token if access_token.plaintext_refresh_token
 
       if access_token.expires_at && key.auto_expire_tokens
-        json['expires_in'] = access_token.expires_at.utc.to_i - Time.now.utc.to_i
+        json["expires_in"] = access_token.expires_at.utc.to_i - Time.now.utc.to_i
       end
       json
     end
@@ -167,8 +170,8 @@ module Canvas::Oauth
         PURPOSE_KEY => options[:purpose],
         REMEMBER_ACCESS => options[:remember_access]
       }
-      Canvas.redis.setex("#{REDIS_PREFIX}#{code}", Setting.get('oath_token_request_timeout', 10.minutes.to_s).to_i, code_data.to_json)
-      return code
+      Canvas.redis.setex("#{REDIS_PREFIX}#{code}", Setting.get("oath_token_request_timeout", 10.minutes.to_s).to_i, code_data.to_json)
+      code
     end
 
     def self.expire_code(code)

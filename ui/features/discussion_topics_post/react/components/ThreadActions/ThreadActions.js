@@ -29,7 +29,9 @@ import {
   IconTrashLine,
   IconSpeedGraderLine,
   IconMarkAsReadSolid,
-  IconMarkAsReadLine
+  IconMarkAsReadLine,
+  IconWarningBorderlessSolid,
+  IconReplyAll2Line
 } from '@instructure/ui-icons'
 
 import {IconButton} from '@instructure/ui-buttons'
@@ -47,10 +49,13 @@ export const ThreadActions = props => {
       onToggleUnread: props.onToggleUnread,
       goToTopic: props.goToTopic,
       goToParent: props.goToParent,
+      goToQuotedReply: props.goToQuotedReply,
       onEdit: props.onEdit,
       onDelete: props.onDelete,
       onOpenInSpeedGrader: props.onOpenInSpeedGrader,
-      onMarkThreadAsRead: props.onMarkThreadAsRead
+      onMarkThreadAsRead: props.onMarkThreadAsRead,
+      onReport: props.onReport,
+      isReported: props.isReported
     }).map(config => renderMenuItem({...config}, props.id))
   }, [props])
 
@@ -149,6 +154,14 @@ const getMenuConfigs = props => {
       selectionCallback: props.goToParent
     })
   }
+  if (props.goToQuotedReply) {
+    options.push({
+      key: 'toQuotedReply',
+      icon: <IconReplyAll2Line />,
+      label: I18n.t('Go To Quoted Reply'),
+      selectionCallback: props.goToQuotedReply
+    })
+  }
   if (props.onEdit) {
     options.push({
       key: 'edit',
@@ -173,25 +186,48 @@ const getMenuConfigs = props => {
       selectionCallback: props.onOpenInSpeedGrader
     })
   }
+  if (props.onReport) {
+    options.push({
+      key: 'separator',
+      separator: true
+    })
+    options.push({
+      key: 'report',
+      icon: <IconWarningBorderlessSolid />,
+      label: props.isReported ? I18n.t('Reported') : I18n.t('Report'),
+      selectionCallback: props.onReport,
+      disabled: props.isReported
+    })
+  }
   return options
 }
 
-const renderMenuItem = ({selectionCallback, icon, label, key}, id) => (
-  <Menu.Item
-    key={`${key}-${id}`}
-    onSelect={() => {
-      selectionCallback(key)
-    }}
-    data-testid={key}
-  >
-    <Flex>
-      <Flex.Item>{icon}</Flex.Item>
-      <Flex.Item padding="0 0 0 xx-small">
-        <Text>{label}</Text>
-      </Flex.Item>
-    </Flex>
-  </Menu.Item>
-)
+const renderMenuItem = (
+  {selectionCallback, icon, label, key, separator = false, disabled = false, color = 'primary'},
+  id
+) => {
+  return separator ? (
+    <Menu.Separator key={key} />
+  ) : (
+    <Menu.Item
+      key={`${key}-${id}`}
+      onSelect={() => {
+        selectionCallback(key)
+      }}
+      data-testid={key}
+      disabled={disabled}
+    >
+      <Text color={color}>
+        <Flex>
+          <Flex.Item>{icon}</Flex.Item>
+          <Flex.Item padding="0 0 0 xx-small">
+            <Text>{label}</Text>
+          </Flex.Item>
+        </Flex>
+      </Text>
+    </Menu.Item>
+  )
+}
 
 ThreadActions.propTypes = {
   id: PropTypes.string.isRequired,
@@ -202,15 +238,19 @@ ThreadActions.propTypes = {
   isUnread: PropTypes.bool,
   goToTopic: PropTypes.func,
   goToParent: PropTypes.func,
+  goToQuotedReply: PropTypes.func,
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
   onOpenInSpeedGrader: PropTypes.func,
+  onReport: PropTypes.func,
+  isReported: PropTypes.bool,
   isSearch: PropTypes.bool
 }
 
 ThreadActions.defaultProps = {
   isUnread: false,
-  isSearch: false
+  isSearch: false,
+  isReported: false
 }
 
 export default ThreadActions

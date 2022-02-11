@@ -18,8 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../../../spec_helper.rb')
-require File.expand_path(File.dirname(__FILE__) + '/answer_parser_spec_helper.rb')
+require_relative "answer_parser_spec_helper"
 
 describe Quizzes::QuizQuestion::AnswerParsers::Matching do
   context "#parse" do
@@ -59,8 +58,6 @@ describe Quizzes::QuizQuestion::AnswerParsers::Matching do
 
     let(:parser_class) { Quizzes::QuizQuestion::AnswerParsers::Matching }
 
-    include_examples "All answer parsers"
-
     let(:raw_dupe_answers) do
       [
         {
@@ -86,6 +83,8 @@ describe Quizzes::QuizQuestion::AnswerParsers::Matching do
         }
       ]
     end
+
+    include_examples "All answer parsers"
 
     it "reuses match_id for duplicate answer_match_right" do
       question = Quizzes::QuizQuestion::QuestionData.new(question_params)

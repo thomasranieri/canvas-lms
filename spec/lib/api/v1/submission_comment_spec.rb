@@ -58,7 +58,7 @@ describe Api::V1::SubmissionComment do
     let(:student3) { course.enroll_user(User.create!, "StudentEnrollment", enrollment_state: "active").user }
     let(:teacher) { course.enroll_user(User.create!, "TeacherEnrollment", enrollment_state: "active").user }
 
-    before(:each) do
+    before do
       student_sub.add_comment(author: student, comment: "I'm Student")
     end
 
@@ -72,7 +72,7 @@ describe Api::V1::SubmissionComment do
         current_user: teacher,
         submissions: [student_sub],
         submission_comments: student_sub.submission_comments
-      ).map { |comment| comment[:anonymous_id] }
+      ).pluck(:anonymous_id)
 
       expect(anonymous_ids).to match_array([student_sub.anonymous_id, student2_sub.anonymous_id])
     end

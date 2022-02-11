@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::GroupSetType do
@@ -79,6 +78,24 @@ describe Types::GroupSetType do
     it "doesn't return sis_id if you don't have read_sis or management_sis permissions" do
       tester = GraphQLTypeTester.new(@group_set, current_user: @student)
       expect(tester.resolve("sisId")).to be_nil
+    end
+  end
+
+  context "current group" do
+    let(:student) { GraphQLTypeTester.new(@group_set, current_user: @student) }
+    let(:teacher) { GraphQLTypeTester.new(@group_set, current_user: @teacher) }
+
+    it "returns the group where the current student belongs to" do
+      expect(student.resolve("currentGroup { _id }")).to eq @group.id.to_s
+    end
+
+    it "returns null if the student doesn't belong to any group" do
+      @membership.destroy
+      expect(student.resolve("currentGroup { _id }")).to eq nil
+    end
+
+    it "returns null if the current user has a teacher enrollment" do
+      expect(teacher.resolve("currentGroup { _id }")).to eq nil
     end
   end
 end

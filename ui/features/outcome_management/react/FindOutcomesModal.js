@@ -39,8 +39,19 @@ import {FIND_GROUP_OUTCOMES} from '@canvas/outcomes/graphql/Management'
 import GroupActionDrillDown from './shared/GroupActionDrillDown'
 import useOutcomesImport from '@canvas/outcomes/react/hooks/useOutcomesImport'
 
-const FindOutcomesModal = ({open, onCloseHandler}) => {
-  const {isMobileView, isCourse, rootIds} = useCanvasContext()
+const getSelectegGroupAncestorsWithSelf = (collections, selectedGroupId) => {
+  const resp = []
+  let currGroupId = selectedGroupId
+  while (currGroupId) {
+    resp.push(currGroupId)
+    currGroupId = collections[currGroupId]?.parentGroupId
+  }
+
+  return resp
+}
+
+const FindOutcomesModal = ({open, onCloseHandler, targetGroup}) => {
+  const {isMobileView, isCourse, rootOutcomeGroup, rootIds} = useCanvasContext()
   const [showOutcomesView, setShowOutcomesView] = useState(false)
   const [scrollContainer, setScrollContainer] = useState(null)
   const {
@@ -61,7 +72,8 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
     id: selectedGroupId,
     query: FIND_GROUP_OUTCOMES,
     loadOutcomesIsImported: true,
-    searchString: debouncedSearchString
+    searchString: debouncedSearchString,
+    targetGroupId: rootOutcomeGroup?.id
   })
 
   useEffect(() => {
@@ -77,15 +89,11 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
     importOutcomes,
     importGroupsStatus,
     importOutcomesStatus,
-    clearGroupsStatus,
-    clearOutcomesStatus,
     hasAddedOutcomes,
     setHasAddedOutcomes
   } = useOutcomesImport()
 
   const onCloseModalHandler = () => {
-    clearGroupsStatus()
-    clearOutcomesStatus()
     onCloseHandler(hasAddedOutcomes)
   }
 
@@ -105,6 +113,15 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
   }, [open, setHasAddedOutcomes])
 
   const onAddAllHandler = () => {
+    const callImportApiToGroup = () => {
+      importOutcomes({
+        targetGroupId: targetGroup?._id,
+        targetGroupTitle: targetGroup?.title,
+        outcomeOrGroupId: selectedGroupId,
+        groupTitle: group.title
+      })
+    }
+
     if (isCourse && !isConfirmBoxOpen && group.outcomesCount > 50) {
       blurAddAllBtn()
       blurDoneBtn()
@@ -112,7 +129,7 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
       showImportConfirmBox({
         count: group.outcomesCount,
         onImportHandler: () => {
-          importOutcomes(selectedGroupId, group.title)
+          callImportApiToGroup()
           closeConfirmBox()
           focusDoneBtn()
         },
@@ -122,9 +139,33 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
         }
       })
     } else {
-      importOutcomes(selectedGroupId, group.title)
+      callImportApiToGroup()
     }
   }
+
+  const importSingleOutcomeHandler = (outcomeId, sourceContextId, sourceContextType) => {
+    importOutcomes({
+      outcomeOrGroupId: outcomeId,
+      isGroup: false,
+      targetGroupId: targetGroup?._id,
+      targetGroupTitle: targetGroup?.title,
+      sourceContextId,
+      sourceContextType
+    })
+  }
+
+  const modalLabel = targetGroup
+    ? I18n.t('Add Outcomes to "%{groupName}"', {
+        groupName: targetGroup.title
+      })
+    : isCourse
+    ? I18n.t('Add Outcomes to Course')
+    : I18n.t('Add Outcomes to Account')
+
+  const selfOrParentBeingImported =
+    getSelectegGroupAncestorsWithSelf(collections, selectedGroupId).find(
+      gid => importGroupsStatus[gid]
+    ) || selectedGroupId
 
   const findOutcomesView = (
     <FindOutcomesView
@@ -134,13 +175,13 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
       onChangeHandler={updateSearch}
       onClearHandler={clearSearch}
       disableAddAllButton={isConfirmBoxOpen}
-      importGroupStatus={importGroupsStatus[selectedGroupId]}
+      importGroupStatus={importGroupsStatus[selfOrParentBeingImported]}
       onAddAllHandler={onAddAllHandler}
       loading={loading}
       loadMore={loadMore}
       mobileScrollContainer={scrollContainer}
       importOutcomesStatus={importOutcomesStatus}
-      importOutcomeHandler={importOutcomes}
+      importOutcomeHandler={importSingleOutcomeHandler}
       shouldFocusAddAllBtn={shouldFocusAddAllBtn}
     />
   )
@@ -183,8 +224,9 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
       onDismiss={onCloseModalHandler}
       shouldReturnFocus
       size="fullscreen"
-      label={isCourse ? I18n.t('Add Outcomes to Course') : I18n.t('Add Outcomes to Account')}
+      label={modalLabel}
       shouldCloseOnDocumentClick={false}
+      data-testid="find-outcomes-modal"
     >
       <Modal.Body padding={isMobileView ? '0' : '0 small small'}>
         {!isMobileView ? (
@@ -215,14 +257,14 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
               position="relative"
               width="1%"
               height="calc(100vh - 8.75rem)"
+              tabIndex="0"
+              role="separator"
+              aria-orientation="vertical"
+              aria-hidden="true"
+              onKeyDown={onKeyDownHandler}
+              elementRef={setDelimiterRef}
             >
-              {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
               <div
-                tabIndex="0"
-                role="separator"
-                aria-orientation="vertical"
-                onKeyDown={onKeyDownHandler}
-                ref={setDelimiterRef}
                 style={{
                   width: '1vw',
                   height: '100%',
@@ -231,7 +273,6 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
                     '#EEEEEE url("/images/splitpane_handle-ew.gif") no-repeat scroll 50% 50%'
                 }}
               />
-              {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
             </Flex.Item>
             <Flex.Item
               as="div"
@@ -283,7 +324,11 @@ const FindOutcomesModal = ({open, onCloseHandler}) => {
 
 FindOutcomesModal.propTypes = {
   open: PropTypes.bool.isRequired,
-  onCloseHandler: PropTypes.func.isRequired
+  onCloseHandler: PropTypes.func.isRequired,
+  targetGroup: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired
+  })
 }
 
 export default FindOutcomesModal

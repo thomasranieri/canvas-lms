@@ -78,9 +78,9 @@ module Canvas::Migration::ExternalContent
     CLASSES_TO_TYPES = TYPES_TO_CLASSES.invert.freeze
 
     ALIASED_TYPES = {
-      'context_module_item' => 'context_module_tag',
-      'file' => 'attachment',
-      'page' => 'wiki_page'
+      "context_module_item" => "context_module_tag",
+      "file" => "attachment",
+      "page" => "wiki_page"
     }.freeze
 
     def object_class_for_translation(key)
@@ -99,7 +99,7 @@ module Canvas::Migration::ExternalContent
       end
     end
 
-    NOT_FOUND = "$OBJECT_NOT_FOUND".freeze
+    NOT_FOUND = "$OBJECT_NOT_FOUND"
 
     def get_canvas_id_from_migration_id(obj_class, migration_id)
       return NOT_FOUND if migration_id == NOT_FOUND
@@ -111,7 +111,7 @@ module Canvas::Migration::ExternalContent
       # but it may have been imported earlier as a selective import
       # so we can search for it in the course just to be sure
       obj_type = TYPES_TO_CLASSES.detect { |_k, v| v == obj_class }.first
-      if (item = content_migration.context.send(obj_type.pluralize).where(:migration_id => migration_id).first)
+      if (item = content_migration.context.send(obj_type.pluralize).where(migration_id: migration_id).first)
         return item.id
       end
 

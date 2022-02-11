@@ -68,6 +68,8 @@ QUnit.module('GradebookGrid TotalGradeColumnHeader', suiteHooks => {
         settingKey: 'grade'
       },
 
+      isRunningScoreToUngraded: false,
+
       viewUngradedAsZero: false
     }
   })
@@ -528,6 +530,51 @@ QUnit.module('GradebookGrid TotalGradeColumnHeader', suiteHooks => {
         getMenuItem($menuContent, 'Move to End').click()
         strictEqual(props.position.onMoveToBack.callCount, 1)
       })
+    })
+  })
+
+  QUnit.module('"Apply Score to Ungraded" menu item', () => {
+    const applyScoreToUngradedItem = (opts = {showAlternativeText: false}) => {
+      return getMenuItem(
+        $menuContent,
+        opts.showAlternativeText ? 'Applying Score to Ungraded' : 'Apply Score to Ungraded'
+      )
+    }
+
+    test('is present when the onApplyScoreToUngraded prop is non-null', () => {
+      props.onApplyScoreToUngraded = sinon.stub()
+      mountAndOpenOptionsMenu()
+
+      ok(applyScoreToUngradedItem())
+    })
+
+    test('calls the onApplyScoreToUngraded prop when clicked', () => {
+      props.onApplyScoreToUngraded = sinon.stub()
+      mountAndOpenOptionsMenu()
+
+      applyScoreToUngradedItem().click()
+      strictEqual(props.onApplyScoreToUngraded.callCount, 1)
+    })
+
+    test('is not present when the onApplyScoreToUngraded prop is null', () => {
+      mountAndOpenOptionsMenu()
+      notOk(applyScoreToUngradedItem())
+    })
+
+    test('is enabled when isRunningScoreToUngraded is false', () => {
+      props.onApplyScoreToUngraded = sinon.stub()
+      mountAndOpenOptionsMenu()
+      strictEqual(applyScoreToUngradedItem().getAttribute('aria-disabled'), null)
+    })
+
+    test('is disabled when isRunningScoreToUngraded is true', () => {
+      props.onApplyScoreToUngraded = sinon.stub()
+      props.isRunningScoreToUngraded = true
+      mountAndOpenOptionsMenu()
+      strictEqual(
+        applyScoreToUngradedItem({showAlternativeText: true}).getAttribute('aria-disabled'),
+        'true'
+      )
     })
   })
 

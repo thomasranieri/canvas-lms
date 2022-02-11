@@ -128,16 +128,16 @@ const GroupActionDrillDown = ({
     </Select.Option>
   ) : (
     <Select.Group renderLabel={collections[selectedGroupId].name}>
-      <Select.Option
-        id={VIEW_OPTION}
-        isDisabled={disableActionLink}
-        isHighlighted={disableActionLink ? false : isActionLinkHighlighted}
-      >
-        {!disableActionLink && (
+      {!disableActionLink ? (
+        <Select.Option
+          id={VIEW_OPTION}
+          isDisabled={disableActionLink}
+          isHighlighted={disableActionLink ? false : isActionLinkHighlighted}
+        >
           <div
             style={{
               ...margin,
-              color: isActionLinkHighlighted ? '' : '#008EE2'
+              color: isActionLinkHighlighted ? '' : '#0374B5'
             }}
           >
             {I18n.t(
@@ -150,8 +150,8 @@ const GroupActionDrillDown = ({
               }
             )}
           </div>
-        )}
-      </Select.Option>
+        </Select.Option>
+      ) : null}
     </Select.Group>
   )
 

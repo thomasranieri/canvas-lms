@@ -31,6 +31,7 @@ import fakeENV from 'helpers/fakeENV'
 import moment from 'moment'
 
 const moonwalk = new Date('1969-07-21T02:56:00Z')
+const john_glenn = new Date('1962-02-20T14:47:39')
 
 QUnit.module('processTimeOptions', {
   setup() {
@@ -218,6 +219,15 @@ test('should initialize from the inputdate data', function () {
   equal(field.$suggest.text(), 'Sun, Jul 20, 1969, 9:56 PM')
 })
 
+test('should initialize from the initial value attribute if present, and then remove it', function () {
+  this.$initialValueField = $(
+    '<input type="text" name="has_initial_value" data-initial-value="2021-02-14T14:00:00Z">'
+  )
+  const field = new DatetimeField(this.$initialValueField, {})
+  equal(field.$suggest.text(), 'Sun, Feb 14, 2021, 9:00 AM')
+  equal(this.$initialValueField.attr('data-initial-value'), undefined)
+})
+
 test('should tie it to update on keyup only', function () {
   const field = new DatetimeField(this.$field, {})
 
@@ -264,52 +274,52 @@ QUnit.module('parseValue', {
 })
 
 test('sets @fudged according to browser (fudged) timezone', function () {
-  this.$field.val(tz.format(moonwalk, '%b %-e, %Y at %-l:%M%P'))
+  this.$field.val(tz.format(moonwalk, '%b %-e, %Y at %-l:%M%P')).change()
   this.field.parseValue()
   equal(+this.field.fudged, +$.fudgeDateForProfileTimezone(moonwalk))
 })
 
 test('sets @datetime according to profile timezone', function () {
-  this.$field.val(tz.format(moonwalk, '%b %-e, %Y at %-l:%M%P'))
+  this.$field.val(tz.format(moonwalk, '%b %-e, %Y at %-l:%M%P')).change()
   this.field.parseValue()
   equal(+this.field.datetime, +moonwalk)
 })
 
 test('sets @showTime true by default', function () {
-  this.$field.val('Jan 1, 1970 at 12:01am')
+  this.$field.val('Jan 1, 1970 at 12:01am').change()
   this.field.parseValue()
   equal(this.field.showTime, true)
 })
 
 test('sets @showTime false when value is midnight in profile timezone', function () {
-  this.$field.val('Jan 1, 1970 at 12:00am')
+  this.$field.val('Jan 1, 1970 at 12:00am').change()
   this.field.parseValue()
   equal(this.field.showTime, false)
 })
 
 test('sets @showTime true for midnight if @alwaysShowTime', function () {
   this.field.alwaysShowTime = true
-  this.$field.val('Jan 1, 1970 at 12:00am')
+  this.$field.val('Jan 1, 1970 at 12:00am').change()
   this.field.parseValue()
   equal(this.field.showTime, true)
 })
 
 test('sets @showTime false for non-midnight if not @allowTime', function () {
   this.field.allowTime = false
-  this.$field.val('Jan 1, 1970 at 12:01am')
+  this.$field.val('Jan 1, 1970 at 12:01am').change()
   this.field.parseValue()
   equal(this.field.showTime, false)
 })
 
 test('sets not @blank and not @invalid on valid input', function () {
-  this.$field.val('Jan 1, 1970 at 12:00am')
+  this.$field.val('Jan 1, 1970 at 12:00am').change()
   this.field.parseValue()
   equal(this.field.blank, false)
   equal(this.field.invalid, false)
 })
 
 test('sets @blank and not @invalid and null dates when no input', function () {
-  this.$field.val('')
+  this.$field.val('').change()
   this.field.parseValue()
   equal(this.field.blank, true)
   equal(this.field.invalid, false)
@@ -318,7 +328,7 @@ test('sets @blank and not @invalid and null dates when no input', function () {
 })
 
 test('sets @invalid and not @blank and null dates when invalid input', function () {
-  this.$field.val('invalid')
+  this.$field.val('invalid').change()
   this.field.parseValue()
   equal(this.field.blank, false)
   equal(this.field.invalid, true)
@@ -328,17 +338,17 @@ test('sets @invalid and not @blank and null dates when invalid input', function 
 
 test('interprets bare numbers < 8 in time-only fields as 12-hour PM', function () {
   this.field.showDate = false
-  this.$field.val('7')
+  this.$field.val('7').change()
   this.field.parseValue()
   equal(tz.format(this.field.datetime, '%-l%P'), '7pm')
 })
 
 test('interprets bare numbers >= 8 in time-only fields as 24-hour', function () {
   this.field.showDate = false
-  this.$field.val('8')
+  this.$field.val('8').change()
   this.field.parseValue()
   equal(tz.format(this.field.datetime, '%-l%P'), '8am')
-  this.$field.val('13')
+  this.$field.val('13').change()
   this.field.parseValue()
   equal(tz.format(this.field.datetime, '%-l%P'), '1pm')
 })
@@ -346,9 +356,17 @@ test('interprets bare numbers >= 8 in time-only fields as 24-hour', function () 
 test('interprets time-only fields as occurring on implicit date if set', function () {
   this.field.showDate = false
   this.field.setDate(moonwalk)
-  this.$field.val('12PM')
+  this.$field.val('12PM').change()
   this.field.parseValue()
   equal(tz.format(this.field.datetime, '%F %T'), `${tz.format(moonwalk, '%F ')}12:00:00`)
+})
+
+test('setDate changes the date of an existing time field', function () {
+  this.field.showDate = false
+  this.field.setDate(moonwalk)
+  this.$field.val('12PM').change()
+  this.field.setDate(john_glenn)
+  equal(tz.format(this.field.datetime, '%F %T'), `${tz.format(john_glenn, '%F ')}12:00:00`)
 })
 
 QUnit.module('updateData', {
@@ -394,10 +412,10 @@ test('sets blank field', function () {
   equal(this.$field.data('blank'), false)
 })
 
-test('sets value of hiddenInput, if present, to fudged time', function () {
+test('sets value of hiddenInput, if present, to fudged time as ISO8601', function () {
   this.field.addHiddenInput()
   this.field.updateData()
-  equal(this.$field.data('hiddenInput').val(), this.field.fudged.toString())
+  equal(this.$field.data('hiddenInput').val(), this.field.fudged.toISOString())
 })
 
 test('sets time-* to fudged, 12-hour values', function () {

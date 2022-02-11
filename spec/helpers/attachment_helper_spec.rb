@@ -18,15 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe AttachmentHelper do
   include ApplicationHelper
   include AttachmentHelper
 
   before :once do
     course_with_student
-    @att = attachment_model(:context => @user)
+    @att = attachment_model(context: @user)
   end
 
   it "returns a valid crocodoc session url" do
@@ -72,9 +70,54 @@ describe AttachmentHelper do
   describe "set_cache_header" do
     it "does not allow caching of instfs redirects" do
       allow(@att).to receive(:instfs_hosted?).and_return(true)
-      expect(self).to receive(:cancel_cache_buster).never
+      expect(self).not_to receive(:cancel_cache_buster)
       set_cache_header(@att, false)
-      expect(response.headers).not_to have_key('Cache-Control')
+      expect(response.headers).not_to have_key("Cache-Control")
+    end
+  end
+
+  describe "#doc_preview_json" do
+    subject { doc_preview_json(attachment, locked_for_user: locked_for_user) }
+
+    let(:attachment) { @att }
+    let(:locked_for_user) { false }
+
+    shared_examples_for "scenarios when the file is not locked for the user" do
+      let(:preview_json) { raise "set in examples" }
+
+      it "adds the crocodoc session url" do
+        expect(preview_json.keys).to include(:crocodoc_session_url)
+      end
+
+      it "adds the canvadoc session url" do
+        expect(preview_json.keys).to include(:canvadoc_session_url)
+      end
+    end
+
+    context "when 'locked_for_user' is true" do
+      let(:locked_for_user) { false }
+
+      it_behaves_like "scenarios when the file is not locked for the user" do
+        let(:preview_json) { subject }
+      end
+    end
+
+    context "when 'locked_for_user' is not given" do
+      it_behaves_like "scenarios when the file is not locked for the user" do
+        let(:preview_json) { doc_preview_json(attachment) }
+      end
+    end
+
+    context "when 'locked_for_user' is false" do
+      let(:locked_for_user) { true }
+
+      it "does not add the crocodoc session url" do
+        expect(subject.keys).not_to include(:crocodoc_session_url)
+      end
+
+      it "does not add the canvadoc session url" do
+        expect(subject.keys).not_to include(:canvadoc_session_url)
+      end
     end
   end
 end

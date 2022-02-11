@@ -92,11 +92,17 @@
     "apply_781a2546": {
         "message": "Appliquer"
     },
+    "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+        "message": "Appliquer les changements à toutes les instances de ce Bouton et des Icônes dans le cours."
+    },
     "apps_54d24a47": {
         "message": "Applications"
     },
     "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
         "message": "Êtes-vous sûr de vouloir supprimer cet élément de planificateur ?"
+    },
+    "arrows_464a3e54": {
+        "message": "Flèches"
     },
     "aspect_ratio_will_be_preserved_cb5fdfb8": {
         "message": "Les proportions seront préservées."
@@ -143,17 +149,23 @@
     "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
         "message": "Enregistrement audio et vidéo non pris en charge, veuillez utiliser un autre navigateur."
     },
+    "audio_options_feb58e2c": {
+        "message": "Options audio"
+    },
+    "audio_options_tray_33a90711": {
+        "message": "Tiroir des options audio"
+    },
     "audio_player_for_title_20cc70d": {
         "message": "Lecteur audio pour { title }"
     },
     "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
         "message": "Du contenu enregistré automatiquement existe. Souhaitez-vous charger le contenu enregistré automatiquement à la place ?"
     },
-    "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-        "message": "Ouvrir automatiquement un aperçu en ligne. (L''aperçu ne s''affiche qu''après l''enregistrement)"
-    },
     "available_folders_694d0436": {
         "message": "Dossiers disponibles"
+    },
+    "basic_554cdc0a": {
+        "message": "Basique"
     },
     "beginning_of_your_to_do_history_61ef2dce": {
         "message": "Début de votre historique des choses à faire"
@@ -245,6 +257,9 @@
     "close_opportunity_center_popup_9907d981": {
         "message": "Fermer la fenêtre pop-up du centre d''opportunités"
     },
+    "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+        "message": "Le fichier de sous-titres doit faire moins de { maxKb } Ko."
+    },
     "closed_captions_subtitles_e6aaa016": {
         "message": "Sous-titres"
     },
@@ -326,6 +341,12 @@
     "creative_commons_license_725584ae": {
         "message": "Licence Creative Commons :"
     },
+    "crop_image_807ebb08": {
+        "message": "Rogner l’image"
+    },
+    "current_image_f16c249c": {
+        "message": "Image actuelle"
+    },
     "custom_6979cd81": {
         "message": "Personnalisé"
     },
@@ -362,6 +383,9 @@
     "delete_a6efa79d": {
         "message": "Supprimer"
     },
+    "delimiters_4db4840d": {
+        "message": "Délimiteurs"
+    },
     "describe_the_image_e65d2e32": {
         "message": "(Décrire l’image)"
     },
@@ -374,14 +398,20 @@
     "details_a6f427c3": {
         "message": "Détails :"
     },
+    "diamond_b8dfe7ae": {
+        "message": "Diamant"
+    },
+    "dimension_type_55c83e4e": {
+        "message": "Type de dimension"
+    },
     "dimensions_45ddb7b7": {
         "message": "Dimensions"
     },
     "directionality_26ae9e08": {
         "message": "Direction"
     },
-    "disable_in_line_preview_2a675175": {
-        "message": "Désactiver la prévisualisation en ligne."
+    "directly_edit_latex_b7e9235b": {
+        "message": "Modifier directement le LaTeX"
     },
     "discussion_6719c51d": {
         "message": "Discussion"
@@ -485,6 +515,9 @@
     "equation_1c5ac93c": {
         "message": "Équation"
     },
+    "equation_editor_39fbc3f1": {
+        "message": "Éditeur d''équations"
+    },
     "error_loading_grades_e0b38f4d": {
         "message": "Erreur de chargement des notes"
     },
@@ -547,6 +580,9 @@
     },
     "feedback_6dcc1991": {
         "message": "Commentaire"
+    },
+    "file_name_8fd421ff": {
+        "message": "Nom du fichier"
     },
     "file_url_c12b64be": {
         "message": "URL du fichier"
@@ -613,6 +649,9 @@
     },
     "grades_loaded_5056277c": {
         "message": "Notes chargées"
+    },
+    "greek_65c5b3f7": {
+        "message": "Grec"
     },
     "group_documents_8bfd6ae6": {
         "message": "Documents du groupe"
@@ -797,6 +836,9 @@
     "loading_please_wait_d276220a": {
         "message": "Chargement en cours, veuillez patienter"
     },
+    "loading_preview_9f077aa1": {
+        "message": "Chargement de l’aperçu"
+    },
     "location_3b6ff307": {
         "message": "Lieu :"
     },
@@ -818,6 +860,9 @@
     "middle_27dc1d5": {
         "message": "Milieu"
     },
+    "misc_3b692ea7": {
+        "message": "Divers"
+    },
     "miscellaneous_e9818229": {
         "message": "Divers"
     },
@@ -830,6 +875,12 @@
     "modules_c4325335": {
         "message": "Modules"
     },
+    "multi_color_image_63d7372f": {
+        "message": "Image multicolore"
+    },
+    "must_be_at_least_percentage_22e373b6": {
+        "message": "Doit être au moins égal à { percentage }%"
+    },
     "must_be_at_least_width_x_height_px_41dc825e": {
         "message": "Doit faire au moins { width } x { height } px"
     },
@@ -838,9 +889,6 @@
     },
     "my_grades_98834476": {
         "message": "Mes notes"
-    },
-    "my_images_427f9b0c": {
-        "message": "Mes images"
     },
     "name_1aed4a1b": {
         "message": "Nom"
@@ -893,6 +941,9 @@
     "none_3b5e34d2": {
         "message": "Aucun"
     },
+    "none_selected_b93d56d2": {
+        "message": "Aucun sélectionné"
+    },
     "nothing_due_this_week_d45c9ef9": {
         "message": "Rien à rendre cette semaine"
     },
@@ -932,6 +983,9 @@
     "open_title_application_fd624fc5": {
         "message": "Ouvrir l’application { title }"
     },
+    "operators_a2ef9a93": {
+        "message": "Opérateurs"
+    },
     "opportunities_popup_f6703842": {
         "message": "opportunités pop-up"
     },
@@ -965,8 +1019,20 @@
     "peer_review_for_itemtitle_358cb413": {
         "message": "Correction par un pair pour { itemTitle }"
     },
+    "pentagon_17d82ea3": {
+        "message": "Pentagone"
+    },
     "people_b4ebb13c": {
         "message": "Personnes"
+    },
+    "percentage_34ab7c2c": {
+        "message": "Pourcentage"
+    },
+    "percentage_must_be_a_number_8033c341": {
+        "message": "Le pourcentage doit être un nombre"
+    },
+    "pixels_52ece7d1": {
+        "message": "Pixels"
     },
     "points_bceb5005": {
         "message": "points"
@@ -1028,6 +1094,9 @@
     "redo_363c58b7": {
         "message": "Refaire"
     },
+    "relationships_6602af70": {
+        "message": "Relations"
+    },
     "reminder_date_4564d12d": {
         "message": "Rappel : { date }"
     },
@@ -1076,6 +1145,9 @@
     "search_term_b2d2235": {
         "message": "Terme de recherche"
     },
+    "select_crop_shape_d441feeb": {
+        "message": "Sélectionnez la forme du rognage"
+    },
     "select_language_7c93a900": {
         "message": "Sélectionner la langue"
     },
@@ -1087,6 +1159,9 @@
     },
     "show_all_ae37d610": {
         "message": "Tout montrer"
+    },
+    "show_audio_options_b489926b": {
+        "message": "Afficher les options audio"
     },
     "show_embed_options_ef8d7ef": {
         "message": "Afficher les options d''intégration"
@@ -1103,11 +1178,14 @@
     "show_video_options_6ed3721a": {
         "message": "Afficher les options vidéo"
     },
+    "single_color_image_4e5d4dbc": {
+        "message": "Image monocolore"
+    },
     "size_b30e1077": {
         "message": "Taille"
     },
-    "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-        "message": "La taille du fichier { file } est supérieur aux { max } Mo de taille maximum autorisée."
+    "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+        "message": "La taille du fichier de sous-titres est supérieur au maximum de { max } Ko autorisés."
     },
     "small_b070434a": {
         "message": "Petit"

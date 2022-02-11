@@ -101,6 +101,12 @@
   "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
     "message": "Are you sure you want to delete this planner item?"
   },
+  "arrows_464a3e54": {
+    "message": "Arrows"
+  },
+  "art_icon_8e1daad": {
+    "message": "Art Icon"
+  },
   "aspect_ratio_will_be_preserved_cb5fdfb8": {
     "message": "Aspect ratio will be preserved"
   },
@@ -146,17 +152,23 @@
   "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
     "message": "Audio and video recording not supported; please use a different browser."
   },
+  "audio_options_feb58e2c": {
+    "message": "Audio Options"
+  },
+  "audio_options_tray_33a90711": {
+    "message": "Audio Options Tray"
+  },
   "audio_player_for_title_20cc70d": {
     "message": "Audio player for { title }"
   },
   "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
     "message": "Auto-saved content exists. Would you like to load the auto-saved content instead?"
   },
-  "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-    "message": "Automatically open an in-line preview. (Preview displays only after saving)"
-  },
   "available_folders_694d0436": {
     "message": "Available folders"
+  },
+  "basic_554cdc0a": {
+    "message": "Basic"
   },
   "beginning_of_your_to_do_history_61ef2dce": {
     "message": "Beginning of Your To-Do History"
@@ -218,6 +230,9 @@
   "clear_2084585f": {
     "message": "Clear"
   },
+  "clear_image_3213fe62": {
+    "message": "Clear image"
+  },
   "clear_selected_file_82388e50": {
     "message": "Clear selected file"
   },
@@ -247,6 +262,9 @@
   },
   "close_opportunity_center_popup_9907d981": {
     "message": "Close Opportunity Center popup"
+  },
+  "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+    "message": "Closed caption file must be less than { maxKb } kb"
   },
   "closed_captions_subtitles_e6aaa016": {
     "message": "Closed Captions/Subtitles"
@@ -329,6 +347,15 @@
   "creative_commons_license_725584ae": {
     "message": "Creative Commons License:"
   },
+  "crop_image_41bf940c": {
+    "message": "Crop image"
+  },
+  "crop_image_807ebb08": {
+    "message": "Crop Image"
+  },
+  "current_image_f16c249c": {
+    "message": "Current Image"
+  },
   "custom_6979cd81": {
     "message": "Custom"
   },
@@ -365,6 +392,9 @@
   "delete_a6efa79d": {
     "message": "Delete"
   },
+  "delimiters_4db4840d": {
+    "message": "Delimiters"
+  },
   "describe_the_image_e65d2e32": {
     "message": "(Describe the image)"
   },
@@ -377,14 +407,20 @@
   "details_a6f427c3": {
     "message": "Details:"
   },
+  "diamond_b8dfe7ae": {
+    "message": "Diamond"
+  },
+  "dimension_type_55c83e4e": {
+    "message": "Dimension type"
+  },
   "dimensions_45ddb7b7": {
     "message": "Dimensions"
   },
   "directionality_26ae9e08": {
     "message": "Directionality"
   },
-  "disable_in_line_preview_2a675175": {
-    "message": "Disable in-line preview."
+  "directly_edit_latex_b7e9235b": {
+    "message": "Directly Edit LaTeX"
   },
   "discussion_6719c51d": {
     "message": "Discussion"
@@ -482,11 +518,20 @@
   "embedded_content_aaeb4d3d": {
     "message": "embedded content"
   },
+  "engineering_icon_f8f3cf43": {
+    "message": "Engineering Icon"
+  },
+  "english_icon_25bfe845": {
+    "message": "English Icon"
+  },
   "enter_at_least_3_characters_to_search_4f037ee0": {
     "message": "Enter at least 3 characters to search"
   },
   "equation_1c5ac93c": {
     "message": "Equation"
+  },
+  "equation_editor_39fbc3f1": {
+    "message": "Equation Editor"
   },
   "error_loading_grades_e0b38f4d": {
     "message": "Error loading grades"
@@ -550,6 +595,9 @@
   },
   "feedback_6dcc1991": {
     "message": "Feedback"
+  },
+  "file_name_8fd421ff": {
+    "message": "File name"
   },
   "file_url_c12b64be": {
     "message": "File URL"
@@ -617,6 +665,9 @@
   "grades_loaded_5056277c": {
     "message": "Grades Loaded"
   },
+  "greek_65c5b3f7": {
+    "message": "Greek"
+  },
   "group_documents_8bfd6ae6": {
     "message": "Group Documents"
   },
@@ -646,6 +697,9 @@
   },
   "heading_4_b2e74be7": {
     "message": "Heading 4"
+  },
+  "health_icon_8d292eb5": {
+    "message": "Health Icon"
   },
   "height_69b03e15": {
     "message": "Height"
@@ -685,6 +739,9 @@
   },
   "image_options_tray_90a46006": {
     "message": "Image Options Tray"
+  },
+  "image_to_crop_3a34487d": {
+    "message": "Image to crop"
   },
   "images_7ce26570": {
     "message": "Images"
@@ -739,6 +796,9 @@
   "language_arts_35b79a8b": {
     "message": "Language Arts"
   },
+  "languages_835813f0": {
+    "message": "Languages"
+  },
   "large_9c5e80e7": {
     "message": "Large"
   },
@@ -747,6 +807,9 @@
   },
   "left_to_right_e9b4fd06": {
     "message": "Left-to-Right"
+  },
+  "library_4b05885e": {
+    "message": "Library"
   },
   "link_7262adec": {
     "message": "Link"
@@ -802,6 +865,9 @@
   "loading_please_wait_d276220a": {
     "message": "Loading, please wait"
   },
+  "loading_preview_9f077aa1": {
+    "message": "Loading preview"
+  },
   "location_3b6ff307": {
     "message": "Location:"
   },
@@ -823,6 +889,9 @@
   "middle_27dc1d5": {
     "message": "Middle"
   },
+  "misc_3b692ea7": {
+    "message": "Misc"
+  },
   "miscellaneous_e9818229": {
     "message": "Miscellaneous"
   },
@@ -835,6 +904,15 @@
   "modules_c4325335": {
     "message": "Modules"
   },
+  "multi_color_image_63d7372f": {
+    "message": "Multi Color Image"
+  },
+  "music_8678b13": {
+    "message": "Music"
+  },
+  "must_be_at_least_percentage_22e373b6": {
+    "message": "Must be at least { percentage }%"
+  },
   "must_be_at_least_width_x_height_px_41dc825e": {
     "message": "Must be at least { width } x { height }px"
   },
@@ -843,9 +921,6 @@
   },
   "my_grades_98834476": {
     "message": "My Grades"
-  },
-  "my_images_427f9b0c": {
-    "message": "My Images"
   },
   "name_1aed4a1b": {
     "message": "Name"
@@ -898,6 +973,9 @@
   "none_3b5e34d2": {
     "message": "None"
   },
+  "none_selected_b93d56d2": {
+    "message": "None Selected"
+  },
   "nothing_due_this_week_d45c9ef9": {
     "message": "Nothing Due This Week"
   },
@@ -937,6 +1015,9 @@
   "open_title_application_fd624fc5": {
     "message": "Open { title } application"
   },
+  "operators_a2ef9a93": {
+    "message": "Operators"
+  },
   "opportunities_popup_f6703842": {
     "message": "opportunities popup"
   },
@@ -970,8 +1051,26 @@
   "peer_review_for_itemtitle_358cb413": {
     "message": "Peer Review for { itemTitle }"
   },
+  "pentagon_17d82ea3": {
+    "message": "Pentagon"
+  },
   "people_b4ebb13c": {
     "message": "People"
+  },
+  "percentage_34ab7c2c": {
+    "message": "Percentage"
+  },
+  "percentage_must_be_a_number_8033c341": {
+    "message": "Percentage must be a number"
+  },
+  "performing_arts_258f265": {
+    "message": "Performing Arts"
+  },
+  "physical_education_b1031a43": {
+    "message": "Physical Education"
+  },
+  "pixels_52ece7d1": {
+    "message": "Pixels"
   },
   "points_bceb5005": {
     "message": "points"
@@ -1033,6 +1132,12 @@
   "redo_363c58b7": {
     "message": "Redo"
   },
+  "relationships_6602af70": {
+    "message": "Relationships"
+  },
+  "religion_afb0a930": {
+    "message": "Religion"
+  },
   "reminder_date_4564d12d": {
     "message": "Reminder: { date }"
   },
@@ -1081,6 +1186,9 @@
   "search_term_b2d2235": {
     "message": "Search Term"
   },
+  "select_crop_shape_d441feeb": {
+    "message": "Select crop shape"
+  },
   "select_language_7c93a900": {
     "message": "Select Language"
   },
@@ -1092,6 +1200,9 @@
   },
   "show_all_ae37d610": {
     "message": "Show All"
+  },
+  "show_audio_options_b489926b": {
+    "message": "Show audio options"
   },
   "show_embed_options_ef8d7ef": {
     "message": "Show embed options"
@@ -1108,11 +1219,14 @@
   "show_video_options_6ed3721a": {
     "message": "Show video options"
   },
+  "single_color_image_4e5d4dbc": {
+    "message": "Single Color Image"
+  },
   "size_b30e1077": {
     "message": "Size"
   },
-  "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-    "message": "Size of { file } is greater than the maximum { max } MB allowed file size."
+  "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+    "message": "Size of caption file is greater than the maximum { max } kb allowed file size."
   },
   "small_b070434a": {
     "message": "Small"
@@ -1449,5 +1563,11 @@
   },
   "you_ve_scrolled_back_to_your_very_first_to_do_29374681": {
     "message": "You''ve scrolled back to your very first To-Do!"
+  },
+  "zoom_in_image_bb97d4f": {
+    "message": "Zoom in image"
+  },
+  "zoom_out_image_d0a0a2ec": {
+    "message": "Zoom out image"
   }
 }

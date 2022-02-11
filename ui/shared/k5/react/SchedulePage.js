@@ -24,12 +24,13 @@ import {
   createPlannerPreview,
   renderWeeklyPlannerHeader,
   JumpToHeaderButton,
-  preloadInitialItems
+  preloadInitialItems,
+  reloadPlannerForObserver
 } from '@instructure/canvas-planner'
 import {ApplyTheme} from '@instructure/ui-themeable'
 
-import EmptyDashboardState from '@canvas/k5/react/EmptyDashboardState'
-import {plannerTheme} from '@canvas/k5/react/k5-theme'
+import EmptyDashboardState from './EmptyDashboardState'
+import {plannerTheme} from './k5-theme'
 
 const SchedulePage = ({
   plannerEnabled,
@@ -37,7 +38,9 @@ const SchedulePage = ({
   timeZone,
   userHasEnrollments,
   visible,
-  singleCourse
+  singleCourse,
+  observedUserId,
+  contextCodes
 }) => {
   const [isPlannerCreated, setPlannerCreated] = useState(false)
   const [hasPreloadedItems, setHasPreloadedItems] = useState(false)
@@ -50,20 +53,30 @@ const SchedulePage = ({
     }
   }, [plannerInitialized])
 
+  const plannerReady = isPlannerCreated && userHasEnrollments
+  const showPlanner = plannerReady && visible
+
   // Only preload the previous and next weeks' items once the schedule tab is active
   // The present week's items are loaded regardless of tab state
   useEffect(() => {
-    if (
-      visible &&
-      isPlannerCreated &&
-      plannerInitialized &&
-      userHasEnrollments &&
-      !hasPreloadedItems
-    ) {
+    if (showPlanner && !hasPreloadedItems && !observedUserId) {
       preloadInitialItems()
       setHasPreloadedItems(true)
     }
-  }, [visible, isPlannerCreated, plannerInitialized, userHasEnrollments, hasPreloadedItems])
+  }, [showPlanner, hasPreloadedItems, observedUserId])
+
+  useEffect(() => {
+    if (plannerReady) {
+      reloadPlannerForObserver(observedUserId, contextCodes)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    plannerReady,
+    observedUserId,
+    // contextCodes is included in the dependency array in its stringified form
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    JSON.stringify(contextCodes)
+  ])
 
   let content = <></>
   if (plannerInitialized && isPlannerCreated) {
@@ -102,7 +115,9 @@ SchedulePage.propTypes = {
   timeZone: PropTypes.string.isRequired,
   userHasEnrollments: PropTypes.bool.isRequired,
   visible: PropTypes.bool.isRequired,
-  singleCourse: PropTypes.bool.isRequired
+  singleCourse: PropTypes.bool.isRequired,
+  observedUserId: PropTypes.string,
+  contextCodes: PropTypes.arrayOf(PropTypes.string)
 }
 
 export default SchedulePage

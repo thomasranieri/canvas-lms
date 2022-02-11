@@ -18,10 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'rubric_assessment_submission_reminder' do
+describe "rubric_assessment_submission_reminder" do
   before :once do
     user_model
     rubric_assessment_model(user: @user)

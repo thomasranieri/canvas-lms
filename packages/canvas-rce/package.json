@@ -1,6 +1,6 @@
 {
   "name": "@instructure/canvas-rce",
-  "version": "5.1.1",
+  "version": "5.3.0",
   "description": "A component wrapping canvas's common tinymce usage",
   "main": "lib/index.js",
   "module": "es/index.js",
@@ -29,14 +29,16 @@
     "demo:build": "webpack -c ./webpack.demo.config.js",
     "demo:dev": "yarn demo:clean && mkdir -p ./github-pages/dist &&  cp ./github-pages/index.html ./github-pages/dist && webpack -c ./webpack.dev.config.js",
     "installTranslations": "scripts/installTranslations.js",
+    "commitTranslations": "scripts/commitTranslations.sh",
     "build:all": "scripts/build.js",
     "build:canvas": "scripts/build-canvas",
-    "build:watch": "rm -rf es &&  ./node_modules/.bin/babel --out-dir es src --watch",
+    "build:watch": "rm -rf es &&  ./node_modules/.bin/babel --out-dir es src --watch --verbose",
     "build:cafe": "webpack --config webpack.testcafe.config.js",
     "prepublishOnly": "yarn build:all && yarn test",
     "fmt:check": "prettier -l '**/*.js'",
     "fmt:fix": "prettier --write '**/*.js'",
-    "clean": "rm -rf lib && rm -rf es && rm -rf coverage && yarn demo:clean"
+    "clean": "rm -rf lib && rm -rf es && rm -rf coverage && yarn demo:clean",
+    "generate-svgs": "yarn build:all && scripts/generateSvgs.js"
   },
   "author": "Instructure, Inc",
   "license": "AGPL-3.0",
@@ -57,9 +59,9 @@
     "instrument": false
   },
   "dependencies": {
-    "@instructure/canvas-media": ">=1.0.0",
+    "@instructure/canvas-media": "*",
     "@instructure/canvas-theme": "7",
-    "@instructure/k5uploader": ">=1",
+    "@instructure/k5uploader": "*",
     "@instructure/media-capture": "~8.0.1-rc.11",
     "@instructure/ui-a11y-content": "7",
     "@instructure/ui-alerts": "7",
@@ -68,7 +70,7 @@
     "@instructure/ui-billboard": "7",
     "@instructure/ui-buttons": "7",
     "@instructure/ui-checkbox": "7",
-    "@instructure/ui-code-editor": "7.3.0",
+    "@instructure/ui-code-editor": "7",
     "@instructure/ui-color-utils": "7",
     "@instructure/ui-file-drop": "7",
     "@instructure/ui-flex": "7",
@@ -112,7 +114,6 @@
     "classnames": "^2.2.5",
     "format-message": "^6",
     "format-message-generate-id": "^6",
-    "get-cookie": "1",
     "i18n-js": "^3",
     "i18nliner": "~0.2.0",
     "isomorphic-fetch": "2.2.1",
@@ -120,7 +121,9 @@
     "js-beautify": "1",
     "keycode": "^2",
     "lodash": "^4",
+    "mathlive": "^0.69.8",
     "minimatch": "~3.0.4",
+    "moment-timezone": "^0.5.13",
     "prop-types": "^15",
     "react": "^0.14.8 || ^15.0.0 || ^16",
     "react-dom": "^0.14.8 || ^15.0.0 || ^16",
@@ -132,7 +135,7 @@
     "redux-thunk": "^2",
     "scroll-into-view": "https://github.com/bkirkby/scroll-into-view.git#588b0ced98eeecf84e6fb2074aa076e80b7cffab",
     "tinymce": "^5",
-    "tinymce-a11y-checker": "^3.0.0"
+    "tinymce-a11y-checker": "^3.3.3"
   },
   "devDependencies": {
     "@babel/cli": "^7",
@@ -154,18 +157,20 @@
     "babel-plugin-minify-guarded-expressions": "^0.4.3",
     "babel-plugin-transform-inline-environment-variables": "^0.4.3",
     "cross-env": "^5.0.0",
+    "escape-html": "^1",
     "eslint-plugin-mocha": "^6",
     "eslint-plugin-testcafe": "^0.2.1",
     "fetch-mock": "^6",
     "format-message-cli": "^6",
     "format-message-parse": "^6",
-    "jest": "^24",
+    "jest": "^26",
     "jest-canvas-mock": "^2",
     "jest-environment-jsdom-fourteen": "^0.1.0",
     "jest-junit": "^7",
     "jsdom": "^13.0.0",
     "jsdom-global": "^3.0.2",
     "jsdomify": "^3",
+    "mathjax": "^3.2.0",
     "mocha": "^6",
     "mocha-junit-reporter": "^1.18.0",
     "mocha-multi-reporters": "^1.1.7",
@@ -184,6 +189,6 @@
     "webpack-plugin-serve": "^1"
   },
   "resolutions": {
-    "format-message-estree-util": "../packages/format-message-estree-util"
+    "format-message-estree-util": "./packages/format-message-estree-util"
   }
 }

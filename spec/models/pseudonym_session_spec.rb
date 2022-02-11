@@ -18,17 +18,15 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe PseudonymSession do
-  before(:each) do
+  before do
     fake_controller_cls = Class.new do
       attr_reader :request
 
       def initialize
         request_cls = Class.new do
           def ip
-            '127.0.0.1'
+            "127.0.0.1"
           end
         end
         @request = request_cls.new
@@ -55,9 +53,10 @@ describe PseudonymSession do
     Authlogic::Session::Base.controller = fake_controller_cls.new
   end
 
-  after(:each) do
+  after do
     Authlogic::Session::Base.controller = nil
   end
+
   describe "save_record" do
     it "will not overwrite the last_request_at within the configured window" do
       pseud = pseudonym_model
@@ -85,7 +84,7 @@ describe PseudonymSession do
       sess.save_record
       expect(pseud.reload.last_request_at).to eq(expected_timestamp)
       pseud.last_request_at = 1.second.from_now.utc
-      pseud.unique_id = 'some new value'
+      pseud.unique_id = "some new value"
       sess.save_record
       expect(pseud.reload.last_request_at > expected_timestamp).to be_truthy
     end

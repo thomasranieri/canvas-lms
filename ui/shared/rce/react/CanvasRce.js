@@ -24,6 +24,7 @@ import getRCSProps from '../getRCSProps'
 import closedCaptionLanguages from '@canvas/util/closedCaptionLanguages'
 import EditorConfig from '../tinymce.config'
 import loadEventListeners from '../loadEventListeners'
+import shouldUseFeature, {Feature} from '../shouldUseFeature'
 
 // the ref you add via <CanvasRce ref={yourRef} /> will be a reference
 // to the underlying RCEWrapper. You probably shouldn't use it until
@@ -77,7 +78,7 @@ const CanvasRce = forwardRef(function CanvasRce(props, rceRef) {
     return config
   })
   const [autosave_] = useState({
-    enabled: ENV.rce_auto_save && autosave,
+    enabled: true,
     interval: Number.isNaN(ENV.rce_auto_save_max_age_ms) ? 3600000 : ENV.rce_auto_save_max_age_ms
   })
   const [refCreated, setRefCreated] = useState(null)
@@ -119,9 +120,7 @@ const CanvasRce = forwardRef(function CanvasRce(props, rceRef) {
       languages={languages}
       liveRegion={() => document.getElementById('flash_screenreader_holder')}
       ltiTools={window.INST?.editorButtons}
-      maxInitRenderedRCEs={
-        window.ENV?.FEATURES?.rce_limit_init_render_on_page ? props.maxInitRenderedRCEs : -1
-      }
+      maxInitRenderedRCEs={props.maxInitRenderedRCEs}
       mirroredAttrs={mirroredAttrs}
       readOnly={readOnly}
       textareaClassName={textareaClassName}
@@ -132,8 +131,7 @@ const CanvasRce = forwardRef(function CanvasRce(props, rceRef) {
       onBlur={onBlur}
       onContentChange={onContentChange}
       onInit={onInit}
-      use_rce_pretty_html_editor={!!window.ENV?.FEATURES?.rce_pretty_html_editor}
-      use_rce_buttons_and_icons={!!window.ENV?.FEATURES?.rce_buttons_and_icons}
+      use_rce_buttons_and_icons={shouldUseFeature(Feature.ButtonsAndIcons, window.ENV)}
       use_rce_a11y_checker_notifications={!!window.ENV?.use_rce_a11y_checker_notifications}
       {...rest}
     />
@@ -152,8 +150,7 @@ CanvasRce.propTypes = {
   editorOptions: object,
   // height of the RCE. If a number, in px
   height: oneOfType([number, string]),
-  // if the rce_limit_init_render_on_page flag is on, this
-  // is the maximum number of RCEs that will render on page load.
+  // The maximum number of RCEs that will render on page load.
   // Any more than this will be deferred until it is nearly
   // scrolled into view.
   // if isNaN or <=0, render them all

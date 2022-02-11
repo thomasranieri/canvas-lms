@@ -19,14 +19,14 @@
 #
 
 class CustomData < ActiveRecord::Base
-  class WriteConflict < Exception
+  class WriteConflict < RuntimeError
     attr_accessor :conflict_scope, :type_at_conflict, :value_at_conflict
 
     def initialize(opts = {})
       opts.each do |k, v|
         instance_variable_set("@#{k}", v)
       end
-      super 'write conflict for custom_data hash'
+      super "write conflict for custom_data hash"
     end
 
     def as_json
@@ -38,13 +38,13 @@ class CustomData < ActiveRecord::Base
     end
   end
 
-  self.table_name = 'custom_data'
+  self.table_name = "custom_data"
 
   belongs_to :user
 
   serialize :data, Hash
 
-  validates_presence_of :user, :namespace
+  validates :user, :namespace, presence: true
 
   def get_data(scope)
     hash_data_from_scope(data_frd, "d/#{scope}")
@@ -52,9 +52,9 @@ class CustomData < ActiveRecord::Base
 
   def lock_and_save
     transaction do
-      self.lock!
+      lock!
       yield
-      self.destroyed? || save
+      destroyed? || save
     end
   end
 
@@ -69,19 +69,19 @@ class CustomData < ActiveRecord::Base
   private
 
   def hash_data_from_scope(hash, scope)
-    keys = scope.split('/')
-    keys.inject(hash) do |hash, k|
-      raise ArgumentError, 'invalid scope for hash' unless hash.is_a? Hash
+    keys = scope.split("/")
+    keys.inject(hash) do |h, k|
+      raise ArgumentError, "invalid scope for hash" unless h.is_a?(Hash)
 
-      hash[k]
+      h[k]
     end
   end
 
   def set_hash_data_from_scope(hash, scope, data)
-    keys = scope.split('/')
+    keys = scope.split("/")
     last = keys.pop
 
-    traverse = ->(hsh, key_idx) do
+    traverse = lambda do |hsh, key_idx|
       return hsh if key_idx == keys.length
 
       k = keys[key_idx]
@@ -90,7 +90,7 @@ class CustomData < ActiveRecord::Base
         hsh[k] = {}
       elsif !h.is_a? Hash
         raise WriteConflict.new({
-                                  conflict_scope: keys.slice(1..key_idx).join('/'),
+                                  conflict_scope: keys.slice(1..key_idx).join("/"),
                                   type_at_conflict: h.class,
                                   value_at_conflict: h
                                 })
@@ -105,24 +105,24 @@ class CustomData < ActiveRecord::Base
   end
 
   def delete_hash_data_from_scope(hash, scope)
-    keys = scope.split('/')
-    del_frd = ->(hash) do
+    keys = scope.split("/")
+    del_frd = lambda do |hash2|
       k = keys.shift
       if keys.empty?
-        raise ArgumentError, 'invalid scope for hash' unless hash.has_key? k
+        raise ArgumentError, "invalid scope for hash" unless hash2.key?(k)
 
-        hash.delete k
+        hash2.delete k
       else
-        h = hash[k]
-        raise ArgumentError, 'invalid scope for hash' if h.nil?
+        hash3 = hash2[k]
+        raise ArgumentError, "invalid scope for hash" if hash3.nil?
 
-        ret = del_frd.call(h)
-        hash.delete k if h.empty?
+        ret = del_frd.call(hash3)
+        hash2.delete k if hash3.empty?
         ret
       end
     end
     ret = del_frd.call(hash)
-    self.destroy if hash.empty?
+    destroy if hash.empty?
     ret
   end
 

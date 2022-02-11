@@ -31,7 +31,8 @@ jest.mock('../../utilities/apiUtils', () => ({
     newActivity: response.new_activity,
     transformedToInternal: true
   })),
-  transformInternalToApiItem: jest.fn(internal => ({...internal, transformedToApi: true}))
+  transformInternalToApiItem: jest.fn(internal => ({...internal, transformedToApi: true})),
+  observedUserId: jest.requireActual('../../utilities/apiUtils').observedUserId
 }))
 
 const getBasicState = () => ({
@@ -52,7 +53,9 @@ const getBasicState = () => ({
     weekEnd: moment.tz('UTC').endOf('week'),
     thisWeek: moment.tz('UTC').startOf('week'),
     weeks: {}
-  }
+  },
+  selectedObservee: null,
+  currentUser: {id: '1'}
 })
 
 describe('api actions', () => {
@@ -506,6 +509,69 @@ describe('api actions', () => {
         expect(moxios.requests.at(0).url).toMatch(expectedContextCodes)
         expect(moxios.requests.at(1).url).toMatch(expectedContextCodes)
         expect(moxios.requests.at(2).url).toMatch(expectedContextCodes)
+        done()
+      })
+    })
+
+    it('adds observee id and context codes to request if state contains selected observee', async done => {
+      const today = moment.tz('UTC').startOf('day')
+      moxios.stubRequest(/\/api\/v1\/planner\/items/, {
+        status: 200,
+        response: [{plannable_date: '2017-05-01T:00:00:00Z'}]
+      })
+
+      const mockCourses = [{id: 7}]
+      const mockUiManager = {
+        setStore: jest.fn(),
+        handleAction: jest.fn(),
+        uiStateUnchanged: jest.fn()
+      }
+
+      const store = configureStore(mockUiManager, {
+        ...getBasicState(),
+        courses: mockCourses,
+        selectedObservee: {id: '35', contextCodes: ['course_11', 'course_12']}
+      })
+      store.dispatch(Actions.getWeeklyPlannerItems(today))
+
+      const expectedParams =
+        /observed_user_id=35&context_codes\[]=course_11&context_codes\[]=course_12/
+      moxios.wait(() => {
+        // Fetching current week, far future date, and far past date should all have observee id and context codes
+        expect(moxios.requests.count()).toBe(3)
+        expect(moxios.requests.at(0).url).toMatch(expectedParams)
+        expect(moxios.requests.at(1).url).toMatch(expectedParams)
+        expect(moxios.requests.at(2).url).toMatch(expectedParams)
+        done()
+      })
+    })
+
+    it('does not add observee id if observee id is the current user id', async done => {
+      const today = moment.tz('UTC').startOf('day')
+      moxios.stubRequest(/\/api\/v1\/planner\/items/, {
+        status: 200,
+        response: [{plannable_date: '2017-05-01T:00:00:00Z'}]
+      })
+
+      const mockCourses = [{id: 7}]
+      const mockUiManager = {
+        setStore: jest.fn(),
+        handleAction: jest.fn(),
+        uiStateUnchanged: jest.fn()
+      }
+
+      const store = configureStore(mockUiManager, {
+        ...getBasicState(),
+        courses: mockCourses,
+        selectedObservee: {id: '1', contextCodes: ['course_11', 'course_12']}
+      })
+      store.dispatch(Actions.getWeeklyPlannerItems(today))
+
+      moxios.wait(() => {
+        expect(moxios.requests.count()).toBe(3)
+        expect(moxios.requests.at(0).url).not.toContain('observed_user_id')
+        expect(moxios.requests.at(1).url).not.toContain('observed_user_id')
+        expect(moxios.requests.at(2).url).not.toContain('observed_user_id')
         done()
       })
     })

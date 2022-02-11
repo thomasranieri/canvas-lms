@@ -22,7 +22,7 @@ module Types
   class GroupType < ApplicationObjectType
     graphql_name "Group"
 
-    alias :group :object
+    alias_method :group, :object
 
     implements GraphQL::Types::Relay::Node
     implements Interfaces::TimestampInterface
@@ -32,6 +32,8 @@ module Types
     global_id_field :id
 
     field :name, String, null: true
+
+    field :members_count, Integer, null: true
 
     field :members_connection, GroupMembershipType.connection_type, null: true
     def members_connection

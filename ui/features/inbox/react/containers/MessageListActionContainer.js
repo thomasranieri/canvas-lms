@@ -17,9 +17,9 @@
  */
 
 import {AlertManagerContext} from '@canvas/alerts/react/AlertManager'
-import {COURSES_QUERY, CONVERSATIONS_QUERY} from '../../graphql/Queries'
-import {DELETE_CONVERSATIONS, UPDATE_CONVERSATION_PARTICIPANTS} from '../../graphql/Mutations'
-import {CourseSelect} from '../components/CourseSelect/CourseSelect'
+import {COURSES_QUERY} from '../../graphql/Queries'
+import {UPDATE_CONVERSATION_PARTICIPANTS} from '../../graphql/Mutations'
+import {CourseSelect, ALL_COURSES_ID} from '../components/CourseSelect/CourseSelect'
 import {Flex} from '@instructure/ui-flex'
 import I18n from 'i18n!conversations_2'
 import {MailboxSelectionDropdown} from '../components/MailboxSelectionDropdown/MailboxSelectionDropdown'
@@ -29,10 +29,13 @@ import {useQuery, useMutation} from 'react-apollo'
 import React, {useContext} from 'react'
 import {reduceDuplicateCourses} from '../../util/courses_helper'
 import {View} from '@instructure/ui-view'
+import {AddressBookContainer} from './AddressBookContainer/AddressBookContainer'
+import {Responsive} from '@instructure/ui-responsive'
+import {responsiveQuerySizes} from '../../util/utils'
 
 const MessageListActionContainer = props => {
+  const LIMIT_TAG_COUNT = 1
   const {setOnFailure, setOnSuccess} = useContext(AlertManagerContext)
-  const conversationsQuery = CONVERSATIONS_QUERY
   const userID = ENV.current_user_id?.toString()
 
   const selectedReadStates = () => {
@@ -55,76 +58,14 @@ const MessageListActionContainer = props => {
 
   const hasSelectedConversations = () => props.selectedConversations.length > 0
 
-  const removeDeletedConversationsFromCache = (cache, result) => {
-    const conversationsFromCache = JSON.parse(
-      JSON.stringify(
-        cache.readQuery({
-          query: conversationsQuery,
-          variables: {userID, scope: props.scope, course: props.course}
-        })
-      )
-    )
-
-    const conversationIDsFromResult = result.data.deleteConversations.conversationIds
-
-    const updatedCPs = conversationsFromCache.legacyNode.conversationsConnection.nodes.filter(
-      conversationParticipant => {
-        return !conversationIDsFromResult.includes(conversationParticipant.conversation._id)
-      }
-    )
-
-    conversationsFromCache.legacyNode.conversationsConnection.nodes = updatedCPs
-    cache.writeQuery({
-      query: conversationsQuery,
-      variables: {userID, scope: props.scope, course: props.course},
-      data: conversationsFromCache
-    })
-  }
-
-  const handleDeleteComplete = data => {
-    const deletedSuccessMsg = I18n.t(
-      {
-        one: 'Message Deleted!',
-        other: 'Messages Deleted!'
-      },
-      {count: props.selectedConversations.length}
-    )
-
-    if (data.deleteConversations.errors) {
-      // keep delete button enabled since deletion returned errors
-      props.deleteToggler(false)
-      setOnFailure(I18n.t('Delete operation failed'))
-    } else {
-      props.deleteToggler(true)
-      props.onConversationRemove(props.selectedConversations)
-      setOnSuccess(deletedSuccessMsg, false)
-    }
-  }
-
-  const [deleteConversations] = useMutation(DELETE_CONVERSATIONS, {
-    update: removeDeletedConversationsFromCache,
-    onCompleted(data) {
-      handleDeleteComplete(data)
-    },
-    onError() {
-      setOnFailure(I18n.t('Delete operation failed'))
-    }
-  })
-
   const removeOutOfScopeConversationsFromCache = (cache, result) => {
     if (result.data.updateConversationParticipants.errors) {
       return
     }
 
     const conversationsFromCache = JSON.parse(
-      JSON.stringify(
-        cache.readQuery({
-          query: conversationsQuery,
-          variables: {userID, scope: props.scope, course: props.course}
-        })
-      )
+      JSON.stringify(cache.readQuery(props.conversationsQueryOptions))
     )
-
     const conversationParticipantIDsFromResult =
       result.data.updateConversationParticipants.conversationParticipants.map(cp => cp._id)
 
@@ -132,13 +73,8 @@ const MessageListActionContainer = props => {
       conversationParticipant =>
         !conversationParticipantIDsFromResult.includes(conversationParticipant._id)
     )
-
     conversationsFromCache.legacyNode.conversationsConnection.nodes = updatedCPs
-    cache.writeQuery({
-      query: conversationsQuery,
-      variables: {userID, scope: props.scope, course: props.course},
-      data: conversationsFromCache
-    })
+    cache.writeQuery({...props.conversationsQueryOptions, data: conversationsFromCache})
   }
 
   const handleArchiveComplete = data => {
@@ -160,6 +96,25 @@ const MessageListActionContainer = props => {
     }
   }
 
+  const handleUnarchiveComplete = data => {
+    const unarchiveSuccessMsg = I18n.t(
+      {
+        one: 'Message Unarchived!',
+        other: 'Messages Unarchived!'
+      },
+      {count: props.selectedConversations.length}
+    )
+    if (data.updateConversationParticipants.errors) {
+      // keep delete button enabled since deletion returned errors
+      props.archiveToggler(true)
+      setOnFailure(I18n.t('Unarchive operation failed'))
+    } else {
+      props.archiveToggler(false)
+      props.onConversationRemove(props.selectedConversations)
+      setOnSuccess(unarchiveSuccessMsg) // screenReaderOnly
+    }
+  }
+
   const [archiveConversationParticipants] = useMutation(UPDATE_CONVERSATION_PARTICIPANTS, {
     update: removeOutOfScopeConversationsFromCache,
     onCompleted(data) {
@@ -167,6 +122,16 @@ const MessageListActionContainer = props => {
     },
     onError() {
       setOnFailure(I18n.t('Archive operation failed'))
+    }
+  })
+
+  const [unarchiveConversationParticipants] = useMutation(UPDATE_CONVERSATION_PARTICIPANTS, {
+    update: removeOutOfScopeConversationsFromCache,
+    onCompleted(data) {
+      handleUnarchiveComplete(data)
+    },
+    onError() {
+      setOnFailure(I18n.t('Unarchive operation failed'))
     }
   })
 
@@ -245,24 +210,6 @@ const MessageListActionContainer = props => {
     data?.legacyNode?.favoriteCoursesConnection?.nodes
   )
 
-  const handleDelete = () => {
-    const delMsg = I18n.t(
-      {
-        one: 'Are you sure you want to delete your copy of this conversation? This action cannot be undone.',
-        other:
-          'Are you sure you want to delete your copy of these conversations? This action cannot be undone.'
-      },
-      {count: props.selectedConversations.length}
-    )
-    const confirmResult = window.confirm(delMsg) // eslint-disable-line no-alert
-    if (confirmResult) {
-      deleteConversations({variables: {ids: props.selectedConversations.map(convo => convo._id)}})
-    } else {
-      // confirm message was cancelled by user
-      props.deleteToggler(false)
-    }
-  }
-
   const handleArchive = () => {
     const archiveConfirmMsg = I18n.t(
       {
@@ -297,7 +244,7 @@ const MessageListActionContainer = props => {
 
     const confirmResult = window.confirm(unarchiveConfirmMsg) // eslint-disable-line no-alert
     if (confirmResult) {
-      archiveConversationParticipants({
+      unarchiveConversationParticipants({
         variables: {
           conversationIds: props.selectedConversations.map(convo => convo._id),
           workflowState: 'read'
@@ -337,80 +284,160 @@ const MessageListActionContainer = props => {
   }
 
   return (
-    <View
-      as="div"
-      display="inline-block"
-      width="100%"
-      margin="none"
-      padding="small"
-      background="secondary"
-    >
-      <Flex wrap="wrap">
-        <Flex.Item>
-          <CourseSelect
-            mainPage
-            options={{
-              favoriteCourses: data?.legacyNode?.favoriteCoursesConnection?.nodes,
-              moreCourses,
-              concludedCourses: [],
-              groups: data?.legacyNode?.favoriteGroupsConnection?.nodes
-            }}
-            onCourseFilterSelect={props.onCourseFilterSelect}
-          />
-        </Flex.Item>
-        <Flex.Item padding="none none none xxx-small">
-          <MailboxSelectionDropdown
-            activeMailbox={props.activeMailbox}
-            onSelect={props.onSelectMailbox}
-          />
-        </Flex.Item>
-        <Flex.Item shouldGrow shouldShrink />
-        <Flex.Item>
-          <MessageActionButtons
-            archive={props.displayUnarchiveButton ? undefined : handleArchive}
-            unarchive={props.displayUnarchiveButton ? handleUnarchive : undefined}
-            archiveDisabled={props.archiveDisabled || props.activeMailbox === 'sent'}
-            compose={props.onCompose}
-            delete={handleDelete}
-            deleteDisabled={props.deleteDisabled}
-            forward={() => {}}
-            markAsUnread={handleMarkAsUnread}
-            markAsRead={handleMarkAsRead}
-            reply={props.onReply}
-            replyAll={props.onReplyAll}
-            star={!firstConversationIsStarred ? () => handleStar(true) : null}
-            unstar={firstConversationIsStarred ? () => handleStar(false) : null}
-            settingsDisabled={!hasSelectedConversations()}
-            shouldRenderMarkAsRead={shouldRenderMarkAsRead()}
-            shouldRenderMarkAsUnread={shouldRenderMarkAsUnread()}
-            hasMultipleSelectedMessages={hasMultipleSelectedMessages()}
-          />
-        </Flex.Item>
-      </Flex>
-    </View>
+    <Responsive
+      match="media"
+      query={responsiveQuerySizes({mobile: true, tablet: true, desktop: true})}
+      props={{
+        tablet: {
+          addressBookContainer: {
+            padding: 'x-small',
+            width: '336px'
+          },
+          courseSelect: {
+            padding: 'x-small',
+            itemSize: ''
+          },
+          messageActionButtons: {
+            padding: 'x-small'
+          }
+        },
+        desktop: {
+          addressBookContainer: {
+            padding: 'x-small small x-small x-small',
+            width: ''
+          },
+          courseSelect: {
+            padding: 'x-small',
+            itemSize: ''
+          },
+          messageActionButtons: {
+            padding: 'x-small x-small x-small medium'
+          }
+        },
+        mobile: {
+          addressBookContainer: {
+            padding: 'x-small',
+            width: ''
+          },
+          courseSelect: {
+            padding: 'none x-small none x-small',
+            itemSize: '45%'
+          },
+          messageActionButtons: {
+            padding: 'none x-small none x-small'
+          }
+        }
+      }}
+      render={(responsiveProps, matches) => (
+        <View
+          as="div"
+          display="inline-block"
+          width="100%"
+          margin="none"
+          padding="small"
+          background="secondary"
+        >
+          <Flex wrap="wrap">
+            <Flex.Item
+              shouldGrow={matches.includes('tablet') || matches.includes('mobile')}
+              size={responsiveProps.courseSelect.itemSize}
+              padding={responsiveProps.courseSelect.padding}
+            >
+              <CourseSelect
+                mainPage
+                options={{
+                  allCourses: [
+                    {
+                      _id: ALL_COURSES_ID,
+                      contextName: I18n.t('All Courses'),
+                      assetString: 'all_courses'
+                    }
+                  ],
+                  favoriteCourses: data?.legacyNode?.favoriteCoursesConnection?.nodes,
+                  moreCourses,
+                  concludedCourses: [],
+                  groups: data?.legacyNode?.favoriteGroupsConnection?.nodes
+                }}
+                onCourseFilterSelect={props.onCourseFilterSelect}
+              />
+            </Flex.Item>
+            <Flex.Item
+              shouldGrow={matches.includes('tablet') || matches.includes('mobile')}
+              size={responsiveProps.courseSelect.itemSize}
+              padding={responsiveProps.courseSelect.padding}
+            >
+              <MailboxSelectionDropdown
+                activeMailbox={props.activeMailbox}
+                onSelect={props.onSelectMailbox}
+              />
+            </Flex.Item>
+            <Flex.Item
+              padding={responsiveProps.addressBookContainer.padding}
+              shouldGrow
+              shouldShrink
+              justifyItems="space-between"
+            >
+              <AddressBookContainer
+                onUserFilterSelect={props.onUserFilterSelect}
+                width={responsiveProps.addressBookContainer.width}
+                limitTagCount={LIMIT_TAG_COUNT}
+              />
+            </Flex.Item>
+            <Flex.Item
+              shouldGrow={matches.includes('mobile')}
+              padding={responsiveProps.messageActionButtons.padding}
+            >
+              <MessageActionButtons
+                isSubmissionComment={props.activeMailbox === 'submission_comments'}
+                archive={props.displayUnarchiveButton ? undefined : handleArchive}
+                unarchive={props.displayUnarchiveButton ? handleUnarchive : undefined}
+                archiveDisabled={props.archiveDisabled || props.activeMailbox === 'sent'}
+                compose={props.onCompose}
+                delete={() => props.onDelete()}
+                deleteDisabled={props.deleteDisabled}
+                forward={props.onForward}
+                markAsUnread={handleMarkAsUnread}
+                markAsRead={handleMarkAsRead}
+                reply={props.onReply}
+                replyAll={props.onReplyAll}
+                replyDisabled={!hasSelectedConversations()}
+                star={!firstConversationIsStarred ? () => handleStar(true) : null}
+                unstar={firstConversationIsStarred ? () => handleStar(false) : null}
+                settingsDisabled={!hasSelectedConversations()}
+                shouldRenderMarkAsRead={shouldRenderMarkAsRead()}
+                shouldRenderMarkAsUnread={shouldRenderMarkAsUnread()}
+                hasMultipleSelectedMessages={hasMultipleSelectedMessages()}
+              />
+            </Flex.Item>
+          </Flex>
+        </View>
+      )}
+    />
   )
 }
 
 export default MessageListActionContainer
 
 MessageListActionContainer.propTypes = {
-  course: PropTypes.string,
-  scope: PropTypes.string,
   activeMailbox: PropTypes.string,
   onCourseFilterSelect: PropTypes.func,
+  onUserFilterSelect: PropTypes.func,
   onSelectMailbox: PropTypes.func,
   onCompose: PropTypes.func,
   selectedConversations: PropTypes.array,
   onReply: PropTypes.func,
   onReplyAll: PropTypes.func,
-  deleteToggler: PropTypes.func,
+  onForward: PropTypes.func,
   deleteDisabled: PropTypes.bool,
   archiveToggler: PropTypes.func,
   archiveDisabled: PropTypes.bool,
   onConversationRemove: PropTypes.func,
-  displayUnarchiveButton: PropTypes.bool
+  displayUnarchiveButton: PropTypes.bool,
+  conversationsQueryOptions: PropTypes.object,
+  onDelete: PropTypes.func
 }
 
 MessageListActionContainer.defaultProps = {
-  selectedConversations: []
+  selectedConversations: [],
+  conversationsQueryOptions: {}
 }

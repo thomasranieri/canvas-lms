@@ -25,6 +25,12 @@ import {handlers} from '../../../graphql/mswHandlers'
 import {mswClient} from '../../../../../shared/msw/mswClient'
 import {mswServer} from '../../../../../shared/msw/mswServer'
 import React from 'react'
+import {responsiveQuerySizes} from '../../../util/utils'
+
+jest.mock('../../../util/utils', () => ({
+  ...jest.requireActual('../../../util/utils'),
+  responsiveQuerySizes: jest.fn()
+}))
 
 describe('ComposeModalContainer', () => {
   const server = mswServer(handlers)
@@ -32,6 +38,22 @@ describe('ComposeModalContainer', () => {
     // eslint-disable-next-line no-undef
     fetchMock.dontMock()
     server.listen()
+
+    // Add appropriate mocks for responsive
+    window.matchMedia = jest.fn().mockImplementation(() => {
+      return {
+        matches: true,
+        media: '',
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn()
+      }
+    })
+
+    // Repsonsive Query Mock Default
+    responsiveQuerySizes.mockImplementation(() => ({
+      desktop: {minWidth: '768px'}
+    }))
   })
 
   afterEach(() => {
@@ -59,6 +81,7 @@ describe('ComposeModalContainer', () => {
     setOnSuccess = jest.fn(),
     isReply,
     isReplyAll,
+    isForward,
     conversation
   ) => {
     return render(
@@ -69,6 +92,7 @@ describe('ComposeModalContainer', () => {
             onDismiss={jest.fn()}
             isReply={isReply}
             isReplyAll={isReplyAll}
+            isForward={isForward}
             conversation={conversation}
           />
         </AlertManagerContext.Provider>
@@ -126,6 +150,15 @@ describe('ComposeModalContainer', () => {
     })
   })
 
+  describe('Media', () => {
+    it('opens the media upload modal', async () => {
+      const container = setup()
+      const mediaButton = await container.findByTestId('media-upload')
+      fireEvent.click(mediaButton)
+      expect(await container.findByText('Upload Media')).toBeInTheDocument()
+    })
+  })
+
   describe('Subject', () => {
     it('allows setting the subject', async () => {
       const {findByTestId} = setup()
@@ -169,6 +202,13 @@ describe('ComposeModalContainer', () => {
       const selectOptions = await component.findAllByText('Fighting Magneto 101')
       expect(selectOptions.length).toBeGreaterThan(0)
     })
+
+    it('does not render All Courses option', async () => {
+      const {findByTestId, queryByText} = setup()
+      const courseDropdown = await findByTestId('course-select')
+      fireEvent.click(courseDropdown)
+      expect(await queryByText('All Courses')).not.toBeInTheDocument()
+    })
   })
 
   describe('Create Conversation', () => {
@@ -184,6 +224,37 @@ describe('ComposeModalContainer', () => {
       // Set body
       const bodyInput = component.getByTestId('message-body')
       fireEvent.change(bodyInput, {target: {value: 'Potato'}})
+
+      // Hit send
+      const button = component.getByTestId('send-button')
+      fireEvent.click(button)
+
+      await waitFor(() => expect(mockedSetOnSuccess).toHaveBeenCalled())
+    })
+
+    it('allows created conversations to be added to faculty journal', async () => {
+      window.ENV.CONVERSATIONS = {
+        ATTACHMENTS_FOLDER_ID: 1,
+        NOTES_ENABLED: true,
+        CAN_ADD_NOTES_FOR_ACCOUNT: true,
+        CAN_ADD_NOTES_FOR_COURSES: {1: true}
+      }
+      const mockedSetOnSuccess = jest.fn().mockResolvedValue({})
+
+      const component = setup(jest.fn(), mockedSetOnSuccess)
+
+      // Set subject
+      const subjectInput = await component.findByTestId('subject-input')
+      fireEvent.change(subjectInput, {target: {value: 'Journalized Message'}})
+
+      // Set body
+      const bodyInput = component.getByTestId('message-body')
+      fireEvent.change(bodyInput, {target: {value: 'This is a journalized message'}})
+
+      // set as faculty journal entry
+      const checkbox = await component.findByTestId('faculty-message-checkbox')
+      fireEvent.click(checkbox)
+      expect(checkbox.checked).toBe(true)
 
       // Hit send
       const button = component.getByTestId('send-button')
@@ -207,7 +278,7 @@ describe('ComposeModalContainer', () => {
     })
 
     it('should include past messages', async () => {
-      const component = setup(jest.fn(), jest.fn(), true, false, {
+      const component = setup(jest.fn(), jest.fn(), true, false, false, {
         _id: '1',
         conversationMessagesConnection: {
           nodes: [
@@ -225,7 +296,7 @@ describe('ComposeModalContainer', () => {
 
     it('allows replying to a conversation', async () => {
       const mockedSetOnSuccess = jest.fn().mockResolvedValue({})
-      const component = setup(jest.fn(), mockedSetOnSuccess, true, false, {
+      const component = setup(jest.fn(), mockedSetOnSuccess, true, false, false, {
         _id: '1',
         conversationMessagesConnection: {
           nodes: [
@@ -253,7 +324,7 @@ describe('ComposeModalContainer', () => {
   describe('replyAll', () => {
     it('allows replying all to a conversation', async () => {
       const mockedSetOnSuccess = jest.fn().mockResolvedValue({})
-      const component = setup(jest.fn(), mockedSetOnSuccess, false, true, {
+      const component = setup(jest.fn(), mockedSetOnSuccess, false, true, false, {
         _id: '1',
         conversationMessagesConnection: {
           nodes: [
@@ -283,6 +354,72 @@ describe('ComposeModalContainer', () => {
       fireEvent.click(button)
 
       await waitFor(() => expect(mockedSetOnSuccess).toHaveBeenCalled())
+    })
+  })
+
+  describe('forward', () => {
+    it('allows replying all to a conversation', async () => {
+      const mockedSetOnSuccess = jest.fn().mockResolvedValue({})
+      const component = setup(jest.fn(), mockedSetOnSuccess, false, false, true, {
+        _id: '1',
+        conversationMessagesConnection: {
+          nodes: [
+            {
+              author: {
+                _id: '1337'
+              },
+              recipients: [
+                {
+                  _id: '1337'
+                },
+                {
+                  _id: '1338'
+                }
+              ]
+            }
+          ]
+        }
+      })
+
+      // Set body
+      const bodyInput = await component.findByTestId('message-body')
+      fireEvent.change(bodyInput, {target: {value: 'Potato'}})
+
+      // Hit send
+      const button = component.getByTestId('send-button')
+      fireEvent.click(button)
+
+      await waitFor(() => expect(mockedSetOnSuccess).toHaveBeenCalled())
+    })
+  })
+
+  describe('Responsive', () => {
+    describe('Mobile', () => {
+      beforeEach(() => {
+        responsiveQuerySizes.mockImplementation(() => ({
+          mobile: {maxWidth: '67'}
+        }))
+      })
+
+      it('Should emit correct testId for mobile compose window', async () => {
+        const component = setup()
+        const modal = await component.findByTestId('compose-modal-mobile')
+        expect(modal).toBeTruthy()
+      })
+    })
+
+    describe('Desktop', () => {
+      beforeEach(() => {
+        responsiveQuerySizes.mockImplementation(() => ({
+          desktop: {minWidth: '768'}
+        }))
+      })
+
+      it('Should emit correct testId for destop compose window', async () => {
+        const component = setup()
+        const modal = await component.findByTestId('compose-modal-desktop')
+        expect(modal).toBeTruthy()
+      })
     })
   })
 })

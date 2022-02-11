@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
 require_dependency "lti/tool_proxy_binding"
 
 module Lti
@@ -26,19 +25,19 @@ module Lti
     let(:account) { Account.new }
     let(:tool_proxy) { ToolProxy.new }
 
-    describe 'validations' do
-      before(:each) do
+    describe "validations" do
+      before do
         subject.context = account
         subject.tool_proxy = tool_proxy
       end
 
-      it 'requires a context' do
+      it "requires a context" do
         subject.context = nil
         subject.save
         expect(subject.errors.first).to eq [:context, "can't be blank"]
       end
 
-      it 'requires a tool_proxy' do
+      it "requires a tool_proxy" do
         subject.tool_proxy = nil
         subject.save
         expect(subject.errors.first).to eq [:tool_proxy, "can't be blank"]

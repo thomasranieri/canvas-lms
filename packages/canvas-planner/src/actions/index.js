@@ -17,12 +17,15 @@
  */
 import {createActions, createAction} from 'redux-actions'
 import axios from 'axios'
+import moment from 'moment-timezone'
 import {asAxios, getPrefetchedXHR} from '@instructure/js-utils'
+import {deepEqual} from '@instructure/ui-utils'
 import parseLinkHeader from 'parse-link-header'
 import configureAxios from '../utilities/configureAxios'
 import {alert} from '../utilities/alertUtils'
 import formatMessage from '../format-message'
 import {maybeUpdateTodoSidebar} from './sidebar-actions'
+import {getWeeklyPlannerItems, preloadSurroundingWeeks, startLoadingItems} from './loading-actions'
 
 import {
   transformInternalToApiItem,
@@ -50,7 +53,11 @@ export const {
   setNaiAboveScreen,
   scrollToNewActivity,
   scrollToToday,
-  toggleMissingItems
+  toggleMissingItems,
+  selectedObservee,
+  clearWeeklyItems,
+  clearOpportunities,
+  clearDays
 } = createActions(
   'INITIAL_OPTIONS',
   'ADD_OPPORTUNITIES',
@@ -69,7 +76,11 @@ export const {
   'SET_NAI_ABOVE_SCREEN',
   'SCROLL_TO_NEW_ACTIVITY',
   'SCROLL_TO_TODAY',
-  'TOGGLE_MISSING_ITEMS'
+  'TOGGLE_MISSING_ITEMS',
+  'SELECTED_OBSERVEE',
+  'CLEAR_WEEKLY_ITEMS',
+  'CLEAR_OPPORTUNITIES',
+  'CLEAR_DAYS'
 )
 
 export * from './loading-actions'
@@ -271,5 +282,32 @@ function getOverrideDataOnItem(plannerItem) {
   return {
     id: plannerItem.overrideId,
     marked_complete: plannerItem.completed
+  }
+}
+
+export const clearItems = () => {
+  return dispatch => {
+    dispatch(clearWeeklyItems())
+    dispatch(clearOpportunities())
+    dispatch(clearDays())
+  }
+}
+
+export const reloadWithObservee = (observeeId, contextCodes) => {
+  return (dispatch, getState) => {
+    if (
+      getState().selectedObservee?.id !== observeeId ||
+      (observeeId && !deepEqual(getState().selectedObservee?.contextCodes, contextCodes))
+    ) {
+      dispatch(selectedObservee({id: observeeId, contextCodes}))
+      dispatch(clearItems())
+      if (observeeId && !contextCodes) {
+        dispatch(startLoadingItems())
+      } else {
+        dispatch(getWeeklyPlannerItems(moment.tz(getState().timeZone).startOf('day')))
+        dispatch(preloadSurroundingWeeks())
+        dispatch(startLoadingAllOpportunities())
+      }
+    }
   }
 }

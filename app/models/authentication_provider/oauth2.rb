@@ -18,13 +18,13 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'oauth2'
-require 'canvas/core_ext/oauth2'
+require "oauth2"
+require "canvas/core_ext/oauth2"
 
-class OauthValidationError < RuntimeError
+class OAuthValidationError < RuntimeError
 end
 
-class AuthenticationProvider::Oauth2 < AuthenticationProvider::Delegated
+class AuthenticationProvider::OAuth2 < AuthenticationProvider::Delegated
   SENSITIVE_PARAMS = [:client_secret].freeze
 
   # rename DB fields to something that makes sense for OAuth2
@@ -36,7 +36,7 @@ class AuthenticationProvider::Oauth2 < AuthenticationProvider::Delegated
   alias_attribute :scope, :requested_authn_context
 
   def client
-    @client ||= OAuth2::Client.new(client_id, client_secret, client_options)
+    @client ||= ::OAuth2::Client.new(client_id, client_secret, client_options)
   end
 
   def generate_authorize_url(redirect_uri, state)

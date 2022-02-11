@@ -35,11 +35,16 @@ import {
 
 export const BLACKOUT_DATES: BlackoutDate[] = []
 
+window.ENV.TIMEZONE = 'America/Denver'
+window.ENV.CONTEXT_TIMEZONE = 'America/Denver'
+
 export const COURSE: Course = {
   id: '30',
   name: 'Neuromancy 300',
-  start_at: '2021-09-01',
-  end_at: '2021-12-15'
+  created_at: '2021-09-01T00:00:00-06:00',
+  start_at: '2021-09-01T00:00:00-06:00',
+  end_at: '2021-12-31T00:00:00-07:00',
+  time_zone: window.ENV.CONTEXT_TIMEZONE
 }
 
 export const ENROLLMENT_1: Enrollment = {
@@ -90,6 +95,8 @@ export const PLAN_ITEM_1: PacePlanItem = {
   id: '50',
   duration: 2,
   assignment_title: 'Basic encryption/decryption',
+  assignment_link: `/courses/${COURSE.id}/modules/items/50`,
+  points_possible: 100,
   position: 1,
   module_item_id: '60',
   module_item_type: 'Assignment',
@@ -100,6 +107,8 @@ export const PLAN_ITEM_2: PacePlanItem = {
   id: '51',
   duration: 5,
   assignment_title: 'Being 1337',
+  assignment_link: `/courses/${COURSE.id}/modules/items/51`,
+  points_possible: 80,
   position: 2,
   module_item_id: '61',
   module_item_type: 'Discussion',
@@ -110,6 +119,8 @@ export const PLAN_ITEM_3: PacePlanItem = {
   id: '52',
   duration: 3,
   assignment_title: 'What are laws, anyway?',
+  assignment_link: `/courses/${COURSE.id}/modules/items/52`,
+  points_possible: 1,
   position: 1,
   module_item_id: '62',
   module_item_type: 'Quiz',
@@ -142,8 +153,7 @@ export const PRIMARY_PLAN: PacePlan = {
   workflow_state: 'active',
   exclude_weekends: true,
   hard_end_dates: true,
-  modules: [PLAN_MODULE_1, PLAN_MODULE_2],
-  linked_to_parent: false
+  modules: [PLAN_MODULE_1, PLAN_MODULE_2]
 }
 
 export const SECTION_PLAN: PacePlan = {
@@ -158,8 +168,7 @@ export const SECTION_PLAN: PacePlan = {
   workflow_state: 'active',
   exclude_weekends: false,
   hard_end_dates: true,
-  modules: [PLAN_MODULE_1, PLAN_MODULE_2],
-  linked_to_parent: false
+  modules: [PLAN_MODULE_1, PLAN_MODULE_2]
 }
 
 export const STUDENT_PLAN: PacePlan = {
@@ -174,8 +183,23 @@ export const STUDENT_PLAN: PacePlan = {
   workflow_state: 'active',
   exclude_weekends: true,
   hard_end_dates: true,
-  modules: [PLAN_MODULE_1, PLAN_MODULE_2],
-  linked_to_parent: false
+  modules: [PLAN_MODULE_1, PLAN_MODULE_2]
+}
+
+export const PROGRESS_RUNNING = {
+  id: '900',
+  completion: 25,
+  message: undefined,
+  workflow_state: 'running',
+  url: '/api/v1/progress/900'
+}
+
+export const PROGRESS_FAILED = {
+  id: '901',
+  completion: undefined,
+  message: 'Something went wrong!',
+  workflow_state: 'failed',
+  url: '/api/v1/progress/901'
 }
 
 export interface DefaultStoreState {
@@ -191,6 +215,6 @@ export const DEFAULT_STORE_STATE: DefaultStoreState = {
   blackoutDates: BLACKOUT_DATES,
   course: COURSE,
   enrollments: ENROLLMENTS,
-  pacePlan: PRIMARY_PLAN,
+  pacePlan: {...PRIMARY_PLAN, originalPlan: PRIMARY_PLAN},
   sections: SECTIONS
 }

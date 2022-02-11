@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require_relative '../spec_helper'
+require_relative "../spec_helper"
 
 describe Autoextend do
   it "all extensions get used" do
@@ -29,10 +29,11 @@ describe Autoextend do
       begin
         extension.const_name.to_s.constantize
       rescue NameError
+        nil
       end
 
       # not found via autoloading? maybe it's a migration
-      if !extension.used
+      unless extension.used
         ActiveRecord::Base.connection.migration_context.migrations.map(&:disable_ddl_transaction)
       end
 

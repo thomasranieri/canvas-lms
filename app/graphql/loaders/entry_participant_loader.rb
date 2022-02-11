@@ -20,6 +20,7 @@
 
 class Loaders::EntryParticipantLoader < GraphQL::Batch::Loader
   def initialize(current_user:)
+    super()
     @current_user = current_user
   end
 
@@ -28,14 +29,15 @@ class Loaders::EntryParticipantLoader < GraphQL::Batch::Loader
 
     objects.each do |object|
       unless deps[object.id]
-        fulfill(object, { read: false, rating: nil, forced_read_state: nil })
+        fulfill(object, { read: false, rating: nil, forced_read_state: nil, report_type: nil })
         next
       end
 
       participant = {}
-      participant["rating"] = deps[object.id].rating
+      participant["rating"] = deps[object.id].rating == 1
       participant["forced_read_state"] = deps[object.id].forced_read_state
-      participant["read"] = deps[object.id].workflow_state == 'read'
+      participant["read"] = deps[object.id].workflow_state == "read"
+      participant["report_type"] = deps[object.id].report_type
       fulfill(object, participant)
     end
   end

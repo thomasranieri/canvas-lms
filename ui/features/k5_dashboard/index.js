@@ -35,19 +35,15 @@ ready(() => {
         plannerEnabled={ENV.STUDENT_PLANNER_ENABLED}
         timeZone={ENV.TIMEZONE}
         hideGradesTabForStudents={ENV.HIDE_K5_DASHBOARD_GRADES_TAB}
-        createPermissions={
-          ENV.PERMISSIONS?.create_courses_as_admin
-            ? 'admin'
-            : ENV.PERMISSIONS?.create_courses_as_teacher
-            ? 'teacher'
-            : 'none'
-        }
+        createPermission={ENV.CREATE_COURSES_PERMISSIONS.PERMISSION}
+        restrictCourseCreation={ENV.CREATE_COURSES_PERMISSIONS.RESTRICT_TO_MCC_ACCOUNT}
         showImportantDates={!!ENV.FEATURES.important_dates}
         selectedContextCodes={ENV.SELECTED_CONTEXT_CODES}
         selectedContextsLimit={ENV.SELECTED_CONTEXTS_LIMIT}
         parentSupportEnabled={ENV.FEATURES?.k5_parent_support}
-        observerList={ENV.OBSERVER_LIST}
+        observedUsersList={ENV.OBSERVED_USERS_LIST}
         canAddObservee={ENV.CAN_ADD_OBSERVEE}
+        openTodosInNewTab={ENV.OPEN_TEACHER_TODOS_IN_NEW_TAB}
       />,
       dashboardContainer
     )

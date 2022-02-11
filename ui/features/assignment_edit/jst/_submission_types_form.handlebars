@@ -76,7 +76,6 @@
           {{#t "labels.allow_media_recordings"}}Media Recordings{{/t}}
         </label>
         {{/if}}
-        {{#if annotatedDocumentSubmissionsEnabled}}
         <label class="checkbox" for="assignment_annotated_document">
           {{checkbox "acceptsAnnotatedDocument"
           id="assignment_annotated_document"
@@ -94,7 +93,6 @@
           style="{{hiddenUnless acceptsAnnotatedDocument}}; padding: 0 0 0 42px;">
         </div>
         <input type="hidden" name="annotatable_attachment_id" id="annotatable_attachment_id" />
-        {{/if}}
         <label class="checkbox" for="assignment_online_upload">
           {{checkbox "acceptsOnlineUpload"
           id="assignment_online_upload"
@@ -135,7 +133,7 @@
               maxlength="254"
               placeholder="{{#t "labels.allowed_extensions"}}Allowed File Extensions{{/t}}"
               aria-labelledby="explanation_nest"
-              value="{{join allowedExtensions " ,"}}"
+              value="{{join allowedExtensions ", "}}"
               {{disabledIfIncludes frozenAttributes "submission_types"}} />
             <div id="explanation_nest" class="explanation nest">
               {{#t "descriptions.allowed_extensions"}}
@@ -245,7 +243,8 @@
               <input id="assignment_external_tool_tag_attributes_url" class="ic-Input" name="external_tool_tag_attributes[url]"
                 type="url" value="{{externalToolUrl}}" placeholder="http://www.example.com/launch" {{disabledIfIncludes
                 frozenAttributes "submission_types"}} />
-              <button class="Button" id="assignment_external_tool_tag_attributes_url_find" type="button">
+              <button class="Button" id="assignment_external_tool_tag_attributes_url_find" type="button" {{disabledIfIncludes
+                frozenAttributes "submission_types"}}>
                 {{#t}}Find{{/t}}
               </button>
               {{#if submissionTypesFrozen}}

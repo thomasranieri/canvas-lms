@@ -18,7 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'zlib'
+require "zlib"
 
 # see https://github.com/redis/redis-rb/pull/739
 
@@ -62,7 +62,7 @@ module CanvasCache
       # and therefore the top bit is set
       digest_length = result.values.sum.to_s(2).length
       max = 1 << digest_length
-      result[ring[sorted_keys.last]] + max - last
+      result[ring[sorted_keys.last]] = max - last
       result.map { |k, v| [k, v.to_f / max] }.sort_by(&:last).to_h
     end
 
@@ -92,15 +92,15 @@ module CanvasCache
     end
 
     def get_node_pos(key)
-      return [nil, nil] if @ring.size == 0
+      return [nil, nil] if @ring.empty?
 
       crc = @digest[key]
       idx = HashRing.binary_search(@sorted_keys, crc)
-      return [@ring[@sorted_keys[idx]], idx]
+      [@ring[@sorted_keys[idx]], idx]
     end
 
     def iter_nodes(key)
-      return [nil, nil] if @ring.size == 0
+      return [nil, nil] if @ring.empty?
 
       _, pos = get_node_pos(key)
       @ring.size.times do |n|
@@ -109,12 +109,12 @@ module CanvasCache
     end
 
     # Find the closest index in HashRing with value <= the given value
-    def self.binary_search(ary, value, &block)
+    def self.binary_search(ary, value)
       upper = ary.size - 1
       lower = 0
       idx = 0
 
-      while (lower <= upper) do
+      while lower <= upper do
         idx = (lower + upper) / 2
         comp = ary[idx] <=> value
 
@@ -130,7 +130,7 @@ module CanvasCache
       if upper < 0
         upper = ary.size - 1
       end
-      return upper
+      upper
     end
 
     private

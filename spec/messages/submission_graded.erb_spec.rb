@@ -18,8 +18,7 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
 describe "submission_graded" do
   before :once do
@@ -46,6 +45,6 @@ describe "submission_graded" do
     observer = user_model
     observer.preferences[:send_observed_names_in_notifications] = true
     message = generate_message(:submission_graded, :twitter, asset, user: observer)
-    expect(message.body).to match("#{@submission.user.name}")
+    expect(message.body).to match(@submission.user.name)
   end
 end

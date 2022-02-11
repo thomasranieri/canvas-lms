@@ -62,6 +62,8 @@ import '@canvas/rails-flash-notifications'
 import DirectShareCourseTray from '@canvas/direct-sharing/react/components/DirectShareCourseTray'
 import DirectShareUserModal from '@canvas/direct-sharing/react/components/DirectShareUserModal'
 import mathml from 'mathml'
+import {addDeepLinkingListener} from '@canvas/deep-linking/DeepLinking'
+import ExternalToolModalLauncher from '@canvas/external-tools/react/components/ExternalToolModalLauncher'
 
 function scrollTo($thing, time = 500) {
   if (!$thing || $thing.length === 0) return
@@ -86,7 +88,7 @@ function refreshDuplicateLinkStatus($module) {
 
 // TODO: AMD don't export global, use as module
 /* global modules */
-window.modules = (function() {
+window.modules = (function () {
   return {
     updateTaggedItems() {},
 
@@ -105,15 +107,13 @@ window.modules = (function() {
     },
 
     addModule() {
-      const $module = $('#context_module_blank')
-        .clone(true)
-        .attr('id', 'context_module_new')
+      const $module = $('#context_module_blank').clone(true).attr('id', 'context_module_new')
       $('#context_modules').append($module)
       const opts = modules.sortable_module_options
       opts.update = modules.updateModuleItemPositions
       $module.find('.context_module_items').sortable(opts)
       $('#context_modules.ui-sortable').sortable('refresh')
-      $('#context_modules .context_module .context_module_items.ui-sortable').each(function() {
+      $('#context_modules .context_module .context_module_items.ui-sortable').each(function () {
         $(this).sortable('refresh')
         $(this).sortable('option', 'connectWith', '.context_module_items')
       })
@@ -122,12 +122,8 @@ window.modules = (function() {
 
     updateModulePositions() {
       const ids = []
-      $('#context_modules .context_module').each(function() {
-        ids.push(
-          $(this)
-            .attr('id')
-            .substring('context_module_'.length)
-        )
+      $('#context_modules .context_module').each(function () {
+        ids.push($(this).attr('id').substring('context_module_'.length))
       })
       const url = `${ENV.CONTEXT_URL_ROOT}/modules/reorder`
       $('#context_modules').loadingImage()
@@ -153,7 +149,7 @@ window.modules = (function() {
       const moduleId = $module.attr('id').substring('context_module_'.length)
       const url = `${ENV.CONTEXT_URL_ROOT}/modules/${moduleId}/reorder`
       const items = []
-      $module.find('.context_module_items .context_module_item').each(function() {
+      $module.find('.context_module_items .context_module_item').each(function () {
         items.push($(this).getTemplateData({textValues: ['id']}).id)
       })
       $module.find('.context_module_items.ui-sortable').sortable('disable')
@@ -181,7 +177,7 @@ window.modules = (function() {
           }
         )
       )
-      $('.context_module').each(function() {
+      $('.context_module').each(function () {
         refreshDuplicateLinkStatus($(this))
       })
     },
@@ -195,24 +191,22 @@ window.modules = (function() {
       }
       const url = $('.progression_list_url').attr('href')
       if ($('.context_module_item.progression_requirement:visible').length > 0) {
-        $('.loading_module_progressions_link')
-          .show()
-          .attr('disabled', true)
+        $('.loading_module_progressions_link').show().attr('disabled', true)
       }
       $.ajaxJSON(
         url,
         'GET',
         {},
-        function(data) {
+        function (data) {
           $('.loading_module_progressions_link').remove()
           const $user_progression_list = $('#current_user_progression_list')
           const progressions = []
           for (const idx in data) {
             progressions.push(data[idx])
           }
-          const progressionsFinished = function() {
+          const progressionsFinished = function () {
             if (!$('#context_modules').hasClass('editable')) {
-              $('#context_modules .context_module').each(function() {
+              $('#context_modules .context_module').each(function () {
                 modules.updateProgressionState($(this))
               })
             }
@@ -221,7 +215,7 @@ window.modules = (function() {
             }
           }
           let progressionCnt = 0
-          var nextProgression = function() {
+          var nextProgression = function () {
             const data = progressions.shift()
             if (!data) {
               progressionsFinished()
@@ -357,7 +351,7 @@ window.modules = (function() {
     },
 
     updateAllItemInstances(content_tag) {
-      $('.context_module_item.' + modules.itemClass(content_tag) + ' .title').each(function() {
+      $('.context_module_item.' + modules.itemClass(content_tag) + ' .title').each(function () {
         const $this = $(this)
         $this.text(content_tag.title)
         $this.attr('title', content_tag.title)
@@ -389,10 +383,7 @@ window.modules = (function() {
         $form.attr('method', 'PUT')
         $form.find('.submit_button').text(I18n.t('buttons.update', 'Update Module'))
       }
-      $form
-        .find('#unlock_module_at')
-        .prop('checked', data.unlock_at)
-        .change()
+      $form.find('#unlock_module_at').prop('checked', data.unlock_at).change()
       $form
         .find('#require_sequential_progress')
         .attr(
@@ -408,7 +399,7 @@ window.modules = (function() {
         $('#context_modules .context_module:first').attr('id') !== $module.attr('id')
       $form.find('.prerequisites_entry').showIf(has_predecessors)
       const prerequisites = []
-      $module.find('.prerequisites .prerequisite_criterion').each(function() {
+      $module.find('.prerequisites .prerequisite_criterion').each(function () {
         prerequisites.push($(this).getTemplateData({textValues: ['id', 'name', 'type']}))
       })
 
@@ -424,7 +415,7 @@ window.modules = (function() {
         }
       }
       $form.find('.completion_entry .criteria_list').empty()
-      $module.find('.content .context_module_item .criterion.defined').each(function() {
+      $module.find('.content .context_module_item .criterion.defined').each(function () {
         const data = $(this)
           .parents('.context_module_item')
           .getTemplateData({textValues: ['id', 'criterion_type', 'min_score']})
@@ -472,13 +463,9 @@ window.modules = (function() {
 
       const $requirementCount = $module.find('.pill li').data('requirement-count')
       if ($requirementCount == 1) {
-        $('#context_module_requirement_count_1')
-          .prop('checked', true)
-          .change()
+        $('#context_module_requirement_count_1').prop('checked', true).change()
       } else {
-        $('#context_module_requirement_count_')
-          .prop('checked', true)
-          .change()
+        $('#context_module_requirement_count_').prop('checked', true).change()
       }
 
       $module.fadeIn('fast', () => {})
@@ -523,6 +510,15 @@ window.modules = (function() {
       $('#add_context_module_form:visible').dialog('close')
     },
 
+    addContentTagToEnv(content_tag) {
+      ENV.MODULE_FILE_DETAILS[content_tag.id] = {
+        content_details: content_tag.content_details,
+        content_id: content_tag.content_id,
+        id: content_tag.id,
+        module_id: content_tag.context_module_id
+      }
+    },
+
     addItemToModule($module, data) {
       if (!data) {
         return $('<div/>')
@@ -544,9 +540,7 @@ window.modules = (function() {
           $item.find('.ig-row').append($admin)
         }
       } else {
-        $item = $('#context_module_item_blank')
-          .clone(true)
-          .removeAttr('id')
+        $item = $('#context_module_item_blank').clone(true).removeAttr('id')
         modules.evaluateItemCyoe($item, data)
       }
       $item.addClass(data.type + '_' + data.id)
@@ -572,7 +566,7 @@ window.modules = (function() {
       $module
         .find('.context_module_items')
         .children()
-        .each(function() {
+        .each(function () {
           const position = parseInt(
             $(this).getTemplateData({textValues: ['position']}).position,
             10
@@ -654,7 +648,7 @@ window.modules = (function() {
       $module
         .find('.context_module_items')
         .children()
-        .each(function() {
+        .each(function () {
           const position = parseInt(
             $(this).getTemplateData({textValues: ['position']}).position,
             10
@@ -664,10 +658,8 @@ window.modules = (function() {
       return maxPosition + 1
     },
     refreshModuleList() {
-      $('#module_list')
-        .find('.context_module_option')
-        .remove()
-      $('#context_modules .context_module').each(function() {
+      $('#module_list').find('.context_module_option').remove()
+      $('#context_modules .context_module').each(function () {
         const $this = $(this)
         const data = $this.find('.header').getTemplateData({textValues: ['name']})
         data.id = $this.find('.header').attr('id')
@@ -701,14 +693,12 @@ window.modules = (function() {
         to_visit: {},
         visited: {}
       }
-      $('#context_modules .context_module').each(function() {
-        const id = $(this)
-          .attr('id')
-          .substring('context_module_'.length)
+      $('#context_modules .context_module').each(function () {
+        const id = $(this).attr('id').substring('context_module_'.length)
         result[id] = []
         $(this)
           .find('.prerequisites .criterion')
-          .each(function() {
+          .each(function () {
             const pre_id = $(this).getTemplateData({textValues: ['id']}).id
             if ($(this).hasClass('context_module_criterion')) {
               result[id].push(pre_id)
@@ -769,7 +759,7 @@ window.modules = (function() {
         incomplete_reqs = []
       }
 
-      $module.find('.context_module_item').each(function() {
+      $module.find('.context_module_item').each(function () {
         const $mod_item = $(this)
         const position = parseInt(
           $mod_item.getTemplateData({textValues: ['position']}).position,
@@ -875,16 +865,13 @@ window.modules = (function() {
   }
 })()
 
-var addIcon = function($icon_container, css_class, message) {
+var addIcon = function ($icon_container, css_class, message) {
   const $icon = $('<i data-tooltip></i>')
-  $icon
-    .attr('class', css_class)
-    .attr('title', message)
-    .attr('aria-label', message)
+  $icon.attr('class', css_class).attr('title', message).attr('aria-label', message)
   $icon_container.empty().append($icon)
 }
 
-var criterionMessage = function($mod_item) {
+var criterionMessage = function ($mod_item) {
   if ($mod_item.hasClass('must_submit_requirement')) {
     return I18n.t('Must submit the assignment')
   } else if ($mod_item.hasClass('must_mark_done_requirement')) {
@@ -902,7 +889,7 @@ var criterionMessage = function($mod_item) {
   }
 }
 
-const updatePrerequisites = function($module, prereqs) {
+const updatePrerequisites = function ($module, prereqs) {
   const $prerequisitesDiv = $module.find('.prerequisites')
   let prereqsList = ''
   $prerequisitesDiv.empty()
@@ -945,8 +932,8 @@ const updatePrerequisites = function($module, prereqs) {
 }
 
 // after a module has been updated, update its name as used in other modules' prerequisite lists
-const updateOtherPrerequisites = function(id, name) {
-  $('div.context_module .prerequisite_criterion .id').each(function(_, idNode) {
+const updateOtherPrerequisites = function (id, name) {
+  $('div.context_module .prerequisite_criterion .id').each(function (_, idNode) {
     const $id = $(idNode)
     const prereq_id = $id.text()
     if (prereq_id == id) {
@@ -961,11 +948,11 @@ const updateOtherPrerequisites = function(id, name) {
   })
 }
 
-var prerequisitesMessage = function(list) {
+var prerequisitesMessage = function (list) {
   return I18n.t('Prerequisites: %{list}', {list})
 }
 
-const newPillMessage = function($module, requirement_count) {
+const newPillMessage = function ($module, requirement_count) {
   const $message = $module.find('.requirements_message')
 
   if (requirement_count != 0) {
@@ -979,7 +966,7 @@ const newPillMessage = function($module, requirement_count) {
   }
 }
 
-modules.initModuleManagement = function() {
+modules.initModuleManagement = function (duplicate) {
   // Create the context modules backbone view to manage the publish button.
   const context_modules_view = new ContextModulesView({
     el: $('#content'),
@@ -990,7 +977,7 @@ modules.initModuleManagement = function() {
   const $context_module_unlocked_at = $('#context_module_unlock_at')
   let valCache = ''
   $('#unlock_module_at')
-    .change(function() {
+    .change(function () {
       const $this = $(this)
       const $unlock_module_at_details = $('.unlock_module_at_details')
       $unlock_module_at_details.showIf($this.attr('checked'))
@@ -1074,10 +1061,8 @@ modules.initModuleManagement = function() {
       const prereqs = []
       $(this)
         .find('.prerequisites_list .criteria_list .criterion')
-        .each(function() {
-          const id = $(this)
-            .find('.option select')
-            .val()
+        .each(function () {
+          const id = $(this).find('.option select').val()
           if (id) {
             prereqs.push('module_' + id)
           }
@@ -1087,10 +1072,8 @@ modules.initModuleManagement = function() {
       data['context_module[completion_requirements][none]'] = 'none'
 
       const $requirementsList = $(this).find('.completion_entry .criteria_list .criterion')
-      $requirementsList.each(function() {
-        const id = $(this)
-          .find('.id')
-          .val()
+      $requirementsList.each(function () {
+        const id = $(this).find('.id').val()
         data['context_module[completion_requirements][' + id + '][type]'] = $(this)
           .find('.type')
           .val()
@@ -1146,7 +1129,7 @@ modules.initModuleManagement = function() {
       const $publishIcon = $module.find('.publish-icon')
       // new module, setup publish icon and other stuff
       if (!$publishIcon.data('id')) {
-        const fixLink = function(locator, attribute) {
+        const fixLink = function (locator, attribute) {
           const el = $module.find(locator)
           el.attr(attribute, el.attr(attribute).replace('{{ id }}', data.context_module.id))
         }
@@ -1194,21 +1177,16 @@ modules.initModuleManagement = function() {
     }
   })
 
-  $('#add_context_module_form .add_prerequisite_link').click(function(event) {
+  $('#add_context_module_form .add_prerequisite_link').click(function (event) {
     event.preventDefault()
     const $form = $(this).parents('#add_context_module_form')
     const $module = $form.data('current_module')
-    const $select = $('#module_list')
-      .clone(true)
-      .removeAttr('id')
-    const $pre = $form
-      .find('#criterion_blank_prereq')
-      .clone(true)
-      .removeAttr('id')
+    const $select = $('#module_list').clone(true).removeAttr('id')
+    const $pre = $form.find('#criterion_blank_prereq').clone(true).removeAttr('id')
     $select.find('.' + $module.attr('id')).remove()
     const afters = []
 
-    $('#context_modules .context_module').each(function() {
+    $('#context_modules .context_module').each(function () {
       if ($(this)[0] == $module[0] || afters.length > 0) {
         afters.push($(this).attr('id'))
       }
@@ -1218,17 +1196,11 @@ modules.initModuleManagement = function() {
     }
 
     $select.attr('id', 'module_list_prereq')
-    $pre
-      .find('.option')
-      .empty()
-      .append($select.show())
+    $pre.find('.option').empty().append($select.show())
     $('<label for="module_list_prereq" class="screenreader-only" />')
       .text(I18n.t('Select prerequisite module'))
       .insertBefore($select)
-    $form
-      .find('.prerequisites_list .criteria_list')
-      .append($pre)
-      .show()
+    $form.find('.prerequisites_list .criteria_list').append($pre).show()
     $pre.show()
     $select.change(event => {
       const $target = $(event.target)
@@ -1240,30 +1212,23 @@ modules.initModuleManagement = function() {
     $select.focus()
   })
 
-  $('#add_context_module_form .add_completion_criterion_link').click(function(event) {
+  $('#add_context_module_form .add_completion_criterion_link').click(function (event) {
     event.preventDefault()
     const $form = $(this).parents('#add_context_module_form')
     const $module = $form.data('current_module')
-    const $option = $('#completion_criterion_option')
-      .clone(true)
-      .removeAttr('id')
+    const $option = $('#completion_criterion_option').clone(true).removeAttr('id')
     const $select = $option.find('select.id')
-    const $pre = $form
-      .find('#criterion_blank_req')
-      .clone(true)
-      .removeAttr('id')
+    const $pre = $form.find('#criterion_blank_req').clone(true).removeAttr('id')
     $pre.find('.prereq_desc').remove()
     const prereqs = modules.prerequisites()
     const $optgroups = {}
     $module
       .find('.content .context_module_item')
       .not('.context_module_sub_header')
-      .each(function() {
+      .each(function () {
         let displayType
         const data = $(this).getTemplateData({textValues: ['id', 'type']})
-        data.title = $(this)
-          .find('.title')
-          .attr('title')
+        data.title = $(this).find('.title').attr('title')
         if (data.type == 'assignment') {
           displayType = I18n.t('optgroup.assignments', 'Assignments')
         } else if (data.type == 'attachment') {
@@ -1290,26 +1255,20 @@ modules.initModuleManagement = function() {
         $option.val(data.id).text(titleDesc)
         $group.append($option)
       })
-    $pre
-      .find('.option')
-      .empty()
-      .append($option)
+    $pre.find('.option').empty().append($option)
     $option.find('.id').change()
-    $option.slideDown(function() {
+    $option.slideDown(function () {
       if (event.originalEvent) {
         // don't do this when populating the dialog :P
         $('select:first', $(this)).focus()
       }
     })
-    $form
-      .find('.completion_entry .criteria_list')
-      .append($pre)
-      .show()
+    $form.find('.completion_entry .criteria_list').append($pre).show()
     $pre.slideDown()
     $('.requirement-count-radio').show()
     $('#context_module_requirement_count_').change()
   })
-  $('#completion_criterion_option .id').change(function() {
+  $('#completion_criterion_option .id').change(function () {
     const $option = $(this).parents('.completion_criterion_option')
     const data = $('#context_module_item_' + $(this).val()).getTemplateData({
       textValues: ['type', 'graded']
@@ -1327,15 +1286,12 @@ modules.initModuleManagement = function() {
       .show()
       .attr('disabled', false)
     if (data.graded == '1') {
-      $option
-        .find('.type option.graded')
-        .show()
-        .attr('disabled', false)
+      $option.find('.type option.graded').show().attr('disabled', false)
     }
     $option.find('.type').val($option.find('.type option.' + data.criterion_type + ':first').val())
     $option.find('.type').change()
   })
-  $('#completion_criterion_option .type').change(function() {
+  $('#completion_criterion_option .type').change(function () {
     const $option = $(this).parents('.completion_criterion_option')
 
     // Show score text box and do some resizing of drop down to get it to stay on one line
@@ -1374,7 +1330,7 @@ modules.initModuleManagement = function() {
     }
   })
 
-  $('#add_context_module_form .delete_criterion_link').click(function(event) {
+  $('#add_context_module_form .delete_criterion_link').click(function (event) {
     event.preventDefault()
     const $elem = $(this).closest('.criteria_list')
     const $requirement = $(this).parents('.completion_entry')
@@ -1383,7 +1339,7 @@ modules.initModuleManagement = function() {
     const $toFocus = $prevCriterion.length
       ? $('.delete_criterion_link', $prevCriterion)
       : $('.add_prerequisite_or_requirement_link', $(this).closest('.form-section'))
-    $criterion.slideUp(function() {
+    $criterion.slideUp(function () {
       $(this).remove()
       // Hides radio button and checkbox if there are no requirements
       if ($elem.html().length === 0 && $requirement.length !== 0) {
@@ -1393,7 +1349,7 @@ modules.initModuleManagement = function() {
     })
   })
 
-  $('.duplicate_module_link').live('click', function(event) {
+  $('.duplicate_module_link').live('click', function (event) {
     event.preventDefault()
     const duplicateRequestUrl = $(this).attr('href')
     const duplicatedModuleElement = $(this).parents('.context_module')
@@ -1402,7 +1358,7 @@ modules.initModuleManagement = function() {
     $tempElement.insertAfter(duplicatedModuleElement)
     ReactDOM.render(spinner, $('#temporary-spinner')[0])
     $.screenReaderFlashMessage(I18n.t('Duplicating Module, this may take some time'))
-    const renderDuplicatedModule = function(response) {
+    const renderDuplicatedModule = function (response) {
       response.data.ENV_UPDATE.forEach(newAttachmentItem => {
         ENV.MODULE_FILE_DETAILS[newAttachmentItem.id] = newAttachmentItem
       })
@@ -1444,7 +1400,7 @@ modules.initModuleManagement = function() {
           $('.context_module')
             .find('.expand_module_link,.collapse_module_link')
             .bind('click keyclick', toggleModuleCollapse)
-          modules.initModuleManagement()
+          modules.initModuleManagement($newModule)
         })
         .catch(showFlashError(I18n.t('Error rendering duplicated module')))
     }
@@ -1455,7 +1411,7 @@ modules.initModuleManagement = function() {
       .catch(showFlashError(I18n.t('Error duplicating module')))
   })
 
-  $('.delete_module_link').live('click', function(event) {
+  $('.delete_module_link').live('click', function (event) {
     event.preventDefault()
     $(this)
       .parents('.context_module')
@@ -1467,7 +1423,7 @@ modules.initModuleManagement = function() {
         },
         success(data) {
           const id = data.context_module.id
-          $('.context_module .prerequisites .criterion').each(function() {
+          $('.context_module .prerequisites .criterion').each(function () {
             const criterion = $(this).getTemplateData({textValues: ['id', 'type']})
             if (criterion.type == 'context_module' && criterion.id == id) {
               $(this).remove()
@@ -1482,7 +1438,7 @@ modules.initModuleManagement = function() {
           if (module_dnd) {
             ReactDOM.unmountComponentAtNode(module_dnd)
           }
-          $(this).slideUp(function() {
+          $(this).slideUp(function () {
             $(this).remove()
             modules.updateTaggedItems()
             $toFocus.focus()
@@ -1499,14 +1455,12 @@ modules.initModuleManagement = function() {
         }
       })
   })
-  $('.outdent_item_link,.indent_item_link').live('click', function(event, elem, activeElem) {
+  $('.outdent_item_link,.indent_item_link').live('click', function (event, elem, activeElem) {
     event.preventDefault()
     const $elem = $(elem)
     const elemID =
       $elem && $elem.attr('id') ? '#' + $elem.attr('id') : elem && '.' + $elem.attr('class')
-    const $cogLink = $(this)
-      .closest('.cog-menu-container')
-      .children('.al-trigger')
+    const $cogLink = $(this).closest('.cog-menu-container').children('.al-trigger')
     const do_indent = $(this).hasClass('indent_item_link')
     const $item = $(this).parents('.context_module_item')
     let indent = modules.currentIndent($item)
@@ -1527,26 +1481,17 @@ modules.initModuleManagement = function() {
     ).done(() => {
       if (elemID) {
         setTimeout(() => {
-          const $activeElemClass =
-            '.' +
-            $(activeElem)
-              .attr('class')
-              .split(' ')
-              .join('.')
-          $(elemID)
-            .find($activeElemClass)
-            .focus()
+          const $activeElemClass = '.' + $(activeElem).attr('class').split(' ').join('.')
+          $(elemID).find($activeElemClass).focus()
         }, 0)
       } else {
         $cogLink.focus()
       }
     })
   })
-  $('.edit_item_link').live('click', function(event) {
+  $('.edit_item_link').live('click', function (event) {
     event.preventDefault()
-    const $cogLink = $(this)
-      .closest('.cog-menu-container')
-      .children('.al-trigger')
+    const $cogLink = $(this).closest('.cog-menu-container').children('.al-trigger')
     const $item = $(this).parents('.context_module_item')
     const data = $item.getTemplateData({textValues: ['url', 'indent', 'new_tab']})
     data.title = $item.find('.title').attr('title')
@@ -1605,15 +1550,11 @@ modules.initModuleManagement = function() {
     }
   })
 
-  $('.delete_item_link').live('click', function(event) {
+  $('.delete_item_link').live('click', function (event) {
     event.preventDefault()
-    const $currentCogLink = $(this)
-      .closest('.cog-menu-container')
-      .children('.al-trigger')
+    const $currentCogLink = $(this).closest('.cog-menu-container').children('.al-trigger')
     // Get the previous cog item to focus after delete
-    const $allInCurrentModule = $(this)
-      .parents('.context_module_items')
-      .children()
+    const $allInCurrentModule = $(this).parents('.context_module_items').children()
     const $currentModule = $(this).parents('.context_module')
     const curIndex = $allInCurrentModule.index($(this).parents('.context_module_item'))
     const newIndex = curIndex - 1
@@ -1628,9 +1569,7 @@ modules.initModuleManagement = function() {
       }
     } else {
       // Focus on the module cog since there are not more module item cogs
-      $placeToFocus = $(this)
-        .closest('.editable_context_module')
-        .find('button.al-trigger')
+      $placeToFocus = $(this).closest('.editable_context_module').find('button.al-trigger')
     }
     $(this)
       .parents('.context_module_item')
@@ -1641,7 +1580,8 @@ modules.initModuleManagement = function() {
           'Are you sure you want to remove this item from the module?'
         ),
         success(data) {
-          $(this).slideUp(function() {
+          delete ENV.MODULE_FILE_DETAILS[data.content_tag.id]
+          $(this).slideUp(function () {
             $(this).remove()
             modules.updateTaggedItems()
             $placeToFocus.focus()
@@ -1659,7 +1599,7 @@ modules.initModuleManagement = function() {
       })
   })
 
-  $('.move_module_item_link').on('click keyclick', function(event) {
+  $('.move_module_item_link').on('click keyclick', function (event) {
     event.preventDefault()
 
     const currentItem = $(this).parents('.context_module_item')[0]
@@ -1706,7 +1646,7 @@ modules.initModuleManagement = function() {
     renderTray(moveTrayProps, document.getElementById('not_right_side'))
   })
 
-  $('.move_module_link').on('click keyclick', function(event) {
+  $('.move_module_link').on('click keyclick', function (event) {
     event.preventDefault()
 
     const currentModule = $(this).parents('.context_module')[0]
@@ -1742,7 +1682,7 @@ modules.initModuleManagement = function() {
     renderTray(moveTrayProps, document.getElementById('not_right_side'))
   })
 
-  $('.move_module_contents_link').on('click keyclick', function(event) {
+  $('.move_module_contents_link').on('click keyclick', function (event) {
     event.preventDefault()
 
     const currentModule = $(this).parents('.context_module')[0]
@@ -1804,7 +1744,7 @@ modules.initModuleManagement = function() {
     $(event.currentTarget).addClass('screenreader-only')
   })
 
-  $('.edit_module_link').live('click', function(event) {
+  $('.edit_module_link').live('click', function (event) {
     event.preventDefault()
     modules.editModule($(this).parents('.context_module'))
   })
@@ -1829,7 +1769,7 @@ modules.initModuleManagement = function() {
     generate_submit(moduleId, false)(item_data)
   })
 
-  $('.add_module_item_link').on('click', function(event) {
+  $('.add_module_item_link').on('click', function (event) {
     event.preventDefault()
     const $trigger = $(event.currentTarget)
     $trigger.blur()
@@ -1841,14 +1781,8 @@ modules.initModuleManagement = function() {
       return
     }
     if (INST && INST.selectContentDialog) {
-      const id = $(this)
-        .parents('.context_module')
-        .find('.header')
-        .attr('id')
-      const name = $(this)
-        .parents('.context_module')
-        .find('.name')
-        .attr('title')
+      const id = $(this).parents('.context_module').find('.header').attr('id')
+      const name = $(this).parents('.context_module').find('.name').attr('title')
       const options = {for_modules: true, context_module_id: id}
       const responsive_misc = !!window.ENV?.FEATURES?.responsive_misc
       const midSizeModal = window.matchMedia('(min-width: 500px)').matches
@@ -1859,7 +1793,7 @@ modules.initModuleManagement = function() {
       options.height = 550
       options.width = responsive_misc ? responsiveWidth : 770
       options.dialog_title = I18n.t('titles.add_item', 'Add Item to %{module}', {module: name})
-      options.close = function() {
+      options.close = function () {
         $trigger.focus()
       }
       options.submit = generate_submit(id)
@@ -1874,20 +1808,15 @@ modules.initModuleManagement = function() {
       item_data.content_details = ['items']
       item_data['item[position]'] = nextPosition++
       let $item = modules.addItemToModule($module, item_data)
-      $module
-        .find('.context_module_items.ui-sortable')
-        .sortable('refresh')
-        .sortable('disable')
+      $module.find('.context_module_items.ui-sortable').sortable('refresh').sortable('disable')
       const url = $module.find('.add_module_item_link').attr('rel')
       $module.disableWhileLoading(
         $.ajaxJSON(url, 'POST', item_data, data => {
           $item.remove()
           data.content_tag.type = item_data['item[type]']
           $item = modules.addItemToModule($module, data.content_tag)
-          $module
-            .find('.context_module_items.ui-sortable')
-            .sortable('enable')
-            .sortable('refresh')
+          modules.addContentTagToEnv(data.content_tag)
+          $module.find('.context_module_items.ui-sortable').sortable('enable').sortable('refresh')
           initNewItemPublishButton($item, data.content_tag)
           initNewItemDirectShare($item, data.content_tag)
           modules.updateAssignmentData()
@@ -1910,7 +1839,7 @@ modules.initModuleManagement = function() {
     }
   }
 
-  $('.duplicate_item_link').live('click', function(event) {
+  $('.duplicate_item_link').live('click', function (event) {
     event.preventDefault()
 
     const $module = $(this).closest('.context_module')
@@ -1938,10 +1867,7 @@ modules.initModuleManagement = function() {
           })
         })
         $(`#context_module_item_${data.content_tag.id} .item_link`).focus()
-        $module
-          .find('.context_module_items.ui-sortable')
-          .sortable('enable')
-          .sortable('refresh')
+        $module.find('.context_module_items.ui-sortable').sortable('enable').sortable('refresh')
       })
       .catch(showFlashError('Error duplicating item'))
   })
@@ -1950,14 +1876,14 @@ modules.initModuleManagement = function() {
     $('#add_module_prerequisite_dialog').dialog('close')
   })
 
-  $('.delete_prerequisite_link').live('click', function(event) {
+  $('.delete_prerequisite_link').live('click', function (event) {
     event.preventDefault()
     const $criterion = $(this).parents('.criterion')
     const prereqs = []
 
     $(this)
       .parents('.context_module .prerequisites .criterion')
-      .each(function() {
+      .each(function () {
         if ($(this)[0] != $criterion[0]) {
           const data = $(this).getTemplateData({textValues: ['id', 'type']})
           const type = data.type == 'context_module' ? 'module' : data.type
@@ -1965,10 +1891,7 @@ modules.initModuleManagement = function() {
         }
       })
 
-    const url = $(this)
-      .parents('.context_module')
-      .find('.edit_module_link')
-      .attr('href')
+    const url = $(this).parents('.context_module').find('.edit_module_link').attr('href')
     const data = {'context_module[prerequisites]': prereqs.join(',')}
 
     $criterion.dim()
@@ -1977,7 +1900,7 @@ modules.initModuleManagement = function() {
       $('#context_module_' + data.context_module.id).triggerHandler('update', data)
     })
   })
-  $('#add_module_prerequisite_dialog .submit_button').click(function() {
+  $('#add_module_prerequisite_dialog .submit_button').click(function () {
     const val = $('#add_module_prerequisite_dialog .prerequisite_module_select select').val()
     if (!val) {
       return
@@ -1990,7 +1913,7 @@ modules.initModuleManagement = function() {
         $('#add_module_prerequisite_dialog').getTemplateData({textValues: ['context_module_id']})
           .context_module_id
     )
-    $module.find('.prerequisites .criterion').each(function() {
+    $module.find('.prerequisites .criterion').each(function () {
       prereqs.push('module_' + $(this).getTemplateData({textValues: ['id', 'name', 'type']}).id)
     })
     const url = $module.find('.edit_module_link').attr('href')
@@ -2010,7 +1933,7 @@ modules.initModuleManagement = function() {
       }
     )
   })
-  $('.context_module .add_prerequisite_link').live('click', function(event) {
+  $('.context_module .add_prerequisite_link').live('click', function (event) {
     event.preventDefault()
     const module = $(this)
       .parents('.context_module')
@@ -2020,12 +1943,10 @@ modules.initModuleManagement = function() {
       data: {module_name: module.name, context_module_id: module.id}
     })
     const $module = $(this).parents('.context_module')
-    const $select = $('#module_list')
-      .clone(true)
-      .removeAttr('id')
+    const $select = $('#module_list').clone(true).removeAttr('id')
     $select.find('.' + $module.attr('id')).remove()
     const afters = []
-    $('#context_modules .context_module').each(function() {
+    $('#context_modules .context_module').each(function () {
       if ($(this)[0] == $module[0] || afters.length > 0) {
         afters.push($(this).getTemplateData({textValues: ['id']}).id)
       }
@@ -2047,15 +1968,20 @@ modules.initModuleManagement = function() {
   $('#add_context_module_form .cancel_button').click(event => {
     modules.hideEditModule(true)
   })
-  requestAnimationFrame(function() {
+  requestAnimationFrame(function () {
     const $items = []
-    $('#context_modules .context_module_items').each(function() {
+    $('#context_modules .context_module_items').each(function () {
       $items.push($(this))
     })
-    var next = function() {
+    var next = function () {
       if ($items.length > 0) {
         const $item = $items.shift()
         const opts = modules.sortable_module_options
+        const k5TabsContainer = $('#k5-course-header').closest('.ic-Dashboard-tabs').eq(0)
+        const k5ModulesContainer = $('#k5-modules-container')
+        if (k5TabsContainer.length > 0 && k5ModulesContainer.length > 0) {
+          opts.sort = event => onContainerOverlapped(event, k5ModulesContainer, k5TabsContainer)
+        }
         opts.update = modules.updateModuleItemPositions
         $item.sortable(opts)
         requestAnimationFrame(next)
@@ -2091,7 +2017,19 @@ modules.initModuleManagement = function() {
     overrideModel(view.model, view)
   }
 
-  var initPublishButton = function($el, data) {
+  var onContainerOverlapped = function (event, sortableContainer, overlappingElement) {
+    const sortableContainerStart = sortableContainer?.position().top
+    const overlappingElementEnd = overlappingElement?.position().top + overlappingElement.height()
+    const isOverlapped = sortableContainerStart < overlappingElementEnd
+    // if the sortable container is overlapped by another element, the scroll should move when
+    // the draggable item is getting closer to the overlapping element
+    if (isOverlapped && event.pageY < overlappingElementEnd + 30) {
+      const scrollTo = window.scrollY - event.clientY * 0.05
+      $('html, body').scrollTop(scrollTo)
+    }
+  }
+
+  var initPublishButton = function ($el, data) {
     data = data || $el.data()
     if (data.moduleType == 'attachment') {
       // Module isNew if it was created with an ajax request vs being loaded when the page loads
@@ -2123,7 +2061,7 @@ modules.initModuleManagement = function() {
         usage_rights: moduleItem.content_details.usage_rights
       })
 
-      file.url = function() {
+      file.url = function () {
         return '/api/v1/files/' + this.id
       }
 
@@ -2191,7 +2129,7 @@ modules.initModuleManagement = function() {
   }
 
   const moduleItems = {}
-  const updateModuleItem = function(attrs, model) {
+  const updateModuleItem = function (attrs, model) {
     let i, items, item, parsedAttrs
     items = moduleItems[itemContentKey(attrs) || itemContentKey(model)]
     if (items) {
@@ -2208,10 +2146,10 @@ modules.initModuleManagement = function() {
     }
   }
 
-  const overrideModuleModel = function(model) {
+  const overrideModuleModel = function (model) {
     const publish = model.publish,
       unpublish = model.unpublish
-    model.publish = function() {
+    model.publish = function () {
       return publish.apply(model, arguments).done(data => {
         if (data.publish_warning) {
           $.flashWarning(I18n.t('Some module items could not be published'))
@@ -2223,7 +2161,7 @@ modules.initModuleManagement = function() {
         })
       })
     }
-    model.unpublish = function() {
+    model.unpublish = function () {
       return unpublish.apply(model, arguments).done(() => {
         model.fetch({data: {include: 'items'}}).done(attrs => {
           for (let i = 0; i < attrs.items.length; i++) updateModuleItem(attrs.items[i], model)
@@ -2231,21 +2169,21 @@ modules.initModuleManagement = function() {
       })
     }
   }
-  const overrideItemModel = function(model) {
+  const overrideItemModel = function (model) {
     const publish = model.publish,
       unpublish = model.unpublish
-    model.publish = function() {
+    model.publish = function () {
       return publish.apply(model, arguments).done(attrs => {
         updateModuleItem($.extend({published: true}, attrs), model)
       })
     }
-    model.unpublish = function() {
+    model.unpublish = function () {
       return unpublish.apply(model, arguments).done(attrs => {
         updateModuleItem($.extend({published: false}, attrs), model)
       })
     }
   }
-  var overrideModel = function(model, view) {
+  var overrideModel = function (model, view) {
     const contentKey = itemContentKey(model)
     if (contentKey === null) overrideModuleModel(model)
     else overrideItemModel(model)
@@ -2254,7 +2192,9 @@ modules.initModuleManagement = function() {
     moduleItems[contentKey].push({model, view})
   }
 
-  $('.publish-icon').each((index, el) => {
+  const parent = duplicate || $('#context_modules')
+
+  parent.find('.publish-icon').each((index, el) => {
     const $el = $(el)
     if ($el.data('id')) {
       const view = initPublishButton($el)
@@ -2306,9 +2246,9 @@ function itemContentKey(model) {
   }
 }
 
-const setExpandAllButton = function() {
+const setExpandAllButton = function () {
   let someVisible = false
-  $('#context_modules .context_module .content').each(function() {
+  $('#context_modules .context_module .content').each(function () {
     if ($(this).css('display') === 'block') {
       someVisible = true
     }
@@ -2322,14 +2262,14 @@ const setExpandAllButton = function() {
   $('#expand_collapse_all').attr('aria-expanded', someVisible ? 'true' : 'false')
 }
 
-var toggleModuleCollapse = function(event) {
+var toggleModuleCollapse = function (event) {
   event.preventDefault()
   const expandCallback = null
   const collapse = $(this).hasClass('collapse_module_link') ? '1' : '0'
   const $module = $(this).parents('.context_module')
   const reload_entries = $module.find('.content .context_module_items').children().length === 0
-  const toggle = function(show) {
-    const callback = function() {
+  const toggle = function (show) {
+    const callback = function () {
       $module
         .find('.collapse_module_link')
         .css('display', $module.find('.content:visible').length > 0 ? 'inline-block' : 'none')
@@ -2419,8 +2359,8 @@ modules.updateAssignmentData(() => {
   })
 })
 
-$(document).ready(function() {
-  $('.context_module').each(function() {
+$(document).ready(function () {
+  $('.context_module').each(function () {
     refreshDuplicateLinkStatus($(this))
   })
   if (ENV.IS_STUDENT) {
@@ -2428,18 +2368,18 @@ $(document).ready(function() {
     $('.context_module_item .ig-row').addClass('student-view')
   }
 
-  $('.external_url_link').click(function(event) {
+  $('.external_url_link').click(function (event) {
     Helper.externalUrlLinkClick(event, $(this))
   })
 
   $('.datetime_field').datetime_field()
 
-  $('.context_module').live('mouseover', function() {
+  $('.context_module').live('mouseover', function () {
     $('.context_module_hover').removeClass('context_module_hover')
     $(this).addClass('context_module_hover')
   })
 
-  $('.context_module_item').live('mouseover focus', function() {
+  $('.context_module_item').live('mouseover focus', function () {
     $('.context_module_item_hover').removeClass('context_module_item_hover')
     $(this).addClass('context_module_item_hover')
   })
@@ -2449,7 +2389,7 @@ $(document).ready(function() {
   })
 
   let $currentElem = null
-  const hover = function($elem) {
+  const hover = function ($elem) {
     if ($elem.hasClass('context_module')) {
       $('.context_module_hover').removeClass('context_module_hover')
       $('.context_module_item_hover').removeClass('context_module_item_hover')
@@ -2466,7 +2406,7 @@ $(document).ready(function() {
   // This method will select the items passed in with the options object
   // and can be used to advance the focus or return to the previous module or module_item
   // This will also return the element that is now in focus
-  const selectItem = function(options) {
+  const selectItem = function (options) {
     options = options || {}
     let $elem
 
@@ -2488,7 +2428,7 @@ $(document).ready(function() {
     return $elem
   }
 
-  const getClosestModuleOrItem = function($currentElem) {
+  const getClosestModuleOrItem = function ($currentElem) {
     const selector =
       $currentElem && $currentElem.closest('.context_module_item_hover').length
         ? '.context_module_item_hover'
@@ -2594,7 +2534,9 @@ $(document).ready(function() {
   }
 
   if ($('#context_modules').hasClass('editable')) {
-    requestAnimationFrame(modules.initModuleManagement)
+    requestAnimationFrame(() => {
+      modules.initModuleManagement()
+    })
     modules.loadMasterCourseData()
   }
 
@@ -2625,13 +2567,13 @@ $(document).ready(function() {
     $('#expand_collapse_all').hide()
     $('#context_modules_sortable_container').addClass('item-group-container--is-empty')
   }
-  $contextModules.each(function() {
+  $contextModules.each(function () {
     modules.updateProgressionState($(this))
   })
 
   setExpandAllButton()
 
-  $('#expand_collapse_all').click(function() {
+  $('#expand_collapse_all').click(function () {
     const shouldExpand = $(this).data('expand')
 
     $(this).text(shouldExpand ? I18n.t('Collapse All') : I18n.t('Expand All'))
@@ -2642,13 +2584,13 @@ $(document).ready(function() {
     $(this).data('expand', !shouldExpand)
     $(this).attr('aria-expanded', shouldExpand ? 'true' : 'false')
 
-    $('.context_module').each(function() {
+    $('.context_module').each(function () {
       const $module = $(this)
       if (
         (shouldExpand && $module.find('.content:visible').length === 0) ||
         (!shouldExpand && $module.find('.content:visible').length > 0)
       ) {
-        const callback = function() {
+        const callback = function () {
           $module
             .find('.collapse_module_link')
             .css('display', shouldExpand ? 'inline-block' : 'none')
@@ -2702,15 +2644,49 @@ $(document).ready(function() {
     )
   }
 
+  function setExternalToolModal(tool, launchType, returnFocusTo, isOpen) {
+    if (isOpen) {
+      addDeepLinkingListener(() => {
+        window.location.reload()
+      })
+    }
+
+    const handleDismiss = () => {
+      setExternalToolModal(tool, launchType, returnFocusTo, false)
+      returnFocusTo.focus()
+    }
+
+    ReactDOM.render(
+      <ExternalToolModalLauncher
+        tool={tool}
+        launchType={launchType}
+        isOpen={isOpen}
+        contextType="course"
+        contextId={parseInt(ENV.COURSE_ID, 10)}
+        title={tool.name}
+        onRequestClose={handleDismiss}
+      />,
+      $('#external-tool-mount-point')[0]
+    )
+  }
+
+  function findToolFromEvent(collection, idAttribute, event) {
+    return (collection || []).find(t => t[idAttribute] === event.target.dataset.toolId)
+  }
+
   function openExternalTool(ev) {
     if (ev != null) {
       ev.preventDefault()
     }
     const launchType = ev.target.dataset.toolLaunchType
-    const tool = (ENV.MODULE_TRAY_TOOLS[launchType] || []).find(
-      t => t.id === ev.target.dataset.toolId
-    )
 
+    if (launchType === 'module_index_menu_modal') {
+      const tool = findToolFromEvent(ENV.MODULE_MENU_TOOLS, 'definition_id', ev)
+      setExternalToolModal(tool, launchType, $('.al-trigger')[0], true)
+      return
+    }
+
+    const tool = findToolFromEvent(ENV.MODULE_TRAY_TOOLS[launchType], 'id', ev)
     const moduleData = []
     if (launchType == 'module_index_menu') {
       // include all modules
@@ -2764,27 +2740,17 @@ $(document).ready(function() {
 
   $('.module_copy_to').live('click', event => {
     event.preventDefault()
-    const moduleId = $(event.target)
-      .closest('.context_module')
-      .data('module-id')
-      .toString()
+    const moduleId = $(event.target).closest('.context_module').data('module-id').toString()
     const selection = {modules: [moduleId]}
-    const returnFocusTo = $(event.target)
-      .closest('ul')
-      .prev('.al-trigger')
+    const returnFocusTo = $(event.target).closest('ul').prev('.al-trigger')
     renderCopyToTray(true, selection, returnFocusTo)
   })
 
   $('.module_send_to').live('click', event => {
     event.preventDefault()
-    const moduleId = $(event.target)
-      .closest('.context_module')
-      .data('module-id')
-      .toString()
+    const moduleId = $(event.target).closest('.context_module').data('module-id').toString()
     const selection = {content_type: 'module', content_id: moduleId}
-    const returnFocusTo = $(event.target)
-      .closest('ul')
-      .prev('.al-trigger')
+    const returnFocusTo = $(event.target).closest('ul').prev('.al-trigger')
     renderSendToTray(true, selection, returnFocusTo)
   })
 
@@ -2793,9 +2759,7 @@ $(document).ready(function() {
     const select_id = $(event.target).data('select-id')
     const select_class = $(event.target).data('select-class')
     const selection = {[select_class]: [select_id]}
-    const returnFocusTo = $(event.target)
-      .closest('ul')
-      .prev('.al-trigger')
+    const returnFocusTo = $(event.target).closest('ul').prev('.al-trigger')
     renderCopyToTray(true, selection, returnFocusTo)
   })
 
@@ -2804,9 +2768,7 @@ $(document).ready(function() {
     const content_id = $(event.target).data('content-id')
     const content_type = $(event.target).data('content-type')
     const selection = {content_id, content_type}
-    const returnFocusTo = $(event.target)
-      .closest('ul')
-      .prev('.al-trigger')
+    const returnFocusTo = $(event.target).closest('ul').prev('.al-trigger')
     renderSendToTray(true, selection, returnFocusTo)
   })
 })

@@ -19,21 +19,21 @@
 #
 
 class Mutations::UpdateDiscussionReadState < Mutations::BaseMutation
-  graphql_name 'UpdateDiscussionReadState'
+  graphql_name "UpdateDiscussionReadState"
 
-  argument :discussion_topic_id, ID, required: true, prepare: GraphQLHelpers.relay_or_legacy_id_prepare_func('DiscussionTopic')
+  argument :discussion_topic_id, ID, required: true, prepare: GraphQLHelpers.relay_or_legacy_id_prepare_func("DiscussionTopic")
   argument :read, Boolean, required: true
 
   field :discussion_topic, Types::DiscussionType, null: false
   def resolve(input:)
     discussion_topic = DiscussionTopic.find(input[:discussion_topic_id])
     read_state = input[:read] ? :read : :unread
-
     discussion_topic.change_all_read_state(read_state, current_user, forced: false)
+
     {
       discussion_topic: discussion_topic
     }
   rescue ActiveRecord::RecordNotFound
-    raise GraphQL::ExecutionError, 'not found'
+    raise GraphQL::ExecutionError, "not found"
   end
 end

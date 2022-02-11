@@ -16,7 +16,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* global expect */
 import React from 'react'
 import {mount, shallow} from 'enzyme'
 import SectionTooltip from '../index'
@@ -33,28 +32,43 @@ test('renders the SectionTooltip component', () => {
 
 test('renders the correct section text', () => {
   const tree = mount(<SectionTooltip {...defaultProps()} />)
-  const node = tree.find('Button Text')
-  expect(node.text()).toBe('1 Sectionsections name')
+  const node = tree.find('Text')
+  expect(node.first().text()).toBe('1 Sectionsections name')
   const screenReaderNode = tree.find('ScreenReaderContent')
   expect(screenReaderNode.text()).toBe('sections name')
+})
+
+test('renders prefix text when passed in', () => {
+  const props = defaultProps()
+  props.prefix = 'Anonymous Discussion | '
+  const tree = mount(<SectionTooltip {...props} />)
+  const node = tree.find('Text')
+  expect(node.first().text()).toBe('Anonymous Discussion | 1 Sectionsections name')
+})
+
+test('uses textColor from props', () => {
+  const props = defaultProps()
+  props.textColor = 'secondary'
+  const tree = mount(<SectionTooltip {...props} />)
+  const node = tree.find('Text')
+  expect(node.first().props().color).toBe('secondary')
 })
 
 test('renders all sections if no sections are given', () => {
   const props = defaultProps()
   props.sections = null
   const tree = mount(<SectionTooltip {...props} />)
-  const node = tree.find('Button Text')
-  expect(node.text()).toBe('All Sections')
+  const node = tree.find('Text')
+  expect(node.at(0).text()).toBe('All Sections')
+  expect(node.at(1).text()).toBe('(5 Students)')
 })
 
 test('renders tooltip text correcly with sections', () => {
   const tree = shallow(<SectionTooltip {...defaultProps()} />)
   const node = tree.find('Tooltip')
-  expect(
-    mount(node.prop('tip')[0])
-      .find('View Text')
-      .text()
-  ).toBe('sections name (4 Users)')
+  expect(mount(node.prop('renderTip')[0]).find('View Text').text()).toBe(
+    'sections name (4 Students)'
+  )
 })
 
 test('renders multiple sections into tooltip', () => {
@@ -62,22 +76,16 @@ test('renders multiple sections into tooltip', () => {
   props.sections[1] = {id: 3, name: 'section other name', user_count: 8}
   const tree = shallow(<SectionTooltip {...props} />)
   const node = tree.find('Tooltip')
-  expect(node.prop('tip')).toHaveLength(2)
-  expect(
-    mount(node.prop('tip')[1])
-      .find('View Text')
-      .text()
-  ).toBe('section other name (8 Users)')
+  expect(node.prop('renderTip')).toHaveLength(2)
+  expect(mount(node.prop('renderTip')[1]).find('View Text').text()).toBe(
+    'section other name (8 Students)'
+  )
 })
 
-test('renders tooltip text correcly without', () => {
+test('does not renders tooltip text when All Sections', () => {
   const props = defaultProps()
   props.sections = null
   const tree = shallow(<SectionTooltip {...props} />)
   const node = tree.find('Tooltip')
-  expect(
-    mount(node.prop('tip'))
-      .find('View Text')
-      .text()
-  ).toBe('(5 Users)')
+  expect(node).toEqual({})
 })

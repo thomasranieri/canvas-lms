@@ -18,13 +18,11 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
-
 # TODO: When CanvasSecurity has replaced all callsites for Canvas::Security,
 # we won't need this shim anymore, and can drop this test verifying it.
 describe Canvas::Security do
-  describe '.config' do
-    it 'shim works' do
+  describe ".config" do
+    it "shim works" do
       expect(Canvas::Security.config).to_not be_nil
     end
   end

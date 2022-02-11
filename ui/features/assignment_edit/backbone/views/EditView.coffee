@@ -37,7 +37,6 @@ import MissingDateDialog from '@canvas/due-dates/backbone/views/MissingDateDialo
 import AssignmentGroupSelector from '@canvas/assignments/backbone/views/AssignmentGroupSelector.coffee'
 import GroupCategorySelector from '@canvas/groups/backbone/views/GroupCategorySelector.coffee'
 import toggleAccessibly from '@canvas/assignments/jquery/toggleAccessibly'
-import RCEKeyboardShortcuts from '@canvas/tinymce-keyboard-shortcuts'
 import ConditionalRelease from '@canvas/conditional-release-editor'
 import deparam from 'deparam'
 import SisValidationHelper from '@canvas/sis/SisValidationHelper'
@@ -360,6 +359,17 @@ export default class EditView extends ValidatedFormView
         @$externalToolsUrl.val(data['item[url]'])
         @$externalToolsNewTab.prop('checked', data['item[new_tab]'] == '1')
 
+        # a content item with an assignment_id means that an assignment was already
+        # created on the backend. redirect to that assignment so that user can make
+        # any desired changes, without having to populate this model with extra
+        # data not found in this content item
+        if (data['item[assignment_id]'])
+          message = I18n.t("Loading assignment details from external app")
+          $.flashMessage(message)
+          $.screenReaderFlashMessageExclusive(message)
+          [context_type, context_id] = ENV.context_asset_string.split("_")
+          window.location.href = "/#{context_type}s/#{context_id}/assignments/#{data['item[assignment_id]']}/edit"
+
   toggleRestrictFileUploads: =>
     @$restrictFileUploadsOptions.toggleAccessibly @$allowFileUploads.prop('checked')
 
@@ -430,7 +440,7 @@ export default class EditView extends ValidatedFormView
     @setAnnotatedDocument(null)
 
   shouldRenderUsageRights: =>
-    ENV?.ANNOTATED_DOCUMENT_SUBMISSIONS and ENV.USAGE_RIGHTS_REQUIRED
+    ENV.USAGE_RIGHTS_REQUIRED
 
   setAnnotatedDocumentUsageRights:(usageRights) =>
     @annotatedDocumentUsageRights = usageRights
@@ -650,30 +660,28 @@ export default class EditView extends ValidatedFormView
           parseInt(@assignment.id))
 
     @_attachEditorToDescription()
-    @addTinyMCEKeyboardShortcuts()
     @togglePeerReviewsAndGroupCategoryEnabled()
     @handleOnlineSubmissionTypeChange()
     @handleSubmissionTypeChange()
     @handleGroupCategoryChange()
     @handleAnonymousGradingChange()
 
-    if ENV.ANNOTATED_DOCUMENT_SUBMISSIONS
-      if ENV.ANNOTATED_DOCUMENT
-        @setAnnotatedDocument({
-          id: ENV.ANNOTATED_DOCUMENT.id,
-          name: ENV.ANNOTATED_DOCUMENT.display_name,
-          contextType: pluralize(ENV.ANNOTATED_DOCUMENT.context_type).toLowerCase(),
-          contextId: ENV.ANNOTATED_DOCUMENT.context_id,
-        })
+    if ENV.ANNOTATED_DOCUMENT
+      @setAnnotatedDocument({
+        id: ENV.ANNOTATED_DOCUMENT.id,
+        name: ENV.ANNOTATED_DOCUMENT.display_name,
+        contextType: pluralize(ENV.ANNOTATED_DOCUMENT.context_type).toLowerCase(),
+        contextId: ENV.ANNOTATED_DOCUMENT.context_id,
+      })
 
-      @renderAnnotatedDocumentSelector() if @$allowAnnotatedDocument.prop('checked')
+    @renderAnnotatedDocumentSelector() if @$allowAnnotatedDocument.prop('checked')
 
-      if @$allowAnnotatedDocument.prop('checked')
-        @$allowAnnotatedDocumentInfo.show()
-      else
-        @$allowAnnotatedDocumentInfo.hide()
+    if @$allowAnnotatedDocument.prop('checked')
+      @$allowAnnotatedDocumentInfo.show()
+    else
+      @$allowAnnotatedDocumentInfo.hide()
 
-      @renderAnnotatedDocumentUsageRightsSelectBox() if @shouldRenderUsageRights()
+    @renderAnnotatedDocumentUsageRightsSelectBox() if @shouldRenderUsageRights()
 
     if ENV.CONDITIONAL_RELEASE_SERVICE_ENABLED
       @conditionalReleaseEditor = ConditionalRelease.attach(
@@ -691,7 +699,6 @@ export default class EditView extends ValidatedFormView
     data = @assignment.toView()
 
     _.extend data,
-      use_rce_enhancements: ENV?.use_rce_enhancements
       assignment_attempts: ENV?.assignment_attempts_enabled
       kalturaEnabled: ENV?.KALTURA_ENABLED or false
       postToSISEnabled: ENV?.POST_TO_SIS or false
@@ -701,23 +708,11 @@ export default class EditView extends ValidatedFormView
       lockedItems: @lockedItems
       anonymousGradingEnabled: ENV?.ANONYMOUS_GRADING_ENABLED or false
       anonymousInstructorAnnotationsEnabled: ENV?.ANONYMOUS_INSTRUCTOR_ANNOTATIONS_ENABLED or false
-      annotatedDocumentSubmissionsEnabled: ENV?.ANNOTATED_DOCUMENT_SUBMISSIONS or false
 
   _attachEditorToDescription: =>
     return if @lockedItems.content
 
-    RichContentEditor.initSidebar()
     RichContentEditor.loadNewEditor(@$description, { focus: true, manageParent: true })
-
-    $('.rte_switch_views_link').click (e) =>
-      e.preventDefault()
-      RichContentEditor.callOnRCE(@$description, 'toggle')
-      # hide the clicked link, and show the other toggle link.
-      $(e.currentTarget).siblings('.rte_switch_views_link').andSelf().toggle().focus()
-
-  addTinyMCEKeyboardShortcuts: =>
-    keyboardShortcutsView = new RCEKeyboardShortcuts()
-    keyboardShortcutsView.render().$el.insertBefore($(".rte_switch_views_link:first"))
 
   # -- Data for Submitting --
   _datesDifferIgnoringSeconds: (newDate, originalDate) =>

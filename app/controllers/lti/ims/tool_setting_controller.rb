@@ -18,24 +18,24 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'ims/lti'
+require "ims/lti"
 
 module Lti
-  module Ims
+  module IMS
     class ToolSettingController < ApplicationController
       include Lti::ApiServiceHelper
-      include Lti::Ims::AccessTokenHelper
+      include Lti::IMS::AccessTokenHelper
 
       rescue_from ActiveRecord::RecordNotFound do
         render json: {
-          :status => I18n.t('lib.auth.api.not_found_status', 'not_found'),
-          :errors => [{ :message => I18n.t('lib.auth.api.not_found_message', "not_found") }]
+          status: I18n.t("lib.auth.api.not_found_status", "not_found"),
+          errors: [{ message: I18n.t("lib.auth.api.not_found_message", "not_found") }]
         }, status: :not_found
       end
 
-      TOOL_SETTINGS_SERVICE = 'ToolProxySettings'.freeze
-      TOOL_PROXY_BINDING_SERVICE = 'ToolProxyBindingSettings'.freeze
-      LTI_LINK_SETTINGS = 'LtiLinkSettings'.freeze
+      TOOL_SETTINGS_SERVICE = "ToolProxySettings"
+      TOOL_PROXY_BINDING_SERVICE = "ToolProxyBindingSettings"
+      LTI_LINK_SETTINGS = "LtiLinkSettings"
 
       skip_before_action :load_user
       before_action :authenticate_api_call
@@ -44,30 +44,30 @@ module Lti
       SERVICE_DEFINITIONS = [
         {
           id: TOOL_SETTINGS_SERVICE,
-          endpoint: 'api/lti/tool_settings/tool_proxy/{tool_proxy_id}',
-          format: %w(
+          endpoint: "api/lti/tool_settings/tool_proxy/{tool_proxy_id}",
+          format: %w[
             application/vnd.ims.lti.v2.toolsettings+json
             application/vnd.ims.lti.v2.toolsettings.simple+json
-          ).freeze,
-          action: %w(GET PUT).freeze
+          ].freeze,
+          action: %w[GET PUT].freeze
         }.freeze,
         {
           id: TOOL_PROXY_BINDING_SERVICE,
-          endpoint: 'api/lti/tool_settings/bindings/{binding_id}',
-          format: %w(
+          endpoint: "api/lti/tool_settings/bindings/{binding_id}",
+          format: %w[
             application/vnd.ims.lti.v2.toolsettings+json'
             application/vnd.ims.lti.v2.toolsettings.simple+json
-          ).freeze,
-          action: %w(GET PUT).freeze
+          ].freeze,
+          action: %w[GET PUT].freeze
         }.freeze,
         {
           id: LTI_LINK_SETTINGS,
-          endpoint: 'api/lti/tool_proxy/{tool_proxy_guid}/courses/{course_id}/resource_link_id/{resource_link_id}/tool_setting',
-          format: %w(
+          endpoint: "api/lti/tool_proxy/{tool_proxy_guid}/courses/{course_id}/resource_link_id/{resource_link_id}/tool_setting",
+          format: %w[
             application/vnd.ims.lti.v2.toolsettings+json
             application/vnd.ims.lti.v2.toolsettings.simple+json
-          ).freeze,
-          action: %w(GET PUT).freeze
+          ].freeze,
+          action: %w[GET PUT].freeze
         }.freeze
       ].freeze
 
@@ -92,39 +92,37 @@ module Lti
       private
 
       def tool_setting_json(tool_setting, bubble)
-        if %w(all distinct).include?(bubble)
+        if %w[all distinct].include?(bubble)
           graph = []
-          distinct = bubble == 'distinct' ? [] : nil
+          distinct = bubble == "distinct" ? [] : nil
           while tool_setting
             graph << collect_tool_settings(tool_setting, distinct)
             distinct |= graph.last.custom.keys if distinct
             case tool_setting_type(tool_setting)
-            when 'LtiLink'
+            when "LtiLink"
               tool_setting = ToolSetting.where(tool_proxy_id: tool_setting.tool_proxy_id, context_type: tool_setting.context_type, context_id: tool_setting.context_id, resource_link_id: nil).first
-            when 'ToolProxyBinding'
+            when "ToolProxyBinding"
               tool_setting = ToolSetting.where(tool_proxy_id: tool_setting.tool_proxy_id, context_type: nil, context_id: nil, resource_link_id: nil).first
-            when 'ToolProxy'
+            when "ToolProxy"
               tool_setting = nil
             end
           end
 
-          if request.headers['accept'].include?('application/vnd.ims.lti.v2.toolsettings+json')
-            @content_type = 'application/vnd.ims.lti.v2.toolsettings+json'
-            IMS::LTI::Models::ToolSettingContainer.new(graph: graph)
-          elsif bubble == 'distinct' && request.headers['accept'].include?('application/vnd.ims.lti.v2.toolsettings.simple+json')
-            @content_type = 'application/vnd.ims.lti.v2.toolsettings.simple+json'
+          if request.headers["accept"].include?("application/vnd.ims.lti.v2.toolsettings+json")
+            @content_type = "application/vnd.ims.lti.v2.toolsettings+json"
+            ::IMS::LTI::Models::ToolSettingContainer.new(graph: graph)
+          elsif bubble == "distinct" && request.headers["accept"].include?("application/vnd.ims.lti.v2.toolsettings.simple+json")
+            @content_type = "application/vnd.ims.lti.v2.toolsettings.simple+json"
             custom = {}
-            graph.reverse_each { |tool_setting| custom.merge!(tool_setting.custom) }
+            graph.reverse_each { |ts| custom.merge!(ts.custom) }
             custom
           end
+        elsif request.headers["accept"].include?("application/vnd.ims.lti.v2.toolsettings+json")
+          @content_type = "application/vnd.ims.lti.v2.toolsettings+json"
+          ::IMS::LTI::Models::ToolSettingContainer.new(graph: [collect_tool_settings(tool_setting)])
         else
-          if request.headers['accept'].include?('application/vnd.ims.lti.v2.toolsettings+json')
-            @content_type = 'application/vnd.ims.lti.v2.toolsettings+json'
-            IMS::LTI::Models::ToolSettingContainer.new(graph: [collect_tool_settings(tool_setting)])
-          else
-            @content_type = 'application/vnd.ims.lti.v2.toolsettings.simple+json'
-            tool_setting.custom || {}
-          end
+          @content_type = "application/vnd.ims.lti.v2.toolsettings.simple+json"
+          tool_setting.custom || {}
         end
       end
 
@@ -133,13 +131,13 @@ module Lti
         url = show_lti_tool_settings_url(tool_setting.id)
         custom = tool_setting.custom || {}
         custom.delete_if { |k, _| distinct.include? k } if distinct
-        IMS::LTI::Models::ToolSetting.new(custom: custom, type: type, id: url)
+        ::IMS::LTI::Models::ToolSetting.new(custom: custom, type: type, id: url)
       end
 
       def custom_settings(type, json)
-        if request.content_type == 'application/vnd.ims.lti.v2.toolsettings+json'
-          setting = json['@graph'].find { |setting| setting['@type'] == type }
-          setting['custom']
+        if request.content_type == "application/vnd.ims.lti.v2.toolsettings+json"
+          setting = json["@graph"].find { |s| s["@type"] == type }
+          setting["custom"]
         else
           json
         end
@@ -147,11 +145,11 @@ module Lti
 
       def tool_setting_type(tool_setting)
         if tool_setting.resource_link_id.present?
-          'LtiLink'
+          "LtiLink"
         elsif tool_setting.context.present?
-          'ToolProxyBinding'
+          "ToolProxyBinding"
         else
-          'ToolProxy'
+          "ToolProxy"
         end
       end
 
@@ -159,7 +157,7 @@ module Lti
         if oauth2_request?
           begin
             validate_access_token!
-          rescue Lti::Oauth2::InvalidTokenError
+          rescue Lti::OAuth2::InvalidTokenError
             render_unauthorized and return
           end
         elsif request.authorization.present?
@@ -178,7 +176,7 @@ module Lti
                  get_context
                  tool_proxy_guid = params[:tool_proxy_guid]
                  resource_link_id = params[:resource_link_id]
-                 render_unauthorized and return unless tool_proxy_guid == tool_proxy.guid
+                 render_unauthorized and return unless tool_proxy_guid == tool_proxy.guid # rubocop:disable Lint/NoReturnInBeginEndBlocks
 
                  tool_proxy.tool_settings.find_by(
                    context: @context,
@@ -194,26 +192,26 @@ module Lti
       def valid_show_request?
         # TODO: register a mime type in rails for these content-types
         params[:bubble].blank? ||
-          params[:bubble] == 'distinct' ||
-          (params[:bubble] == 'all' && request.accept.include?('application/vnd.ims.lti.v2.toolsettings+json'))
+          params[:bubble] == "distinct" ||
+          (params[:bubble] == "all" && request.accept.include?("application/vnd.ims.lti.v2.toolsettings+json"))
       end
 
       def valid_update_request?(json)
         valid = params[:bubble].blank?
-        if valid && request.content_type == 'application/vnd.ims.lti.v2.toolsettings+json'
-          valid = json['@graph'].count == 1
-        elsif valid && request.content_type == 'application/vnd.ims.lti.v2.toolsettings.simple+json'
-          valid = !json.keys.include?('@graph')
+        if valid && request.content_type == "application/vnd.ims.lti.v2.toolsettings+json"
+          valid = json["@graph"].count == 1
+        elsif valid && request.content_type == "application/vnd.ims.lti.v2.toolsettings.simple+json"
+          valid = !json.key?("@graph")
         end
         valid
       end
 
       def render_bad_request
-        render :json => {
-          :status => I18n.t('lib.auth.api.bad_request_status', 'bad_request'),
-          :errors => [{ :message => I18n.t('lib.auth.api.bad_request_message', "bad_request") }]
+        render json: {
+          status: I18n.t("lib.auth.api.bad_request_status", "bad_request"),
+          errors: [{ message: I18n.t("lib.auth.api.bad_request_message", "bad_request") }]
         },
-               :status => :bad_request
+               status: :bad_request
       end
     end
   end

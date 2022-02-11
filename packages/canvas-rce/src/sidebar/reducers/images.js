@@ -68,18 +68,24 @@ export default function imagesReducer(prevState = {}, action) {
       return state
 
     case RECEIVE_IMAGES:
-      state[ctxt] = {
-        files: state[ctxt].files.concat(action.payload.files),
-        isLoading: false,
-        bookmark: action.payload.bookmark,
-        hasMore: !!action.payload.bookmark
+      // If a request resolved with files but the searchString has since
+      // changed, then the files should not be concatenated because this
+      // request will have been redundant at best and wrong at worst.
+      if (action.payload.searchString === state.searchString) {
+        state[ctxt] = {
+          files: state[ctxt].files.concat(action.payload.files),
+          isLoading: false,
+          bookmark: action.payload.bookmark,
+          hasMore: !!action.payload.bookmark
+        }
       }
       return state
 
     case FAIL_IMAGES_LOAD:
       state[ctxt] = {
         isLoading: false,
-        error: action.payload.error
+        error: action.payload.error,
+        files: []
       }
       if (action.payload.files && action.payload.files.length === 0) {
         state[ctxt].bookmark = null
@@ -91,6 +97,7 @@ export default function imagesReducer(prevState = {}, action) {
     }
 
     case CHANGE_SEARCH_STRING: {
+      state.searchString = action.payload
       return state
     }
 

@@ -18,22 +18,22 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe Progress do
-  describe '#process_job' do
-    class Jerbs
-      cattr_accessor :flag
-      extend RSpec::Matchers
+  describe "#process_job" do
+    before do
+      stub_const("Jerbs", Class.new do
+        cattr_accessor :flag
+        extend RSpec::Matchers
 
-      def self.succeed(progress, flag)
-        expect(progress.state).to eq :running
-        self.flag = flag
-      end
+        def self.succeed(progress, flag)
+          expect(progress.state).to eq :running
+          self.flag = flag
+        end
 
-      def self.fail(progress)
-        raise "fail!"
-      end
+        def self.fail(_progress)
+          raise "fail!"
+        end
+      end)
     end
 
     before { Jerbs.flag = nil }
@@ -47,6 +47,12 @@ describe Progress do
       expect(progress.reload).to be_completed
       expect(progress.completion).to eq 100
       expect(Jerbs.flag).to eq :flag
+    end
+
+    it "stores the delayed_job_id" do
+      progress.process_job(Jerbs, :succeed, {}, :flag)
+      expect(progress).to be_queued
+      expect(progress.delayed_job_id).to be_present
     end
 
     it "fails the progress if the job fails" do

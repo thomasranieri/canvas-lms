@@ -56,7 +56,7 @@ module Canvas
       # canvas redis is patched to disallow "scan" operations,
       # but clearing the whole thing does technically remove any
       # keys matching this pattern
-      def delete_matched(pattern)
+      def delete_matched(_pattern)
         clear
       end
 
@@ -71,7 +71,7 @@ module Canvas
             end
           end
         end
-        Rails.logger.debug("  #{"LOCAL REDIS (%.2fms)" % [ms]}  write_set {#{hash.keys.join(',')}}")
+        Rails.logger.debug("  #{"LOCAL REDIS (%.2fms)" % [ms]}  write_set {#{hash.keys.join(",")}}")
       end
     end
   end

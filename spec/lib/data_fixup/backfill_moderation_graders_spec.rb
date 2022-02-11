@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
-
 describe DataFixup::BackfillModerationGraders do
   before(:once) do
     @root_account = account_model
@@ -27,7 +25,7 @@ describe DataFixup::BackfillModerationGraders do
     @course.enroll_student(@student)
     @teacher = User.create!
     @course.enroll_teacher(@teacher)
-    @assignment = @course.assignments.create!(title: 'test')
+    @assignment = @course.assignments.create!(title: "test")
     @assignment.update_columns(moderated_grading: true, grader_count: 1)
     @assignment.grade_student(@student, grade: 90, provisional: true, grader: @teacher)
 

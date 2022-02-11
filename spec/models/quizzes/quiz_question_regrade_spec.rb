@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe Quizzes::QuizQuestionRegrade do
   describe "relationships" do
     it "belongs to a quiz_question" do
@@ -40,7 +38,7 @@ describe Quizzes::QuizQuestionRegrade do
   describe "#question_data" do
     it "delegates to quiz question" do
       question = Quizzes::QuizQuestion.new
-      allow(question).to receive_messages(:question_data => "foo")
+      allow(question).to receive_messages(question_data: "foo")
 
       qq_regrade = Quizzes::QuizQuestionRegrade.new
       qq_regrade.quiz_question = question

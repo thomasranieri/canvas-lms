@@ -20,15 +20,16 @@ exports[`groups itemsForDay that come in on prop changes 1`] = `
   <div>
     <Animatable(Grouping)
       animatableIndex={1}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -47,22 +48,23 @@ exports[`groups itemsForDay that come in on prop changes 1`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
     />
     <Animatable(Grouping)
       animatableIndex={2}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -81,7 +83,7 @@ exports[`groups itemsForDay that come in on prop changes 1`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
@@ -110,15 +112,16 @@ exports[`groups itemsForDay that come in on prop changes 2`] = `
   <div>
     <Animatable(Grouping)
       animatableIndex={1}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -137,22 +140,23 @@ exports[`groups itemsForDay that come in on prop changes 2`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
     />
     <Animatable(Grouping)
       animatableIndex={2}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -179,22 +183,23 @@ exports[`groups itemsForDay that come in on prop changes 2`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
     />
     <Animatable(Grouping)
       animatableIndex={3}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -208,7 +213,7 @@ exports[`groups itemsForDay that come in on prop changes 2`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
@@ -237,15 +242,16 @@ exports[`groups itemsForDay that have no context into the "Notes" category 1`] =
   <div>
     <Animatable(Grouping)
       animatableIndex={1}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -264,22 +270,23 @@ exports[`groups itemsForDay that have no context into the "Notes" category 1`] =
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
     />
     <Animatable(Grouping)
       animatableIndex={2}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -306,22 +313,23 @@ exports[`groups itemsForDay that have no context into the "Notes" category 1`] =
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
     />
     <Animatable(Grouping)
       animatableIndex={3}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -335,7 +343,7 @@ exports[`groups itemsForDay that have no context into the "Notes" category 1`] =
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
@@ -364,15 +372,16 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
   <div>
     <Animatable(Grouping)
       animatableIndex={101}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -392,7 +401,7 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
@@ -400,15 +409,16 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
     />
     <Animatable(Grouping)
       animatableIndex={102}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -437,7 +447,7 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"
@@ -445,15 +455,16 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
     />
     <Animatable(Grouping)
       animatableIndex={103}
-      color="#00AC18"
+      color="#0B874B"
       currentUser={
         Object {
           "avatarUrl": "/picture/is/here",
-          "color": "#00AC18",
+          "color": "#0B874B",
           "displayName": "Jane",
           "id": "1",
         }
       }
+      isObserving={false}
       items={
         Array [
           Object {
@@ -472,7 +483,7 @@ exports[`renders grouping correctly when having itemsForDay 1`] = `
       singleCourseView={false}
       theme={
         Object {
-          "titleColor": "#00AC18",
+          "titleColor": "#0B874B",
         }
       }
       timeZone="America/Denver"

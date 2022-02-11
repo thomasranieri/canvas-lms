@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-require File.expand_path(File.dirname(__FILE__) + '/../../../spec_helper')
 
 describe Canvas::Security::LoginRegistry do
   let(:registry) { Canvas::Security::LoginRegistry }
@@ -25,11 +24,11 @@ describe Canvas::Security::LoginRegistry do
   describe ".audit_login" do
     before do
       skip("requires redis config to run") unless Canvas.redis_enabled?
-      Setting.set('login_attempts_total', '2')
-      Setting.set('login_attempts_per_ip', '1')
-      u = user_with_pseudonym :active_user => true,
-                              :username => "nobody@example.com",
-                              :password => "asdfasdf"
+      Setting.set("login_attempts_total", "2")
+      Setting.set("login_attempts_per_ip", "1")
+      u = user_with_pseudonym active_user: true,
+                              username: "nobody@example.com",
+                              password: "asdfasdf"
       u.save!
       @p = u.pseudonym
     end
@@ -67,17 +66,17 @@ describe Canvas::Security::LoginRegistry do
         registry.failed_login!(@p, "5.5.5.5")
         # schools like to NAT hundreds of people to the same IP, so we don't
         # ever block the IP address as a whole
-        u2 = user_with_pseudonym(:active_user => true, :username => "second@example.com", :password => "12341234")
+        u2 = user_with_pseudonym(active_user: true, username: "second@example.com", password: "12341234")
         u2.save!
         expect(registry.allow_login_attempt?(u2.pseudonym, "5.5.5.5")).to eq true
         expect(registry.allow_login_attempt?(u2.pseudonym, "5.5.5.6")).to eq true
       end
 
       it "timeouts the login block after a waiting period" do
-        Setting.set('login_attempts_ttl', 5.seconds)
+        Setting.set("login_attempts_ttl", 5.seconds)
         registry.failed_login!(@p, "5.5.5.5")
-        expect(registry.time_until_login_allowed(@p, '5.5.5.6')).to eq 0
-        expect(registry.time_until_login_allowed(@p, '5.5.5.5')).to be <= 5
+        expect(registry.time_until_login_allowed(@p, "5.5.5.6")).to eq 0
+        expect(registry.time_until_login_allowed(@p, "5.5.5.5")).to be <= 5
       end
     end
   end

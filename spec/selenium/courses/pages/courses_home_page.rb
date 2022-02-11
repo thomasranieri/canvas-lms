@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require_relative '../../common'
-require_relative './course_wizard_page_component'
+require_relative "../../common"
+require_relative "./course_wizard_page_component"
 
 module CoursesHomePage
   #------------------------- Sections ---------------------------
@@ -32,7 +32,7 @@ module CoursesHomePage
 
   #------------------------- Selectors --------------------------
   def secondary_content_selector
-    '.ic-app-main-content__secondary'
+    ".ic-app-main-content__secondary"
   end
 
   def choose_home_page_link_selector
@@ -45,6 +45,18 @@ module CoursesHomePage
 
   def accept_enrollment_alert_selector
     ".ic-notification button[name='accept']"
+  end
+
+  def course_pace_plan_selector
+    ".pace_plans"
+  end
+
+  def course_menu_toggle_selector
+    "#courseMenuToggle"
+  end
+
+  def left_side_selector
+    "#left-side"
   end
 
   #------------------------- Elements ---------------------------
@@ -69,7 +81,7 @@ module CoursesHomePage
   end
 
   def course_user_list
-    ff('.roster .rosterUser')
+    ff(".roster .rosterUser")
   end
 
   def accept_enrollment_button
@@ -81,7 +93,19 @@ module CoursesHomePage
   end
 
   def course_page_content
-    f('#content')
+    f("#content")
+  end
+
+  def course_pace_plan_link
+    f(course_pace_plan_selector)
+  end
+
+  def course_menu_toggle
+    f(course_menu_toggle_selector)
+  end
+
+  def left_side
+    f(left_side_selector)
   end
 
   #----------------------- Actions/Methods ----------------------
@@ -90,7 +114,7 @@ module CoursesHomePage
   end
 
   def visit_course_people(course)
-    get "/courses/#{@course.id}/users"
+    get "/courses/#{course.id}/users"
   end
 
   def open_course_wizard
@@ -101,5 +125,17 @@ module CoursesHomePage
     visit_course(@course)
     open_course_wizard
     wait_for(method: nil, timeout: 2) { wizard_box.displayed? }
+  end
+
+  def click_pace_plans
+    course_pace_plan_link.click
+  end
+
+  def pace_plans_nav_exists?
+    element_exists?(course_pace_plan_selector)
+  end
+
+  def click_course_menu_toggle
+    course_menu_toggle.click
   end
 end

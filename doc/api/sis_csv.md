@@ -274,11 +274,20 @@ recommended to omit this field over using fake email addresses for testing.</td>
 <td>User's preferred pronouns. Can pass "&lt;delete>" to remove the pronoun from the user.</td>
 </tr>
 <tr>
+<td>declared_user_type</td>
+<td>enum</td>
+<td></td>
+<td></td>
+<td>User's declared user type. Can be either administrative, observer, staff,
+student, student_other, or teacher. Can pass "&lt;delete>" to remove the
+declared user type from the user.</td>
+</tr>
+<tr>
 <td>status</td>
 <td>enum</td>
 <td>✓</td>
 <td>✓</td>
-<td>active, deleted</td>
+<td>active, suspended, deleted</td>
 </tr>
 </table>
 
@@ -290,7 +299,8 @@ the login_id will be used as the name.</p>
 If the login is the last one, all of the users enrollments will also be deleted
 and they won't be able to log in to the school's account. If you still want the
 student to be able to log in but just not participate, leave the student
-'active' but set the enrollments to 'completed'.</p>
+'active' but set the enrollments to 'completed'. If you want to leave a student's
+enrollments intact, but not allow them to login, use the 'suspended' status.</p>
 
 Sample:
 
@@ -557,6 +567,13 @@ To remove the Blueprint Course link you can pass 'dissociate' in place of the id
 <td></td>
 <td></td>
 <td>Whether the course is a homeroom course. Requires the courses to be associated with a "Canvas for Elementary"-enabled account.</td>
+</tr>
+<tr>
+<td>friendly_name</td>
+<td>text</td>
+<td></td>
+<td></td>
+<td>Friendly name for course, will be shown only for the Elementary account</td>
 </tr>
 </table>
 

@@ -16,11 +16,11 @@
 #
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
-require 'inst_access'
+require "inst_access"
 
 class InstAccessSupport
   def self.configure_inst_access!
-    conf = ConfigFile.load("inst_access_signature")
+    conf = Rails.application.credentials.inst_access_signature
     if conf
       InstAccess.configure(
         signing_key: Base64.decode64(conf[:private_key]),

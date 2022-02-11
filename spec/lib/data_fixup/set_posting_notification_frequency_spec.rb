@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::SetPostingNotificationFrequency do
   let_once(:account) { Account.create! }
   let_once(:course) { Course.create!(account: account) }
@@ -71,9 +69,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "never")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("never")
       end
@@ -82,9 +80,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "weekly")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("weekly")
       end
@@ -93,9 +91,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "daily")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("daily")
       end
@@ -104,9 +102,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "daily")
         policy.update_columns(created_at: now, updated_at: now, frequency: "daily")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end
@@ -114,9 +112,9 @@ describe DataFixup::SetPostingNotificationFrequency do
       it "keeps the existing policy frequency if updated at some point" do
         policy.update_columns(created_at: now - 10.seconds, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end
@@ -150,9 +148,9 @@ describe DataFixup::SetPostingNotificationFrequency do
       it "keeps the existing policy frequency even if policy never updated" do
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end
@@ -167,9 +165,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "never")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("never")
       end
@@ -178,9 +176,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "weekly")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("weekly")
       end
@@ -189,9 +187,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "daily")
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.to change {
+        end.to change {
           policy.reload.frequency
         }.from("immediately").to("daily")
       end
@@ -200,9 +198,9 @@ describe DataFixup::SetPostingNotificationFrequency do
         grading_notification_policies.update_all(frequency: "daily")
         policy.update_columns(created_at: now, updated_at: now, frequency: "daily")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end
@@ -210,9 +208,9 @@ describe DataFixup::SetPostingNotificationFrequency do
       it "keeps the existing policy frequency if updated at some point" do
         policy.update_columns(created_at: now - 10.seconds, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end
@@ -246,9 +244,9 @@ describe DataFixup::SetPostingNotificationFrequency do
       it "keeps the existing policy frequency even if policy never updated" do
         policy.update_columns(created_at: now, updated_at: now, frequency: "immediately")
 
-        expect {
+        expect do
           DataFixup::SetPostingNotificationFrequency.run
-        }.not_to change {
+        end.not_to change {
           policy.reload.frequency
         }
       end

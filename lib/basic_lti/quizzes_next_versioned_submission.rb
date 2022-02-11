@@ -20,16 +20,21 @@
 
 module BasicLTI
   class QuizzesNextVersionedSubmission
-    JSON_FIELDS = [
-      :id, :grade, :score, :submitted_at, :assignment_id,
-      :user_id, :submission_type, :workflow_state, :updated_at,
-      :grade_matches_current_submission, :graded_at, :turnitin_data,
-      :excused, :points_deducted, :grading_period_id, :late, :missing, :url
+    JSON_FIELDS = %i[
+      id grade score submitted_at assignment_id
+      user_id submission_type workflow_state updated_at
+      grade_matches_current_submission graded_at turnitin_data
+      excused points_deducted grading_period_id late missing url
     ].freeze
 
-    def initialize(assignment, user)
+    def initialize(assignment, user, prioritize_non_tool_grade: false)
       @assignment = assignment
       @user = user
+      @prioritize_non_tool_grade = prioritize_non_tool_grade
+    end
+
+    def active?
+      !submission.deleted?
     end
 
     def commit_history(launch_url, grade, grader_id)
@@ -81,7 +86,7 @@ module BasicLTI
     end
 
     def grading_period_closed?
-      !!(submission.grading_period&.closed?)
+      !!submission.grading_period&.closed?
     end
 
     def valid?(launch_url, grade)
@@ -120,30 +125,33 @@ module BasicLTI
     end
 
     def submit_submission
-      submission.submission_type = params[:submission_type] || 'basic_lti_launch'
+      submission.submission_type = params[:submission_type] || "basic_lti_launch"
       submission.submitted_at = params[:submitted_at] || Time.zone.now
       submission.graded_at = params[:graded_at] || Time.zone.now
       submission.grade_matches_current_submission = false
       # this step is important, to send user notifications
       # see SubmissionPolicy
-      submission.workflow_state = 'submitted'
+      submission.workflow_state = "submitted"
       submission.without_versioning(&:save!)
     end
 
     def grade_submission(launch_url, grade, score, grader_id)
-      submission.grade = grade
-      submission.score = score
-      submission.graded_at = params[:graded_at] || Time.zone.now
-      submission.grade_matches_current_submission = true
-      submission.grader_id = grader_id
-      submission.posted_at = submission.submitted_at unless submission.posted? || @assignment.post_manually?
+      BasicOutcomes::LtiResponse.ensure_score_update_possible(submission: submission, prioritize_non_tool_grade: prioritize_non_tool_grade?) do
+        submission.grade = grade
+        submission.score = score
+        submission.graded_at = params[:graded_at] || Time.zone.now
+        submission.grade_matches_current_submission = true
+        submission.grader_id = grader_id
+        submission.posted_at = submission.submitted_at unless submission.posted? || @assignment.post_manually?
+      end
       clear_cache
+      # We always want to update the launch_url to match what new quizzes is laying down.
       submission.url = launch_url
       submission.save!
     end
 
     def save_with_versioning
-      submission.with_versioning(:explicit => true) { submission.save! }
+      submission.with_versioning(explicit: true) { submission.save! }
     end
 
     def clear_cache
@@ -178,13 +186,17 @@ module BasicLTI
 
         # ruby hash will perserve insertion order
         sorted_list = attempts.keys.sort_by do |k|
-          matches = k.match(/\?.*=(\d+)\&/)
+          matches = k.match(/\?.*=(\d+)&/)
           next 0 if matches.blank?
 
           matches.captures.first.to_i # ordered by the first lti parameter
         end
-        sorted_list.each_with_object({}) { |k, a| a[k] = attempts[k] }
+        sorted_list.index_with { |k| attempts[k] }
       end
+    end
+
+    def prioritize_non_tool_grade?
+      @prioritize_non_tool_grade
     end
   end
 end

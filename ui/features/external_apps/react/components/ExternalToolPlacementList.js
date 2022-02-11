@@ -53,8 +53,9 @@ const ALL_PLACEMENTS = {
   link_selection: I18n.t('Link Selection'),
   migration_selection: I18n.t('Migration Selection'),
   module_menu: I18n.t('Module Menu'),
-  module_index_menu: I18n.t('Modules Index Menu'),
   module_group_menu: I18n.t('Modules Group Menu'),
+  module_index_menu: I18n.t('Modules Index Menu (Tray)'),
+  module_index_menu_modal: I18n.t('Modules Index Menu (Modal)'),
   post_grades: I18n.t('Sync Grades'),
   quiz_menu: I18n.t('Quiz Menu'),
   quiz_index_menu: I18n.t('Quizzes Index Menu'),
@@ -183,7 +184,9 @@ export default class ExternalToolPlacementList extends React.Component {
   shouldShowToggleButtons = () => {
     const tool = this.state.tool
     const is_1_1_tool = tool.version === '1.1'
-    const canUpdateTool = ENV.PERMISSIONS && ENV.PERMISSIONS.create_tool_manually
+    const canUpdateTool =
+      ENV.PERMISSIONS &&
+      (ENV.PERMISSIONS.create_tool_manually || ENV.PERMISSIONS.edit_tool_manually)
     const isEditableContext =
       ENV.CONTEXT_BASE_URL &&
       tool.context &&

@@ -18,27 +18,25 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
+require "spec_helper"
 
 describe IncomingMailProcessor::Pop3Mailbox do
-  include_examples 'Mailbox'
+  include_examples "Mailbox"
 
   def default_config
     {
-      :server => "mail.example.com",
-      :ssl => false,
-      :port => 2345,
-      :username => "user",
-      :password => "password",
+      server: "mail.example.com",
+      ssl: false,
+      port: 2345,
+      username: "user",
+      password: "password",
     }
   end
 
   def mock_net_pop
-    @pop_mock = Object.new
-    class << @pop_mock
-      IncomingMailProcessor::Pop3Mailbox::UsedPopMethods.each do |method_name|
-        define_method(method_name) { |*args, &block| }
-      end
+    @pop_mock = double
+    IncomingMailProcessor::Pop3Mailbox::UsedPopMethods.each do |method_name|
+      allow(@pop_mock).to receive(method_name)
     end
 
     allow(Net::POP3).to receive(:new).and_return(@pop_mock)
@@ -47,11 +45,11 @@ describe IncomingMailProcessor::Pop3Mailbox do
   describe "#initialize" do
     it "accepts existing mailman pop3 configuration" do
       @mailbox = IncomingMailProcessor::Pop3Mailbox.new({
-                                                          :server => "pop3.server.com",
-                                                          :port => 1234,
-                                                          :ssl => "truthy-value",
-                                                          :username => "user@server.com",
-                                                          :password => "secret-user-password",
+                                                          server: "pop3.server.com",
+                                                          port: 1234,
+                                                          ssl: "truthy-value",
+                                                          username: "user@server.com",
+                                                          password: "secret-user-password",
                                                         })
 
       expect(@mailbox.server).to eql "pop3.server.com"
@@ -68,7 +66,7 @@ describe IncomingMailProcessor::Pop3Mailbox do
     end
 
     it "connects to the server" do
-      config = default_config.merge(:ssl => false, :port => 110)
+      config = default_config.merge(ssl: false, port: 110)
       expect(Net::POP3).to receive(:new).with(config[:server], config[:port]).and_return(@pop_mock)
       expect(@pop_mock).to receive(:start).with(config[:username], config[:password])
 
@@ -77,7 +75,7 @@ describe IncomingMailProcessor::Pop3Mailbox do
     end
 
     it "uses ssl if configured" do
-      config = default_config.merge(:ssl => true, :port => 995)
+      config = default_config.merge(ssl: true, port: 995)
 
       expect(Net::POP3).to receive(:new).with(config[:server], config[:port]).and_return(@pop_mock)
       expect(@pop_mock).to receive(:enable_ssl).with(OpenSSL::SSL::VERIFY_PEER)
@@ -99,7 +97,7 @@ describe IncomingMailProcessor::Pop3Mailbox do
     end
   end
 
-  describe '#unprocessed_message_count' do
+  describe "#unprocessed_message_count" do
     it "returns nil" do
       expect(IncomingMailProcessor::Pop3Mailbox.new(default_config).unprocessed_message_count).to be_nil
     end
@@ -127,7 +125,7 @@ describe IncomingMailProcessor::Pop3Mailbox do
     end
 
     it "retrieves messages using a stride and offset" do
-      foo, bar, baz = ["foo", "bar", "baz"].map do |msg|
+      foo, bar, baz = %w[foo bar baz].map do |msg|
         m = double(pop: "#{msg} body")
         expect(m).to receive(:uidl).twice.and_return(msg)
         m
@@ -155,14 +153,14 @@ describe IncomingMailProcessor::Pop3Mailbox do
 
       it "deletes when asked" do
         expect(@foo).to receive(:delete)
-        @mailbox.each_message do |message_id, body|
+        @mailbox.each_message do |message_id, _body|
           @mailbox.delete_message(message_id)
         end
       end
 
       it "deletes when asked to move" do
         expect(@foo).to receive(:delete)
-        @mailbox.each_message do |message_id, body|
+        @mailbox.each_message do |message_id, _body|
           @mailbox.move_message(message_id, "anything")
         end
       end

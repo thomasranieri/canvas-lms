@@ -92,11 +92,17 @@
     "apply_781a2546": {
         "message": "Aplicar"
     },
+    "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+        "message": "Aplicar alterações a todas as instâncias deste Botão e Ícone na Disciplina"
+    },
     "apps_54d24a47": {
         "message": "Aplicativos"
     },
     "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
         "message": "Tem a certeza que deseja apagar este item de planeador?"
+    },
+    "arrows_464a3e54": {
+        "message": "Setas"
     },
     "aspect_ratio_will_be_preserved_cb5fdfb8": {
         "message": "A relação de aspeto será preservada"
@@ -143,17 +149,23 @@
     "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
         "message": "Gravação de áudio e vídeo não suportada; por favor use um navegador diferente."
     },
+    "audio_options_feb58e2c": {
+        "message": "Opções áudio"
+    },
+    "audio_options_tray_33a90711": {
+        "message": "Bandeja de opções áudio"
+    },
     "audio_player_for_title_20cc70d": {
         "message": "Leitor de áudio para { title }"
     },
     "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
         "message": "O conteúdo auto-salvamento existe. Você gostaria de carregar o conteúdo auto-salvamento em seu lugar?"
     },
-    "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-        "message": "Abra automaticamente uma pré-visualização em linha. (A pré-visualização é exibida somente após salvar)"
-    },
     "available_folders_694d0436": {
         "message": "Pastas disponíveis"
+    },
+    "basic_554cdc0a": {
+        "message": "Básico"
     },
     "beginning_of_your_to_do_history_61ef2dce": {
         "message": "Início do seu histórico de tarefas"
@@ -245,6 +257,9 @@
     "close_opportunity_center_popup_9907d981": {
         "message": "Fechar o popup Opportunity Center"
     },
+    "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+        "message": "O ficheiro de legendagem deve ser inferior a { maxKb } kb"
+    },
     "closed_captions_subtitles_e6aaa016": {
         "message": "Legendas/subtítulos"
     },
@@ -326,6 +341,12 @@
     "creative_commons_license_725584ae": {
         "message": "Licença Creative Commons:"
     },
+    "crop_image_807ebb08": {
+        "message": "Cortar Imagem"
+    },
+    "current_image_f16c249c": {
+        "message": "Imagem atual"
+    },
     "custom_6979cd81": {
         "message": "Personalizadas"
     },
@@ -362,6 +383,9 @@
     "delete_a6efa79d": {
         "message": "Eliminar"
     },
+    "delimiters_4db4840d": {
+        "message": "Delimitadores"
+    },
     "describe_the_image_e65d2e32": {
         "message": "(Descreva a imagem)"
     },
@@ -374,14 +398,20 @@
     "details_a6f427c3": {
         "message": "Detalhes:"
     },
+    "diamond_b8dfe7ae": {
+        "message": "Diamante"
+    },
+    "dimension_type_55c83e4e": {
+        "message": "Tipo de dimensão"
+    },
     "dimensions_45ddb7b7": {
         "message": "Dimensões"
     },
     "directionality_26ae9e08": {
         "message": "Direcionalidade"
     },
-    "disable_in_line_preview_2a675175": {
-        "message": "Desativar visualização em linha."
+    "directly_edit_latex_b7e9235b": {
+        "message": "Editar diretamente LaTeX"
     },
     "discussion_6719c51d": {
         "message": "Discussão"
@@ -429,16 +459,16 @@
         "message": "Arraste a alça. Use as setas para cima e para baixo para redimensionar"
     },
     "due_5d7267be": {
-        "message": "Vencimento:"
+        "message": "Data limite:"
     },
     "due_date_124fdd99": {
-        "message": "Vencimento: { date }"
+        "message": "Data limite: { date }"
     },
     "due_multiple_dates_cc0ee3f5": {
-        "message": "Vencimento: Várias datas"
+        "message": "Data limite: Várias datas"
     },
     "due_when_7eed10c6": {
-        "message": "Vencimento: { when }"
+        "message": "Data limite: { when }"
     },
     "edit_c5fbea07": {
         "message": "Editar"
@@ -484,6 +514,9 @@
     },
     "equation_1c5ac93c": {
         "message": "Equação"
+    },
+    "equation_editor_39fbc3f1": {
+        "message": "Editor de equações"
     },
     "error_loading_grades_e0b38f4d": {
         "message": "Erro ao carregar classificações"
@@ -547,6 +580,9 @@
     },
     "feedback_6dcc1991": {
         "message": "Resposta"
+    },
+    "file_name_8fd421ff": {
+        "message": "Nome do ficheiro"
     },
     "file_url_c12b64be": {
         "message": "URL do ficheiro"
@@ -613,6 +649,9 @@
     },
     "grades_loaded_5056277c": {
         "message": "Classificações carregadas"
+    },
+    "greek_65c5b3f7": {
+        "message": "Grego"
     },
     "group_documents_8bfd6ae6": {
         "message": "Agrupar Documentos"
@@ -797,6 +836,9 @@
     "loading_please_wait_d276220a": {
         "message": "A carregar, por favor aguarde"
     },
+    "loading_preview_9f077aa1": {
+        "message": "Pré-visualização do carregamento"
+    },
     "location_3b6ff307": {
         "message": "Local:"
     },
@@ -818,6 +860,9 @@
     "middle_27dc1d5": {
         "message": "Médio"
     },
+    "misc_3b692ea7": {
+        "message": "Diversos"
+    },
     "miscellaneous_e9818229": {
         "message": "Diversos"
     },
@@ -830,6 +875,12 @@
     "modules_c4325335": {
         "message": "Módulos"
     },
+    "multi_color_image_63d7372f": {
+        "message": "Imagem Multi-Cor"
+    },
+    "must_be_at_least_percentage_22e373b6": {
+        "message": "Deve ser pelo menos { percentage }%"
+    },
     "must_be_at_least_width_x_height_px_41dc825e": {
         "message": "Deve ter pelo menos { width } x { height }px"
     },
@@ -838,9 +889,6 @@
     },
     "my_grades_98834476": {
         "message": "Minhas classificações"
-    },
-    "my_images_427f9b0c": {
-        "message": "Minhas Imagens"
     },
     "name_1aed4a1b": {
         "message": "Nome"
@@ -867,7 +915,7 @@
         "message": "Próxima página"
     },
     "no_due_dates_assigned_e8f5bac8": {
-        "message": "Nenhuma data de vencimento atribuída"
+        "message": "Nenhuma data limite atribuída"
     },
     "no_e16d9132": {
         "message": "Não"
@@ -892,6 +940,9 @@
     },
     "none_3b5e34d2": {
         "message": "Nenhum"
+    },
+    "none_selected_b93d56d2": {
+        "message": "Nenhuma Selecionada"
     },
     "nothing_due_this_week_d45c9ef9": {
         "message": "Nada de devido esta semana"
@@ -932,6 +983,9 @@
     "open_title_application_fd624fc5": {
         "message": "Abrir aplicação { title }"
     },
+    "operators_a2ef9a93": {
+        "message": "Operadores"
+    },
     "opportunities_popup_f6703842": {
         "message": "popup oportunidades"
     },
@@ -965,8 +1019,20 @@
     "peer_review_for_itemtitle_358cb413": {
         "message": "Revisão por pares para { itemTitle }"
     },
+    "pentagon_17d82ea3": {
+        "message": "Pentágono"
+    },
     "people_b4ebb13c": {
         "message": "Pessoas"
+    },
+    "percentage_34ab7c2c": {
+        "message": "Porcentagem"
+    },
+    "percentage_must_be_a_number_8033c341": {
+        "message": "A percentagem deve ser um número"
+    },
+    "pixels_52ece7d1": {
+        "message": "Pixels"
     },
     "points_bceb5005": {
         "message": "pontos"
@@ -1028,6 +1094,9 @@
     "redo_363c58b7": {
         "message": "Refazer"
     },
+    "relationships_6602af70": {
+        "message": "Relacionamentos"
+    },
     "reminder_date_4564d12d": {
         "message": "Lembrete: { date }"
     },
@@ -1076,6 +1145,9 @@
     "search_term_b2d2235": {
         "message": "Termo de pesquisa"
     },
+    "select_crop_shape_d441feeb": {
+        "message": "Seleccionar cortar forma"
+    },
     "select_language_7c93a900": {
         "message": "Selecione o idioma"
     },
@@ -1087,6 +1159,9 @@
     },
     "show_all_ae37d610": {
         "message": "Mostrar tudo"
+    },
+    "show_audio_options_b489926b": {
+        "message": "Mostrar opções de áudio"
     },
     "show_embed_options_ef8d7ef": {
         "message": "Mostrar opções de incorporação"
@@ -1103,11 +1178,14 @@
     "show_video_options_6ed3721a": {
         "message": "Mostrar opções de vídeo"
     },
+    "single_color_image_4e5d4dbc": {
+        "message": "Imagem a uma cor"
+    },
     "size_b30e1077": {
         "message": "Tamanho"
     },
-    "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-        "message": "O tamanho { file } de é maior que o tamanho máximo { max } de ficheiro permitido pelo MB."
+    "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+        "message": "O tamanho do ficheiro de legendagem é maior do que o tamanho máximo de ficheiro { max } kb permitido."
     },
     "small_b070434a": {
         "message": "Pequeno"

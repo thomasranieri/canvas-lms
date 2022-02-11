@@ -16,12 +16,12 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import moment from 'moment'
+import moment from 'moment-timezone'
 import timezone from 'timezone'
 import en_US from 'timezone/en_US'
 import parseDateTimeWithMoment, {
   specifiesTimezone,
-  toRFC3339WithoutTZ,
+  toRFC3339WithoutTZ
 } from 'datetime-moment-parser'
 
 const initialState = Object.freeze({
@@ -57,15 +57,13 @@ const initialState = Object.freeze({
   //     dateTime.format('2020-10-15', 'date.formats.full')
   //     // => "Oct 15, 2020 12:00am"
   //
-  // the format "time.formats.tiny" is used in a special way to tell whether
-  // the active locale uses AM/PM in time formatting -- hasMeridiem()
-  formats: {},
+  formats: {}
 })
 
-const state = Object.assign({}, initialState)
+const state = {...initialState}
 
-export function configure({ tz, tzData, momentLocale, formats }) {
-  const previousState = Object.assign({}, state)
+export function configure({tz, tzData, momentLocale, formats}) {
+  const previousState = {...state}
 
   state.tz = tz || initialState.tz
   state.tzData = tzData || initialState.tzData
@@ -75,8 +73,8 @@ export function configure({ tz, tzData, momentLocale, formats }) {
   return previousState
 }
 
-export function parse(value) {
-  const { tz, momentLocale } = state
+export function parse(value, parsingTimezone = '') {
+  const {tz, momentLocale} = state
 
   // hard code '' and null as unparseable
   if (value === '' || value === null || value === undefined) {
@@ -97,7 +95,7 @@ export function parse(value) {
   if (typeof value === 'string') {
     let m = parseDateTimeWithMoment(value, momentLocale)
 
-    if (m && !specifiesTimezone(m)) {
+    if (m && !specifiesTimezone(m) && m.tz() !== parsingTimezone) {
       const fudged = tz(toRFC3339WithoutTZ(m))
 
       m = moment(new Date(fudged))
@@ -117,7 +115,7 @@ export function parse(value) {
 export function format(value, format, zone) {
   // make sure we have a good value first
   const datetime = parse(value)
-  const { tz, tzData } = state
+  const {tz, tzData} = state
 
   if (datetime === null) {
     return null
@@ -126,9 +124,9 @@ export function format(value, format, zone) {
   const usingOtherZone = arguments.length === 3 && zone
 
   if (usingOtherZone && !(zone in state.tzData)) {
+    // eslint-disable-next-line no-console
     console.warn(
-      `You are asking to format DateTime into a timezone that ` +
-      `is not supported -- ${zone}`
+      `You are asking to format DateTime into a timezone that is not supported -- ${zone}`
     )
 
     return null
@@ -167,10 +165,7 @@ export function adjustFormat(format) {
   // promoted to the equivalent 24-hour indicator when the locale defines
   // %P as an empty string. ("reverse, look-ahead, reverse" pattern for
   // same reason as above)
-  format = format
-    .split('')
-    .reverse()
-    .join('')
+  format = format.split('').reverse().join('')
   if (
     !hasMeridiem() &&
     ((format.match(/[lI][-_]?%(%%)*(?!%)/) && format.match(/p%(%%)*(?!%)/i)) ||
@@ -180,27 +175,18 @@ export function adjustFormat(format) {
     format = format.replace(/I(?=[-_]?%(%%)*(?!%))/, 'H')
     format = format.replace(/r(?=[-_]?%(%%)*(?!%))/, 'T')
   }
-  format = format
-    .split('')
-    .reverse()
-    .join('')
+  format = format.split('').reverse().join('')
 
   return format
 }
 
-// TODO: this can be replaced with a browser native version:
-//
-//     (new Date()).toLocaleTimeString(locale, { hour12: true }) ===
-//     (new Date()).toLocaleTimeString(locale)
-//
 export function hasMeridiem() {
-  return state.tz(new Date(), '%P') !== ''
-}
-
-export function useMeridiem() {
-  if (!hasMeridiem()) return false
-  const tiny = state.formats['time.formats.tiny']
-  return tiny && tiny.match(/%-?l/)
+  const env = window.ENV
+  const formatter = new Intl.DateTimeFormat((env && env.LOCALE) || navigator.language, {
+    timeStyle: 'short'
+  })
+  const exemplar = formatter.formatToParts(new Date())
+  return typeof exemplar.find(part => part.type === 'dayPeriod') !== 'undefined'
 }
 
 // apply any number of non-format directives to the value (parsing it if
@@ -209,7 +195,7 @@ export function useMeridiem() {
 // otherwise. typical directives will be for date math, e.g. '-3 days'.
 // non-format unrecognized directives are ignored.
 export function shift(value) {
-  const { tz } = state
+  const {tz} = state
 
   // make sure we have a good value first
   const datetime = parse(value)

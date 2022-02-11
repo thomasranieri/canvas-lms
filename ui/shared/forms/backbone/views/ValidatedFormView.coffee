@@ -25,6 +25,7 @@ import '@canvas/jquery/jquery.disableWhileLoading'
 import '../../jquery/jquery.instructure_forms'
 import {send} from '@canvas/rce/RceCommandShim'
 import {shimGetterShorthand} from '@canvas/util/legacyCoffeesScriptHelpers'
+import sanitizeData from '../../sanitizeData'
 
 ##
 # Sets model data from a form, saves it, and displays errors returned in a
@@ -81,8 +82,7 @@ export default class ValidatedFormView extends Backbone.View
 
     okayToContinue = true
     if rceInputs.length > 0
-      if window.ENV.use_rce_enhancements
-        okayToContinue = rceInputs.map((rce) => sendFunc($(rce), 'checkReadyToGetCode', window.confirm)).every((value) => value)
+      okayToContinue = rceInputs.map((rce) => sendFunc($(rce), 'checkReadyToGetCode', window.confirm)).every((value) => value)
 
     if !okayToContinue
       return
@@ -133,7 +133,7 @@ export default class ValidatedFormView extends Backbone.View
   # Converts the form to an object. Override this if the form's input names
   # don't match the model/API fields
   getFormData: ->
-    @$el.toJSON()
+    sanitizeData(@$el.toJSON())
 
   ##
   # Saves data from the form using the model.

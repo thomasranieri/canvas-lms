@@ -92,11 +92,17 @@
     "apply_781a2546": {
         "message": "ปรับใช้"
     },
+    "apply_changes_to_all_instances_of_this_button_and__3a3bea34": {
+        "message": "ปรับใช้การเปลี่ยนแปลงกับส่วนรายการทั้งหมดปุ่มและไอคอนนี้ในบทเรียนนี้"
+    },
     "apps_54d24a47": {
         "message": "แอพ"
     },
     "are_you_sure_you_want_to_delete_this_planner_item_b71e330c": {
         "message": "แน่ใจว่าต้องการลบรายการที่วางแผนนี้ไว้หรือไม่"
+    },
+    "arrows_464a3e54": {
+        "message": "ลูกศร"
     },
     "aspect_ratio_will_be_preserved_cb5fdfb8": {
         "message": "สัดส่วนจะถูกรักษาไว้ตามเดิม"
@@ -143,17 +149,23 @@
     "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
         "message": "ไม่รองรับบันทึกเสียงและภาพ กรุณาใช้เบราเซอร์อื่น"
     },
+    "audio_options_feb58e2c": {
+        "message": "ตัวเลือกเสียง"
+    },
+    "audio_options_tray_33a90711": {
+        "message": "ถาดตัวเลือกเสียง"
+    },
     "audio_player_for_title_20cc70d": {
         "message": "เครื่องเล่นเสียงสำหรับ { title }"
     },
     "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
         "message": "มีเนื้อหาบันทึกอัตโนมัติ ต้องการโหลดเนื้อหาบันทึกอัตโนมัติแทนหรือไม่"
     },
-    "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-        "message": "เปิดอัตโนมัติในการแสดงตัวอย่างแบบ in-line (แสดงตัวอย่างหลังจากบันทึกแล้วเท่านั้น)"
-    },
     "available_folders_694d0436": {
         "message": "โฟลเดอร์ที่ใช้ได้"
+    },
+    "basic_554cdc0a": {
+        "message": "พื้นฐาน"
     },
     "beginning_of_your_to_do_history_61ef2dce": {
         "message": "จุดเริ่มต้นประวัติสิ่งที่ต้องทำของคุณ"
@@ -245,6 +257,9 @@
     "close_opportunity_center_popup_9907d981": {
         "message": "ปอดป๊อปอัพศูนย์โอกาส"
     },
+    "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+        "message": "ไฟล์คำบรรยายแบบปิดได้จะต้องมีขนาดน้อยกว่า { maxKb } kb"
+    },
     "closed_captions_subtitles_e6aaa016": {
         "message": "คำบรรยายแบบซ่อนได้"
     },
@@ -326,6 +341,12 @@
     "creative_commons_license_725584ae": {
         "message": "สิทธิ์ใช้งาน Creative Commons:"
     },
+    "crop_image_807ebb08": {
+        "message": "ครอปภาพ"
+    },
+    "current_image_f16c249c": {
+        "message": "ภาพปัจจุบัน"
+    },
     "custom_6979cd81": {
         "message": "กำหนดเอง"
     },
@@ -362,6 +383,9 @@
     "delete_a6efa79d": {
         "message": "ลบ"
     },
+    "delimiters_4db4840d": {
+        "message": "ตัวคั่น"
+    },
     "describe_the_image_e65d2e32": {
         "message": "(ระบุรายละเอียดภาพ)"
     },
@@ -374,14 +398,20 @@
     "details_a6f427c3": {
         "message": "รายละเอียด:"
     },
+    "diamond_b8dfe7ae": {
+        "message": "เพชร"
+    },
+    "dimension_type_55c83e4e": {
+        "message": "ประเภทขนาด"
+    },
     "dimensions_45ddb7b7": {
         "message": "ขนาด"
     },
     "directionality_26ae9e08": {
         "message": "ทิศทาง"
     },
-    "disable_in_line_preview_2a675175": {
-        "message": "ปิดในส่วนแสดงตัวอย่างแบบ In-Line"
+    "directly_edit_latex_b7e9235b": {
+        "message": "แก้ไข LaTeX โดยตรง"
     },
     "discussion_6719c51d": {
         "message": "การพูดคุย"
@@ -485,6 +515,9 @@
     "equation_1c5ac93c": {
         "message": "สมการ"
     },
+    "equation_editor_39fbc3f1": {
+        "message": "ตัวแก้ไขสมการ"
+    },
     "error_loading_grades_e0b38f4d": {
         "message": "มีข้อผิดพลาดในการโหลดเกรด"
     },
@@ -547,6 +580,9 @@
     },
     "feedback_6dcc1991": {
         "message": "ผลตอบรับ"
+    },
+    "file_name_8fd421ff": {
+        "message": "ชื่อไฟล์"
     },
     "file_url_c12b64be": {
         "message": "URL ไฟล์"
@@ -613,6 +649,9 @@
     },
     "grades_loaded_5056277c": {
         "message": "โหลดเกรดแล้ว"
+    },
+    "greek_65c5b3f7": {
+        "message": "กรีก"
     },
     "group_documents_8bfd6ae6": {
         "message": "เอกสารของกลุ่ม"
@@ -797,6 +836,9 @@
     "loading_please_wait_d276220a": {
         "message": "กำลังโหลด กรุณารอสักครู่"
     },
+    "loading_preview_9f077aa1": {
+        "message": "กำลังโหลดตัวอย่าง"
+    },
     "location_3b6ff307": {
         "message": "สถานที่:"
     },
@@ -818,6 +860,9 @@
     "middle_27dc1d5": {
         "message": "ตรงกลาง"
     },
+    "misc_3b692ea7": {
+        "message": "เบ็ดเตล็ด"
+    },
     "miscellaneous_e9818229": {
         "message": "เบ็ดเตล็ด"
     },
@@ -830,6 +875,12 @@
     "modules_c4325335": {
         "message": "หน่วยการเรียน"
     },
+    "multi_color_image_63d7372f": {
+        "message": "ภาพหลายสี"
+    },
+    "must_be_at_least_percentage_22e373b6": {
+        "message": "จะต้องเท่ากับอย่างน้อย { percentage }%"
+    },
     "must_be_at_least_width_x_height_px_41dc825e": {
         "message": "จะต้องเท่ากับอย่างน้อย { width } x { height }px"
     },
@@ -838,9 +889,6 @@
     },
     "my_grades_98834476": {
         "message": "เกรดของฉัน"
-    },
-    "my_images_427f9b0c": {
-        "message": "ภาพของฉัน"
     },
     "name_1aed4a1b": {
         "message": "ชื่อ"
@@ -893,6 +941,9 @@
     "none_3b5e34d2": {
         "message": "ไม่มี"
     },
+    "none_selected_b93d56d2": {
+        "message": "ไม่ได้เลือกรายการใด"
+    },
     "nothing_due_this_week_d45c9ef9": {
         "message": "ไม่มีงานสำหรับสัปดาห์นี้"
     },
@@ -932,6 +983,9 @@
     "open_title_application_fd624fc5": {
         "message": "เปิดแอพพลิเคชั่น { title }"
     },
+    "operators_a2ef9a93": {
+        "message": "ผู้ดำเนินการ"
+    },
     "opportunities_popup_f6703842": {
         "message": "ป๊อปอัพโอกาส"
     },
@@ -965,8 +1019,20 @@
     "peer_review_for_itemtitle_358cb413": {
         "message": "ความคิดเห็นจากผู้เกี่ยวข้องสำหรับ { itemTitle }"
     },
+    "pentagon_17d82ea3": {
+        "message": "ห้าเหลี่ยม"
+    },
     "people_b4ebb13c": {
         "message": "บุคคล"
+    },
+    "percentage_34ab7c2c": {
+        "message": "เปอร์เซ็นต์"
+    },
+    "percentage_must_be_a_number_8033c341": {
+        "message": "เปอร์เซ็นต์จะต้องเป็นตัวเลข"
+    },
+    "pixels_52ece7d1": {
+        "message": "พิกเซล"
     },
     "points_bceb5005": {
         "message": "คะแนน"
@@ -1028,6 +1094,9 @@
     "redo_363c58b7": {
         "message": "ทำซ้ำ"
     },
+    "relationships_6602af70": {
+        "message": "ความสัมพันธ์"
+    },
     "reminder_date_4564d12d": {
         "message": "แจ้งเตือน: { date }"
     },
@@ -1076,6 +1145,9 @@
     "search_term_b2d2235": {
         "message": "คำค้นหา"
     },
+    "select_crop_shape_d441feeb": {
+        "message": "เลือกรูปทรงการครอป"
+    },
     "select_language_7c93a900": {
         "message": "เลือกภาษา"
     },
@@ -1087,6 +1159,9 @@
     },
     "show_all_ae37d610": {
         "message": "แสดงทั้งหมด"
+    },
+    "show_audio_options_b489926b": {
+        "message": "แสดงตัวเลือกเสียง"
     },
     "show_embed_options_ef8d7ef": {
         "message": "แสดงตัวเลือกในการผนวก"
@@ -1103,11 +1178,14 @@
     "show_video_options_6ed3721a": {
         "message": "แสดงตัวเลือกสำหรับวิดีโอ"
     },
+    "single_color_image_4e5d4dbc": {
+        "message": "ภาพสีเดียว"
+    },
     "size_b30e1077": {
         "message": "ขนาด"
     },
-    "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-        "message": "ขนาด { file } มากกว่าขนาดไฟล์สูงสุดที่ { max } MB"
+    "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+        "message": "ขนาดของไฟล์คำบรรยายจะต้องมากกว่าขนาดสูงสุดที่อนุญาตที่ { max } kb"
     },
     "small_b070434a": {
         "message": "เล็ก"

@@ -17,7 +17,12 @@
  */
 
 import createPermissionsIndex from './react/index'
-import {COURSE, ACCOUNT, ALL_ROLES_VALUE, ALL_ROLES_LABEL} from '@canvas/permissions/react/propTypes'
+import {
+  COURSE,
+  ACCOUNT,
+  ALL_ROLES_VALUE,
+  ALL_ROLES_LABEL
+} from '@canvas/permissions/react/propTypes'
 import {getSortedRoles, groupGranularPermissionsInRole} from '@canvas/permissions/util'
 import ready from '@instructure/ready'
 
@@ -56,7 +61,7 @@ ready(() => {
       })
     })
 
-    return permissionsList.sort(function(a, b) {
+    return permissionsList.sort(function (a, b) {
       if (a.label > b.label) return 1
       if (a.label < b.label) return -1
       return 0
@@ -75,7 +80,7 @@ ready(() => {
 
   // Don't display the alert permission if the alert feature isn't enabled
   const permissions = flattenPermissions(ENV.COURSE_PERMISSIONS)
-  if (!ENV.CURRENT_ACCOUNT.account.settings.enable_alerts) {
+  if (!ENV.ACCOUNT_ENABLE_ALERTS) {
     permissions.splice(permissions.findIndex(isAlert), 1)
   }
 

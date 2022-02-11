@@ -18,11 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe CourseAccountAssociation do
-  context 'create' do
-    it 'sets root account id from account' do
+  context "create" do
+    it "sets root account id from account" do
       course_factory
       association = @course.course_account_associations.first
       expect(association.root_account_id).to eq @course.root_account_id

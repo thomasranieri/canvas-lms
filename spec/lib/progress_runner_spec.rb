@@ -18,20 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe ProgressRunner do
   before do
     @progress = double("progress").as_null_object
   end
 
-  module ProgressMessages
-    def message=(m)
-      @message = m
-    end
-
-    def message
-      @message
+  let(:progress_messages) do
+    Module.new do
+      attr_accessor :message
     end
   end
 
@@ -46,10 +40,16 @@ describe ProgressRunner do
     progress_runner = ProgressRunner.new(@progress)
 
     completed_message_value = nil
-    progress_runner.completed_message { |completed| completed_message_value = completed; "foo" }
+    progress_runner.completed_message do |completed|
+      completed_message_value = completed
+      "foo"
+    end
 
     error_callback_called = false
-    progress_runner.error_message { |message, error_ids| error_callback_called = true; "bar" }
+    progress_runner.error_message do
+      error_callback_called = true
+      "bar"
+    end
 
     process_callback_count = 0
     ids = (0..9).to_a
@@ -64,7 +64,7 @@ describe ProgressRunner do
   end
 
   it "rescues exceptions and record messages as errors" do
-    @progress.extend(ProgressMessages)
+    @progress.extend(progress_messages)
     expect(@progress).to receive(:complete!).once
     expect(@progress).to receive(:completion=).with(100.0)
     expect(@progress).to receive(:save).once
@@ -79,7 +79,7 @@ describe ProgressRunner do
     error_callback_count = 0
     progress_runner.error_message do |error, ids|
       error_callback_count += 1
-      "#{error}: #{ids.join(', ')}"
+      "#{error}: #{ids.join(", ")}"
     end
 
     ids = (1..3).to_a
@@ -94,7 +94,7 @@ describe ProgressRunner do
   end
 
   it "has default completion and error messages" do
-    @progress.extend(ProgressMessages)
+    @progress.extend(progress_messages)
 
     progress_runner = ProgressRunner.new(@progress)
     ids = (1..4).to_a
@@ -108,14 +108,14 @@ describe ProgressRunner do
   # it "should complete progress if only some records fail"
 
   it "fails progress if all records fail" do
-    @progress.extend(ProgressMessages)
+    @progress.extend(progress_messages)
     expect(@progress).to receive(:completion=).with(100.0)
     expect(@progress).to receive(:fail!).once
     expect(@progress).to receive(:save).once
 
     progress_runner = ProgressRunner.new(@progress)
     ids = (1..4).to_a
-    progress_runner.do_batch_update(ids) do |id|
+    progress_runner.do_batch_update(ids) do
       raise "processing error"
     end
 
@@ -128,6 +128,6 @@ describe ProgressRunner do
     expect(@progress).to receive(:calculate_completion!).exactly(times_update).times
 
     progress_runner = ProgressRunner.new(@progress)
-    progress_runner.do_batch_update(ids) {}
+    progress_runner.do_batch_update(ids) { nil }
   end
 end

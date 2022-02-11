@@ -16,11 +16,6 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-// this is because we have a ton of places where people spy/stub es modules
-// using sinon and that is not allowed for "real" es modules. you can ony do it
-// with babel transpiled stuff
-process.env.USE_ES_MODULES = false
-
 const karmaConfig = {
   basePath: '',
 
@@ -64,7 +59,7 @@ const karmaConfig = {
   // - Safari (only Mac; has to be installed with `npm install karma-safari-launcher`)
   // - PhantomJS (has to be installed with `npm install karma-phantomjs-launcher`))
   // - IE (only Windows; has to be installed with `npm install karma-ie-launcher`)
-  browsers: ['ChromeWithoutBackground'],
+  browsers: ['ChromeHeadlessNoSandbox'], // docker friendly
 
   customLaunchers: {
     // Chrome will sometimes be in the background when specs are running,
@@ -111,7 +106,7 @@ const karmaConfig = {
     'spec/javascripts/webpack_spec_index.js': ['webpack']
   },
 
-  webpack: require('./webpack.test.config')
+  webpack: require('./ui-build/webpack-for-karma')
 }
 
 // For faster local debugging in karma, only add istanbul cruft you've explicity set the "COVERAGE" environment variable
@@ -129,11 +124,12 @@ if (process.env.COVERAGE === '1') {
       options: {esModules: true, produceSourceMap: true}
     },
     enforce: 'post',
-    exclude: /(node_modules|spec|public\/javascripts\/(bower|canvas_quizzes|translations|vendor|custom_moment_locales|custom_timezone_locales))/
+    exclude:
+      /(node_modules|spec|public\/javascripts\/(bower|canvas_quizzes|translations|vendor|custom_moment_locales|custom_timezone_locales))/
   })
 }
 
-module.exports = function(config) {
+module.exports = function (config) {
   // config.LOG_DISABLE || config.LOG_ERROR || config.LOG_WARN || config.LOG_INFO || config.LOG_DEBUG
   karmaConfig.logLevel = config.LOG_INFO
   config.set(karmaConfig)

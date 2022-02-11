@@ -31,6 +31,16 @@ describe('MessageListActionContainer', () => {
     // eslint-disable-next-line no-undef
     fetchMock.dontMock()
     server.listen()
+
+    window.matchMedia = jest.fn().mockImplementation(() => {
+      return {
+        matches: true,
+        media: '',
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn()
+      }
+    })
   })
 
   afterEach(() => {
@@ -54,9 +64,12 @@ describe('MessageListActionContainer', () => {
       <ApolloProvider client={mswClient}>
         <AlertManagerContext.Provider value={{setOnFailure: jest.fn(), setOnSuccess: jest.fn()}}>
           <MessageListActionContainer
+            activeMailbox="inbox"
             onCompose={jest.fn()}
             onReply={jest.fn()}
             onReplyAll={jest.fn()}
+            onForward={jest.fn()}
+            onSelectMailbox={jest.fn()}
             {...overrideProps}
           />
         </AlertManagerContext.Provider>
@@ -68,6 +81,13 @@ describe('MessageListActionContainer', () => {
     it('should render', () => {
       const component = setup()
       expect(component.container).toBeTruthy()
+    })
+
+    it('should render All Courses option', async () => {
+      const {findByTestId, queryByText} = setup()
+      const courseDropdown = await findByTestId('course-select')
+      fireEvent.click(courseDropdown)
+      expect(await queryByText('All Courses')).toBeInTheDocument()
     })
 
     it('should call onCourseFilterSelect when course selected', async () => {
@@ -130,6 +150,30 @@ describe('MessageListActionContainer', () => {
     })
   })
 
+  describe('reply buttons', () => {
+    it('should disable replying when no conversations are selected', async () => {
+      const component = setup({
+        selectedConversations: []
+      })
+
+      const replyButton = await component.findByTestId('reply')
+      const replyAllButton = await component.findByTestId('reply-all')
+      expect(replyButton).toBeDisabled()
+      expect(replyAllButton).toBeDisabled()
+    })
+
+    it('should enable replying when conversations are selected', async () => {
+      const component = setup({
+        selectedConversations: [{}]
+      })
+
+      const replyButton = await component.findByTestId('reply')
+      const replyAllButton = await component.findByTestId('reply-all')
+      expect(replyButton).not.toBeDisabled()
+      expect(replyAllButton).not.toBeDisabled()
+    })
+  })
+
   it('should have buttons disabled when their disabled states are true', async () => {
     const component = setup({
       deleteDisabled: true,
@@ -187,15 +231,16 @@ describe('MessageListActionContainer', () => {
     expect(window.confirm).toHaveBeenCalled()
   })
 
-  it('should trigger confirm when deleting', async () => {
-    window.confirm = jest.fn(() => true)
+  it.skip('should trigger delete function', async () => {
+    const deleteMock = jest.fn()
     const component = setup({
       deleteDisabled: false,
-      selectedConversations: [{test1: 'test1'}, {test2: 'test2'}]
+      selectedConversations: [{test1: 'test1'}, {test2: 'test2'}],
+      onDelete: deleteMock
     })
 
     const deleteBtn = await component.findByTestId('delete')
     fireEvent.click(deleteBtn)
-    expect(window.confirm).toHaveBeenCalled()
+    expect(deleteMock).toHaveBeenCalled()
   })
 })

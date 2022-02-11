@@ -18,16 +18,16 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require_relative '../../spec_helper.rb'
+require_relative "../../spec_helper"
 
-describe 'Gradebook Export User-level Feature Flags' do
-  describe 'use_semi_colon_field_separators_in_gradebook_exports' do
-    before :each do
+describe "Gradebook Export User-level Feature Flags" do
+  describe "use_semi_colon_field_separators_in_gradebook_exports" do
+    before do
       teacher_in_course
     end
 
-    context 'when the autodetect_field_separators_for_gradebook_exports feature is disabled' do
-      before :each do
+    context "when the autodetect_field_separators_for_gradebook_exports feature is disabled" do
+      before do
         @teacher.disable_feature!(:autodetect_field_separators_for_gradebook_exports)
         @feature = @teacher.lookup_feature_flag(:use_semi_colon_field_separators_in_gradebook_exports)
         @transitions = Feature.transitions(
@@ -36,17 +36,17 @@ describe 'Gradebook Export User-level Feature Flags' do
         )
       end
 
-      it 'can be enabled' do
-        expect(@transitions['on']['locked']).to be_falsey
+      it "can be enabled" do
+        expect(@transitions["on"]["locked"]).to be_falsey
       end
 
-      it 'can be disabled' do
-        expect(@transitions['off']['locked']).to be_falsey
+      it "can be disabled" do
+        expect(@transitions["off"]["locked"]).to be_falsey
       end
     end
 
-    context 'when the autodetect_field_separators_for_gradebook_exports feature is enabled' do
-      before :each do
+    context "when the autodetect_field_separators_for_gradebook_exports feature is enabled" do
+      before do
         @teacher.enable_feature!(:autodetect_field_separators_for_gradebook_exports)
         @feature = @teacher.lookup_feature_flag(:use_semi_colon_field_separators_in_gradebook_exports)
         @transitions = Feature.transitions(
@@ -55,27 +55,27 @@ describe 'Gradebook Export User-level Feature Flags' do
         )
       end
 
-      it 'is locked in the disabled state' do
+      it "is locked in the disabled state" do
         expect(@teacher.feature_enabled?(:use_semi_colon_field_separators_in_gradebook_exports)).to be_falsey
       end
 
-      it 'cannot be enabled' do
-        expect(@transitions['on']['locked']).to be_truthy
+      it "cannot be enabled" do
+        expect(@transitions["on"]["locked"]).to be_truthy
       end
 
-      it 'can be disabled' do
-        expect(@transitions['off']['locked']).to be_falsey
+      it "can be disabled" do
+        expect(@transitions["off"]["locked"]).to be_falsey
       end
     end
   end
 
-  describe 'autodetect_field_separators_for_gradebook_exports' do
-    before :each do
+  describe "autodetect_field_separators_for_gradebook_exports" do
+    before do
       teacher_in_course
     end
 
-    context 'when the use_semi_colon_field_separators_in_gradebook_exports feature is disabled' do
-      before :each do
+    context "when the use_semi_colon_field_separators_in_gradebook_exports feature is disabled" do
+      before do
         @teacher.disable_feature!(:use_semi_colon_field_separators_in_gradebook_exports)
         @feature = @teacher.lookup_feature_flag(:autodetect_field_separators_for_gradebook_exports)
         @transitions = Feature.transitions(
@@ -84,17 +84,17 @@ describe 'Gradebook Export User-level Feature Flags' do
         )
       end
 
-      it 'can be enabled' do
-        expect(@transitions['on']['locked']).to be_falsey
+      it "can be enabled" do
+        expect(@transitions["on"]["locked"]).to be_falsey
       end
 
-      it 'can be disabled' do
-        expect(@transitions['off']['locked']).to be_falsey
+      it "can be disabled" do
+        expect(@transitions["off"]["locked"]).to be_falsey
       end
     end
 
-    context 'when the use_semi_colon_field_separators_in_gradebook_exports feature is enabled' do
-      before :each do
+    context "when the use_semi_colon_field_separators_in_gradebook_exports feature is enabled" do
+      before do
         @teacher.enable_feature!(:use_semi_colon_field_separators_in_gradebook_exports)
         @feature = @teacher.lookup_feature_flag(:autodetect_field_separators_for_gradebook_exports)
         @transitions = Feature.transitions(
@@ -103,16 +103,16 @@ describe 'Gradebook Export User-level Feature Flags' do
         )
       end
 
-      it 'is locked in the disabled state' do
+      it "is locked in the disabled state" do
         expect(@teacher.feature_enabled?(:autodetect_field_separators_for_gradebook_exports)).to be_falsey
       end
 
-      it 'cannot be enabled' do
-        expect(@transitions['on']['locked']).to be_truthy
+      it "cannot be enabled" do
+        expect(@transitions["on"]["locked"]).to be_truthy
       end
 
-      it 'can be disabled' do
-        expect(@transitions['off']['locked']).to be_falsey
+      it "can be disabled" do
+        expect(@transitions["off"]["locked"]).to be_falsey
       end
     end
   end

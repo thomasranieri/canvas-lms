@@ -25,6 +25,7 @@ class Attachments::Storage
         file_name: attachment.display_name
       )
       attachment.instfs_uuid = instfs_uuid
+      attachment.md5 = Digest::SHA2.new(512).file(data) if digest_file? data
 
       # populate attachment fields if they were not already set
       attachment.size ||= data.size
@@ -36,27 +37,33 @@ class Attachments::Storage
     data
   end
 
+  def self.digest_file?(data)
+    File.file? data
+  rescue TypeError
+    false
+  end
+
   def self.detect_filename(data)
     if data.respond_to?(:original_filename)
       data.original_filename
     elsif data.respond_to?(:filename)
       data.filename
-    elsif data.class == File
+    elsif data.instance_of?(File)
       File.basename(data)
     end
   end
 
   def self.detect_mimetype(data)
-    if data && data.respond_to?(:content_type) && (data.content_type.blank? || data.content_type.strip == "application/octet-stream")
+    if data.respond_to?(:content_type) && (data.content_type.blank? || data.content_type.strip == "application/octet-stream")
       res = nil
       res ||= File.mime_type?(data.original_filename) if data.respond_to?(:original_filename)
       res ||= File.mime_type?(data)
       res ||= "text/plain" unless data.respond_to?(:path)
-      res || 'unknown/unknown'
+      res || "unknown/unknown"
     elsif data.respond_to?(:content_type)
       data.content_type
     else
-      'unknown/unknown'
+      "unknown/unknown"
     end
   end
 end

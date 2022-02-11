@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::TermType do
@@ -38,11 +37,11 @@ describe Types::TermType do
     expect(@term_type.resolve("_id", current_user: @student)).to be_nil
   end
 
-  it 'has coursesConnection' do
+  it "has coursesConnection" do
     expect(@term_type.resolve("coursesConnection { nodes { _id } }", current_user: @admin)).to eq [@course.id.to_s]
   end
 
-  it 'requires admin privilege' do
+  it "requires admin privilege" do
     expect(@term_type.resolve("coursesConnection { nodes { _id } }", current_user: @student)).to be_nil
   end
 

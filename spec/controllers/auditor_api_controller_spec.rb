@@ -18,38 +18,32 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-
 describe AuditorApiController do
-  class AuditsController < AuditorApiController
-    def check_configured
-      super
-    end
-
-    def query_options
-      super
+  let(:audits_controller_class) do
+    Class.new(AuditorApiController) do
+      public :check_configured, :query_options
     end
   end
 
-  let(:audits_controller) { AuditsController.new }
+  let(:audits_controller) { audits_controller_class.new }
 
-  context 'check_configured' do
-    it 'returns not_found if database is not configured' do
+  context "check_configured" do
+    it "returns not_found if database is not configured" do
       allow(CanvasCassandra::DatabaseBuilder).to receive(:configured?).and_return(false)
       expect(audits_controller).to receive(:render).with(hash_including(status: :not_found))
       audits_controller.check_configured
     end
 
-    it 'does not block when database is configured' do
+    it "does not block when database is configured" do
       allow(CanvasCassandra::DatabaseBuilder).to receive(:configured?).and_return(true)
       expect(audits_controller.check_configured).to be_nil
     end
   end
 
-  context 'query_options' do
-    it 'returns hash of audit api parameters' do
-      start_time = 5.hours.ago.change(:usec => 0)
-      end_time = start_time + 2.hour
+  context "query_options" do
+    it "returns hash of audit api parameters" do
+      start_time = 5.hours.ago.change(usec: 0)
+      end_time = start_time + 2.hours
 
       # No params
       allow(audits_controller).to receive(:params).and_return({})

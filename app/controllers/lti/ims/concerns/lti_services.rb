@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-module Lti::Ims::Concerns
+module Lti::IMS::Concerns
   module LtiServices
     extend ActiveSupport::Concern
 
-    UNIVERSAL_GRANT_HOST = Canvas::Security.config['lti_grant_host'] ||
-                           'canvas.instructure.com'.freeze
+    UNIVERSAL_GRANT_HOST = Canvas::Security.config["lti_grant_host"] ||
+                           "canvas.instructure.com"
 
     class AccessToken
       def initialize(raw_jwt_str)
@@ -35,22 +35,22 @@ module Lti::Ims::Concerns
       rescue Canvas::Security::InvalidToken => e
         case e.cause
         when JSON::JWT::InvalidFormat
-          raise Lti::Ims::AdvantageErrors::MalformedAccessToken, e
+          raise Lti::IMS::AdvantageErrors::MalformedAccessToken, e
         when JSON::JWS::UnexpectedAlgorithm
-          raise Lti::Ims::AdvantageErrors::InvalidAccessTokenSignatureType, e
+          raise Lti::IMS::AdvantageErrors::InvalidAccessTokenSignatureType, e
         when JSON::JWS::VerificationFailed
-          raise Lti::Ims::AdvantageErrors::InvalidAccessTokenSignature, e
+          raise Lti::IMS::AdvantageErrors::InvalidAccessTokenSignature, e
         else
-          raise Lti::Ims::AdvantageErrors::InvalidAccessToken.new(e, api_message: 'Access token invalid - signature likely incorrect')
+          raise Lti::IMS::AdvantageErrors::InvalidAccessToken.new(e, api_message: "Access token invalid - signature likely incorrect")
         end
       rescue JSON::JWT::Exception => e
-        raise Lti::Ims::AdvantageErrors::InvalidAccessToken, e
+        raise Lti::IMS::AdvantageErrors::InvalidAccessToken, e
       rescue Canvas::Security::TokenExpired => e
-        raise Lti::Ims::AdvantageErrors::InvalidAccessTokenClaims.new(e, api_message: 'Access token expired')
-      rescue Lti::Ims::AdvantageErrors::AdvantageServiceError
+        raise Lti::IMS::AdvantageErrors::InvalidAccessTokenClaims.new(e, api_message: "Access token expired")
+      rescue Lti::IMS::AdvantageErrors::AdvantageServiceError
         raise
       rescue => e
-        raise Lti::Ims::AdvantageErrors::AdvantageServiceError, e
+        raise Lti::IMS::AdvantageErrors::AdvantageServiceError, e
       end
 
       def validate_claims!(expected_audience)
@@ -59,13 +59,13 @@ module Lti::Ims::Concerns
           expected_aud: expected_audience,
           require_iss: true,
           skip_jti_check: true,
-          max_iat_age: Setting.get('oauth2_jwt_iat_ago_in_seconds', 60.minutes.to_s).to_i.seconds
+          max_iat_age: Setting.get("oauth2_jwt_iat_ago_in_seconds", 60.minutes.to_s).to_i.seconds
         )
 
         # In this case we know the error message can just be safely shunted into the API response (in other cases
         # we're more wary about leaking impl details)
         unless validator.valid?
-          raise Lti::Ims::AdvantageErrors::InvalidAccessTokenClaims.new(
+          raise Lti::IMS::AdvantageErrors::InvalidAccessTokenClaims.new(
             nil,
             api_message: "Invalid access token field/s: #{validator.error_message}"
           )
@@ -100,7 +100,6 @@ module Lti::Ims::Concerns
       end
     end
 
-    # rubocop:disable Metrics/BlockLength
     included do
       skip_before_action :load_user
 
@@ -116,7 +115,7 @@ module Lti::Ims::Concerns
         else
           begin
             access_token.validate!(expected_access_token_audience)
-          rescue Lti::Ims::AdvantageErrors::AdvantageClientError => e # otherwise it's a system error, so we want normal error trapping and rendering to kick in
+          rescue Lti::IMS::AdvantageErrors::AdvantageClientError => e # otherwise it's a system error, so we want normal error trapping and rendering to kick in
             handled_error(e)
             render_error(e.api_message, e.status_code)
           end
@@ -147,7 +146,7 @@ module Lti::Ims::Concerns
       end
 
       def access_token_scopes
-        @_access_token_scopes ||= (access_token&.claim('scopes')&.split(' ').presence || [])
+        @_access_token_scopes ||= (access_token&.claim("scopes")&.split(" ").presence || [])
       end
 
       def tool_permissions_granted?
@@ -155,12 +154,12 @@ module Lti::Ims::Concerns
       end
 
       def scopes_matcher
-        raise 'Abstract method'
+        raise "Abstract method"
       end
 
       def developer_key
         @_developer_key ||= access_token && begin
-          DeveloperKey.find_cached(access_token.claim('sub'))
+          DeveloperKey.find_cached(access_token.claim("sub"))
         rescue ActiveRecord::RecordNotFound
           nil
         end
@@ -186,6 +185,5 @@ module Lti::Ims::Concerns
         end
       end
     end
-    # rubocop:enable Metrics/BlockLength
   end
 end

@@ -56,7 +56,7 @@ describe GradebookUserIds do
       account: @student2.account,
       sis_user_id: "Ernie_sis",
       integration_id: "Ernie_int",
-      unique_id: "Ernie",
+      unique_id: "Ernie"
     )
 
     @student3 = student_in_course(
@@ -112,7 +112,7 @@ describe GradebookUserIds do
       unique_id: "Concluded_Student"
     )
 
-    @fake_student_enrollment = course_with_user('StudentViewEnrollment', course: @course, active_all: true)
+    @fake_student_enrollment = course_with_user("StudentViewEnrollment", course: @course, active_all: true)
     @fake_student = @fake_student_enrollment.user
     @fake_student.update!(sortable_name: "Baker")
   end
@@ -135,7 +135,7 @@ describe GradebookUserIds do
   context "with viewing user's privileges limited" do
     let!(:viewable_section) { @course.course_sections.create! }
 
-    before(:each) do
+    before do
       teacher_in_section(
         viewable_section,
         # we omit allow_multiple_enrollments here to clear this user's existing enrollments
@@ -239,7 +239,7 @@ describe GradebookUserIds do
     end
   end
 
-  context 'given pg_collkey extension is present' do
+  context "given pg_collkey extension is present" do
     before do
       skip_unless_pg_collkey_present
     end
@@ -296,7 +296,7 @@ describe GradebookUserIds do
         @teacher.preferences[:gradebook_settings][@course.id][:sort_rows_by_setting_key] = "sortable_name"
       end
 
-      context 'with pg_collkey installed' do
+      context "with pg_collkey installed" do
         before do
           skip_unless_pg_collkey_present
         end
@@ -333,7 +333,7 @@ describe GradebookUserIds do
         @teacher.preferences[:gradebook_settings][@course.id][:sort_rows_by_setting_key] = "login_id"
       end
 
-      context 'with pg_collkey installed' do
+      context "with pg_collkey installed" do
         before do
           skip_unless_pg_collkey_present
         end
@@ -363,7 +363,7 @@ describe GradebookUserIds do
         @teacher.preferences[:gradebook_settings][@course.id][:sort_rows_by_setting_key] = "sis_user_id"
       end
 
-      context 'with pg_collkey installed' do
+      context "with pg_collkey installed" do
         before do
           skip_unless_pg_collkey_present
         end
@@ -393,7 +393,7 @@ describe GradebookUserIds do
         @teacher.preferences[:gradebook_settings][@course.id][:sort_rows_by_setting_key] = "integration_id"
       end
 
-      context 'with pg_collkey installed' do
+      context "with pg_collkey installed" do
         before do
           skip_unless_pg_collkey_present
         end
@@ -440,13 +440,11 @@ describe GradebookUserIds do
       end
 
       it "puts fake users at the end, ordered by their sortable_name and user_id" do
-        fake_student_enrollment2 = course_with_user('StudentViewEnrollment', course: @course, active_all: true)
+        fake_student_enrollment2 = course_with_user("StudentViewEnrollment", course: @course, active_all: true)
         fake_student2 = fake_student_enrollment2.user
         fake_student2.update!(sortable_name: "Alpha")
-        # rubocop:disable Rails/SkipsModelValidations
         @assignment.submissions.where(user_id: [@student3]).update_all(late_policy_status: "missing")
-        # rubocop:enable Rails/SkipsModelValidations
-        expect(gradebook_user_ids.user_ids[-2..-1]).to eq([fake_student2.id, @fake_student.id])
+        expect(gradebook_user_ids.user_ids[-2..]).to eq([fake_student2.id, @fake_student.id])
       end
 
       it "excludes fake students if they are deactivated" do
@@ -476,22 +474,18 @@ describe GradebookUserIds do
         expect(gradebook_user_ids.user_ids).not_to include @concluded_student.id
       end
 
-      context 'given pg_collkey extension is present' do
+      context "given pg_collkey extension is present" do
         before do
           skip_unless_pg_collkey_present
         end
 
         it "orders the missing user_ids by their sortable_name and user_id" do
-          # rubocop:disable Rails/SkipsModelValidations
           @assignment.submissions.where(user: [@student2, @student3, @student4]).update_all(late_policy_status: "missing")
-          # rubocop:enable Rails/SkipsModelValidations
           expect(gradebook_user_ids.user_ids[0..2]).to eq([@student4.id, @student3.id, @student2.id])
         end
 
         it "puts non-missing, real users in the middle, ordered by their sortable_name and user_id" do
-          # rubocop:disable Rails/SkipsModelValidations
           @assignment.submissions.where(user_id: [@student2]).update_all(late_policy_status: "missing")
-          # rubocop:enable Rails/SkipsModelValidations
           expect(gradebook_user_ids.user_ids[1..3]).to eq([@student1.id, @student4.id, @student3.id])
         end
       end
@@ -513,13 +507,11 @@ describe GradebookUserIds do
       end
 
       it "puts fake users at the end, ordered by their sortable_name and user_id" do
-        fake_student_enrollment2 = course_with_user('StudentViewEnrollment', course: @course, active_all: true)
+        fake_student_enrollment2 = course_with_user("StudentViewEnrollment", course: @course, active_all: true)
         fake_student2 = fake_student_enrollment2.user
         fake_student2.update!(sortable_name: "Alpha")
-        # rubocop:disable Rails/SkipsModelValidations
         @assignment.submissions.where(user_id: [@student3]).update_all(late_policy_status: "late")
-        # rubocop:enable Rails/SkipsModelValidations
-        expect(gradebook_user_ids.user_ids[-2..-1]).to eq([fake_student2.id, @fake_student.id])
+        expect(gradebook_user_ids.user_ids[-2..]).to eq([fake_student2.id, @fake_student.id])
       end
 
       it "excludes fake students if they are deactivated" do
@@ -549,22 +541,18 @@ describe GradebookUserIds do
         expect(gradebook_user_ids.user_ids).not_to include @concluded_student.id
       end
 
-      context 'given pg_collkey extension is present' do
+      context "given pg_collkey extension is present" do
         before do
           skip_unless_pg_collkey_present
         end
 
         it "orders the missing user_ids by their sortable_name and user_id" do
-          # rubocop:disable Rails/SkipsModelValidations
           @assignment.submissions.where(user: [@student2, @student3, @student4]).update_all(late_policy_status: "late")
-          # rubocop:enable Rails/SkipsModelValidations
           expect(gradebook_user_ids.user_ids[0..2]).to eq([@student4.id, @student3.id, @student2.id])
         end
 
         it "puts non-late, real users in the middle, ordered by their sortable_name and user_id" do
-          # rubocop:disable Rails/SkipsModelValidations
           @assignment.submissions.where(user_id: [@student2]).update_all(late_policy_status: "late")
-          # rubocop:enable Rails/SkipsModelValidations
           expect(gradebook_user_ids.user_ids[1..3]).to eq([@student1.id, @student4.id, @student3.id])
         end
       end
@@ -602,7 +590,7 @@ describe GradebookUserIds do
           expect(gradebook_user_ids.user_ids).not_to include @fake_student.id
         end
 
-        context 'given pg_collkey extension is present' do
+        context "given pg_collkey extension is present" do
           before do
             skip_unless_pg_collkey_present
           end
@@ -656,7 +644,7 @@ describe GradebookUserIds do
           expect(gradebook_user_ids.user_ids).not_to include @fake_student.id
         end
 
-        context 'given pg_collkey extension is present' do
+        context "given pg_collkey extension is present" do
           before do
             skip_unless_pg_collkey_present
           end
@@ -707,7 +695,7 @@ describe GradebookUserIds do
     before(:once) do
       @now = Time.zone.now
       @assignment1 = @course.assignments.create!(points_possible: 10, due_at: 1.month.from_now(@now))
-      @second_assignment_group = @course.assignment_groups.create(name: 'second group')
+      @second_assignment_group = @course.assignment_groups.create(name: "second group")
       @assignment2 = @course.assignments.create!(
         points_possible: 100, due_at: 3.months.from_now(@now), assignment_group: @second_assignment_group
       )
@@ -726,7 +714,7 @@ describe GradebookUserIds do
       @teacher.preferences[:gradebook_settings][@course.id][:sort_rows_by_setting_key] = "grade"
     end
 
-    context 'given pg_collkey extension is present' do
+    context "given pg_collkey extension is present" do
       before do
         skip_unless_pg_collkey_present
       end
@@ -836,7 +824,7 @@ describe GradebookUserIds do
           expect(gradebook_user_ids.user_ids).to eq(expected_user_ids)
         end
 
-        context 'given pg_collkey extension is present' do
+        context "given pg_collkey extension is present" do
           before do
             skip_unless_pg_collkey_present
           end
@@ -876,7 +864,7 @@ describe GradebookUserIds do
           expect(gradebook_user_ids.user_ids).to eq(expected_user_ids)
         end
 
-        context 'given pg_collkey extension is present' do
+        context "given pg_collkey extension is present" do
           before do
             skip_unless_pg_collkey_present
           end

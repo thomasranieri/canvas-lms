@@ -121,8 +121,9 @@ class Header extends React.Component {
     if (submission.gradingStatus === 'excused') {
       return null
     }
+    const attemptGrade = submission.gradingStatus !== 'needs_grading' ? submission.grade : null
 
-    const formattedGrade = GradeFormatHelper.formatGrade(submission.grade, {
+    const formattedGrade = GradeFormatHelper.formatGrade(attemptGrade, {
       defaultValue: I18n.t('N/A'),
       formatType: 'points_out_of_fraction',
       gradingType: assignment.gradingType,
@@ -159,21 +160,26 @@ class Header extends React.Component {
     return (
       <>
         <div data-testid="unread_comments_badge">
-          <Badge
-            margin="x-small"
-            count={this.props.submission.unreadCommentCount || null}
-            countUntil={100}
-          >
-            <Button
-              renderIcon={IconChatLine}
-              onClick={this.openCommentsTray}
-              disabled={addCommentsDisabled}
-            >
-              {this.props.submission.feedbackForCurrentAttempt
-                ? I18n.t('View Feedback')
-                : I18n.t('Add Comment')}
-            </Button>
-          </Badge>
+          <StudentViewContext.Consumer>
+            {context => (
+              <Badge
+                margin="x-small"
+                count={this.props.submission ? this.props.submission.unreadCommentCount : null}
+                countUntil={100}
+              >
+                <Button
+                  renderIcon={IconChatLine}
+                  onClick={this.openCommentsTray}
+                  disabled={addCommentsDisabled}
+                >
+                  {(this.props.submission && this.props.submission.feedbackForCurrentAttempt) ||
+                  !context.allowChangesToSubmission
+                    ? I18n.t('View Feedback')
+                    : I18n.t('Add Comment')}
+                </Button>
+              </Badge>
+            )}
+          </StudentViewContext.Consumer>
           {addCommentsDisabled && (
             <Popover
               renderTrigger={
@@ -240,9 +246,9 @@ class Header extends React.Component {
               </Flex.Item>
             )}
           </Flex>
-          {this.props.submission && !this.props.assignment.nonDigitalSubmission && (
-            <Flex alignItems="center" wrap="wrap">
-              <Flex.Item shouldGrow>
+          <Flex alignItems="center" wrap="wrap">
+            <Flex.Item shouldGrow>
+              {this.props.submission && !this.props.assignment.nonDigitalSubmission && (
                 <Flex wrap="wrap">
                   {this.props.allSubmissions && (
                     <Flex.Item>
@@ -260,21 +266,21 @@ class Header extends React.Component {
                     </Flex.Item>
                   )}
                 </Flex>
-              </Flex.Item>
-
-              <Flex.Item shouldShrink>
-                <Flex as="div" wrap="wrap">
-                  {(this.props.submission.state === 'graded' ||
+              )}
+            </Flex.Item>
+            <Flex.Item shouldShrink>
+              <Flex as="div" wrap="wrap">
+                {this.props.submission &&
+                  (this.props.submission.state === 'graded' ||
                     this.props.submission.state === 'submitted') && (
                     <Flex.Item margin="0 small 0 0">{this.selectedSubmissionGrade()}</Flex.Item>
                   )}
-                  <Flex.Item margin="0 small 0 0">
-                    {this.renderViewFeedbackButton(addCommentsDisabled)}
-                  </Flex.Item>
-                </Flex>
-              </Flex.Item>
-            </Flex>
-          )}
+                <Flex.Item margin="0 small 0 0">
+                  {this.renderViewFeedbackButton(addCommentsDisabled)}
+                </Flex.Item>
+              </Flex>
+            </Flex.Item>
+          </Flex>
         </div>
       </>
     )

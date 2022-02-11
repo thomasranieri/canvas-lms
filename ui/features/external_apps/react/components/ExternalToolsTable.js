@@ -32,6 +32,9 @@ import splitAssetString from '@canvas/util/splitAssetString'
 
 export default class ExternalToolsTable extends React.Component {
   static propTypes = {
+    canAdd: PropTypes.bool.isRequired,
+    canEdit: PropTypes.bool.isRequired,
+    canDelete: PropTypes.bool.isRequired,
     canAddEdit: PropTypes.bool.isRequired,
     setFocusAbove: PropTypes.func.isRequired
   }
@@ -94,6 +97,9 @@ export default class ExternalToolsTable extends React.Component {
           key={tool.app_id}
           ref={this.setToolRowRef(tool)}
           tool={tool}
+          canAdd={this.props.canAdd}
+          canEdit={this.props.canEdit}
+          canDelete={this.props.canDelete}
           canAddEdit={this.props.canAddEdit}
           setFocusAbove={this.setFocusAbove(t)}
           favoriteCount={rceFavCount}
@@ -105,13 +111,12 @@ export default class ExternalToolsTable extends React.Component {
     })
   }
 
-  // Don't forget to change the tooltip text when the rce_enhancements flag goes away
   render() {
     // only in account settings (not course), but not site_admin, and with the feature on, and with permissions
     const show_lti_favorite_toggles =
       /^account_/.test(ENV.context_asset_string) &&
       !ENV.ACCOUNT?.site_admin &&
-      this.props.canAddEdit
+      (this.props.canAdd || this.props.canEdit || this.props.canDelete || this.props.canAddEdit)
 
     return (
       <div className="ExternalToolsTable">
@@ -137,7 +142,7 @@ export default class ExternalToolsTable extends React.Component {
                     {I18n.t('Add to RCE toolbar')}
                     <Tooltip
                       renderTip={I18n.t(
-                        'There is a 2 app limit for placement within the RCE toolbar. This setting only applies to the enhanced RCE.'
+                        'There is a 2 app limit for placement within the RCE toolbar.'
                       )}
                       placement="top"
                       on={['click', 'focus']}

@@ -25,7 +25,7 @@ class Lti::Result < ApplicationRecord
   ACCEPT_GIVEN_SCORE_TYPES = %w[FullyGraded PendingManual].freeze
   ACTIVITY_PROGRESS_TYPES = %w[Initialized Started InProgress Submitted Completed].freeze
 
-  AGS_EXT_SUBMISSION = 'https://canvas.instructure.com/lti/submission'.freeze
+  AGS_EXT_SUBMISSION = "https://canvas.instructure.com/lti/submission"
 
   self.record_timestamps = false
 
@@ -48,8 +48,8 @@ class Lti::Result < ApplicationRecord
 
   belongs_to :submission, inverse_of: :lti_result
   belongs_to :user, inverse_of: :lti_results
-  belongs_to :line_item, inverse_of: :results, foreign_key: :lti_line_item_id, class_name: 'Lti::LineItem'
-  belongs_to :root_account, class_name: 'Account'
+  belongs_to :line_item, inverse_of: :results, foreign_key: :lti_line_item_id, class_name: "Lti::LineItem"
+  belongs_to :root_account, class_name: "Account"
   has_one :assignment, through: :submission
 
   before_save :set_root_account
@@ -84,12 +84,12 @@ class Lti::Result < ApplicationRecord
     # result_score to the result_maximum
     (raw_result_score * result_maximum) / assignment.points_possible.to_f
   end
-  alias result_score scaled_result_score
+  alias_method :result_score, :scaled_result_score
 
   # Updates score for submission safely (does not allow maximum score to be null, but
   # if it's not already set, it will set it to assignment's points_possible)
   def self.update_score_for_submission(submission, score)
-    update_query = <<~SQL
+    update_query = <<~SQL.squish
       UPDATE #{Lti::Result.quoted_table_name} SET
         result_score = #{connection.quote(score)},
         result_maximum = COALESCE(
@@ -110,6 +110,6 @@ class Lti::Result < ApplicationRecord
   private
 
   def set_root_account
-    self.root_account_id ||= self.submission&.root_account_id || self.line_item&.root_account_id
+    self.root_account_id ||= submission&.root_account_id || line_item&.root_account_id
   end
 end

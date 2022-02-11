@@ -53,8 +53,8 @@ module Canvas
               client_opts: opts,
               logger: Rails.logger
             )
-          rescue Exception => exception
-            Rails.logger.error "Failed to create DynamoDB client for #{key}: #{exception}"
+          rescue => e
+            Rails.logger.error "Failed to create DynamoDB client for #{key}: #{e}"
             nil # don't save this nil into @clients[key], so we can retry later
           end
         end
@@ -74,7 +74,7 @@ module Canvas
       end
 
       def self.configs(environment = default_environment)
-        ConfigFile.load('dynamodb', environment) || {}
+        ConfigFile.load("dynamodb", environment) || {}
       end
 
       def self.categories

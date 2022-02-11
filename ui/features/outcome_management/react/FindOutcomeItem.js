@@ -30,34 +30,43 @@ import {
   IconArrowOpenDownSolid,
   IconAddSolid
 } from '@instructure/ui-icons'
+import {PresentationContent, ScreenReaderContent} from '@instructure/ui-a11y-content'
 import I18n from 'i18n!OutcomeManagement'
 import OutcomeDescription from './Management/OutcomeDescription'
 import {addZeroWidthSpace} from '@canvas/outcomes/addZeroWidthSpace'
 import useCanvasContext from '@canvas/outcomes/react/hooks/useCanvasContext'
 import {Spinner} from '@instructure/ui-spinner'
 import {IMPORT_PENDING, IMPORT_COMPLETED} from '@canvas/outcomes/react/hooks/useOutcomesImport'
+import {ratingsShape} from './Management/shapes'
 
 const FindOutcomeItem = ({
   id,
   title,
   description,
+  calculationMethod,
+  calculationInt,
+  masteryPoints,
+  ratings,
   isImported,
   importGroupStatus,
   importOutcomeStatus,
   sourceContextId,
   sourceContextType,
-  importOutcomeHandler
+  importOutcomeHandler,
+  friendlyDescription
 }) => {
   const [truncated, setTruncated] = useState(true)
-  const onClickHandler = () => description && setTruncated(prevState => !prevState)
-  const {isMobileView} = useCanvasContext()
+  const {isMobileView, individualOutcomeRatingAndCalculationFF} = useCanvasContext()
+  const shouldShowDescription =
+    description || friendlyDescription || individualOutcomeRatingAndCalculationFF
+  const onClickHandler = () => shouldShowDescription && setTruncated(prevState => !prevState)
   const IconArrowOpenEnd = isMobileView ? IconArrowOpenEndSolid : IconArrowOpenEndLine
   const IconArrowOpenDown = isMobileView ? IconArrowOpenDownSolid : IconArrowOpenDownLine
   const importStatus = [importGroupStatus, importOutcomeStatus]
   const shouldShowSpinner =
     !isImported && importOutcomeStatus !== IMPORT_COMPLETED && importStatus.includes(IMPORT_PENDING)
   const isOutcomeImported = isImported || importStatus.includes(IMPORT_COMPLETED)
-  const onAddHandler = () => importOutcomeHandler(id, 1, false, sourceContextId, sourceContextType)
+  const onAddHandler = () => importOutcomeHandler(id, sourceContextId, sourceContextType)
 
   const checkbox = (
     <Flex.Item size={isMobileView ? '' : '6.75rem'} alignSelf="end">
@@ -82,7 +91,14 @@ const FindOutcomeItem = ({
             onClick={onAddHandler}
             data-testid="add-find-outcome-item"
           >
-            {isOutcomeImported ? I18n.t('Added') : I18n.t('Add')}
+            <PresentationContent>
+              {isOutcomeImported ? I18n.t('Added') : I18n.t('Add')}
+            </PresentationContent>
+            <ScreenReaderContent>
+              {isOutcomeImported
+                ? I18n.t('Added outcome %{title}', {title})
+                : I18n.t('Add outcome %{title}', {title})}
+            </ScreenReaderContent>
           </Button>
         )}
       </div>
@@ -107,12 +123,12 @@ const FindOutcomeItem = ({
                   size="small"
                   screenReaderLabel={
                     truncated
-                      ? I18n.t('Expand outcome description')
-                      : I18n.t('Collapse outcome description')
+                      ? I18n.t('Expand description for outcome %{title}', {title})
+                      : I18n.t('Collapse description for outcome %{title}', {title})
                   }
                   withBackground={false}
                   withBorder={false}
-                  interaction={description ? 'enabled' : 'disabled'}
+                  interaction={shouldShowDescription ? 'enabled' : 'disabled'}
                   onClick={onClickHandler}
                 >
                   <div style={{display: 'flex', alignSelf: 'center', fontSize: '0.875rem'}}>
@@ -148,9 +164,17 @@ const FindOutcomeItem = ({
             )}
             {isMobileView && checkbox}
           </div>
-          {description && (
+          {shouldShowDescription && (
             <div style={{paddingBottom: '0.75rem'}}>
-              <OutcomeDescription description={description} truncated={truncated} />
+              <OutcomeDescription
+                description={description}
+                friendlyDescription={friendlyDescription}
+                calculationMethod={calculationMethod}
+                calculationInt={calculationInt}
+                masteryPoints={masteryPoints}
+                ratings={ratings}
+                truncated={truncated}
+              />
             </div>
           )}
         </Flex.Item>
@@ -164,6 +188,11 @@ FindOutcomeItem.propTypes = {
   id: PropTypes.string.isRequired,
   title: PropTypes.string,
   description: PropTypes.string,
+  calculationMethod: PropTypes.string,
+  calculationInt: PropTypes.number,
+  masteryPoints: PropTypes.number,
+  ratings: ratingsShape,
+  friendlyDescription: PropTypes.string,
   isImported: PropTypes.bool.isRequired,
   importGroupStatus: PropTypes.string.isRequired,
   importOutcomeStatus: PropTypes.string,

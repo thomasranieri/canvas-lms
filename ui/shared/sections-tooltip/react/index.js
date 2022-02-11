@@ -19,10 +19,10 @@
 import React from 'react'
 import {Tooltip} from '@instructure/ui-tooltip'
 import {Text} from '@instructure/ui-text'
-import {Button} from '@instructure/ui-buttons'
 import {View} from '@instructure/ui-view'
 import {ScreenReaderContent} from '@instructure/ui-a11y-content'
 import I18n from 'i18n!sections_tooltip'
+import {string} from 'prop-types'
 
 function sectionsOrTotalCount(props, propName, componentName) {
   if (!props.totalUserCount && !props.sections) {
@@ -33,7 +33,7 @@ function sectionsOrTotalCount(props, propName, componentName) {
   return null
 }
 
-export default function SectionsTooltip({sections, totalUserCount}) {
+export default function SectionsTooltip({sections, totalUserCount, prefix, textColor}) {
   let tipContent = ''
   const nonNullSections = sections || []
   let sectionsCountText = ''
@@ -41,7 +41,7 @@ export default function SectionsTooltip({sections, totalUserCount}) {
     tipContent = sections.map(sec => (
       <View key={sec.id} as="div" margin="xx-small">
         <Text size="small">
-          {I18n.t('%{name} (%{count} Users)', {name: sec.name, count: sec.user_count})}
+          {I18n.t('%{name} (%{count} Students)', {name: sec.name, count: sec.user_count})}
         </Text>
       </View>
     ))
@@ -55,7 +55,7 @@ export default function SectionsTooltip({sections, totalUserCount}) {
   } else {
     tipContent = (
       <View as="div" margin="xx-small">
-        <Text size="small">{I18n.t('(%{count} Users)', {count: totalUserCount})}</Text>
+        <Text size="small">{I18n.t('(%{count} Students)', {count: totalUserCount})}</Text>
       </View>
     )
     sectionsCountText = I18n.t('All Sections')
@@ -63,15 +63,14 @@ export default function SectionsTooltip({sections, totalUserCount}) {
 
   return (
     <span className="ic-section-tooltip">
-      <Tooltip tip={tipContent} placement="bottom">
-        <Button variant="link">
-          <Text size="small">
-            {sectionsCountText}
-            {nonNullSections.map(sec => (
-              <ScreenReaderContent key={sec.id}>{sec.name}</ScreenReaderContent>
-            ))}
-          </Text>
-        </Button>
+      <Tooltip as="span" renderTip={tipContent} placement="bottom">
+        <Text size="small" color={textColor}>
+          {prefix}
+          {sectionsCountText}
+          {nonNullSections.map(sec => (
+            <ScreenReaderContent key={sec.id}>{sec.name}</ScreenReaderContent>
+          ))}
+        </Text>
       </Tooltip>
     </span>
   )
@@ -79,7 +78,9 @@ export default function SectionsTooltip({sections, totalUserCount}) {
 
 SectionsTooltip.propTypes = {
   totalUserCount: sectionsOrTotalCount,
-  sections: sectionsOrTotalCount
+  sections: sectionsOrTotalCount,
+  prefix: string,
+  textColor: string
 }
 
 SectionsTooltip.defaultProps = {

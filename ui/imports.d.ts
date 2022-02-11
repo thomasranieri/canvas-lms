@@ -46,12 +46,16 @@ interface MissingThemeableProps {
 }
 
 declare module '@instructure/ui-buttons' {
-  export interface BaseButtonProps extends MissingInputProps {}
-  export interface ButtonProps extends MissingInputProps {}
-  export interface CloseButtonProps extends MissingInputProps {}
-  export interface CondensedButtonProps extends MissingInputProps {}
-  export interface IconButtonProps extends MissingInputProps {}
-  export interface ToggleButtonProps extends MissingInputProps {}
+  export interface BaseButtonProps extends MissingInputProps, MissingThemeableProps {}
+  export interface ButtonProps extends MissingInputProps, MissingThemeableProps {}
+  export interface CloseButtonProps extends MissingInputProps, MissingThemeableProps {}
+  export interface CondensedButtonProps extends MissingInputProps, MissingThemeableProps {}
+  export interface IconButtonProps extends MissingInputProps, MissingThemeableProps {}
+  export interface ToggleButtonProps extends MissingInputProps, MissingThemeableProps {}
+}
+
+declare module '@instructure/ui-motion' {
+  export interface TransitionProps extends MissingThemeableProps {}
 }
 
 declare module '@instructure/ui-text-input' {
@@ -63,5 +67,13 @@ declare module '@instructure/ui-toggle-details' {
 }
 
 declare module '@instructure/ui-view' {
-  export interface ViewProps extends MissingElementProps, MissingThemeableProps {}
+  export interface ViewProps extends MissingElementProps, MissingThemeableProps {
+    className?: string
+  }
+}
+
+declare module '@instructure/ui-buttons' {
+  export interface ButtonProps {
+    id?: string
+  }
 }

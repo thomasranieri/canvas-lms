@@ -18,16 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::ClearOldUserRootAccountIds do
   it "clears out root_account_ids" do
     a = account_model
-    u1 = user_model
-    u2 = user_model(root_account_ids: [a.id])
-    u3 = user_model(root_account_ids: [a.id])
-    expect {
+    user_model
+    user_model(root_account_ids: [a.id])
+    user_model(root_account_ids: [a.id])
+    expect do
       described_class.run
-    }.to change { User.pluck(:root_account_ids).uniq }.from([[], [a.id]]).to([[]])
+    end.to change { User.pluck(:root_account_ids).uniq }.from([[], [a.id]]).to([[]])
   end
 end

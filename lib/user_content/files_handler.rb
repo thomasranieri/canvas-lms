@@ -22,15 +22,15 @@ module UserContent
   class FilesHandler
     class UriMatch < SimpleDelegator
       def preview?
-        rest.start_with?('/preview')
+        rest.start_with?("/preview")
       end
 
       def download?
-        rest.start_with?('/download')
+        rest.start_with?("/download")
       end
 
       def download_frd?
-        rest.include?('download_frd=1')
+        rest.include?("download_frd=1")
       end
     end
 
@@ -71,7 +71,7 @@ module UserContent
         { only_path: true }.tap do |h|
           h[:download] = 1 if match.download_frd?
           h[:verifier] = attachment.uuid unless in_app && !is_public
-          if !match.preview? && match.rest.include?('wrap=1')
+          if !match.preview? && match.rest.include?("wrap=1")
             h[:wrap] = 1
           end
         end
@@ -107,10 +107,12 @@ module UserContent
       if user_can_access_attachment?
         ProcessedUrl.new(match: match, attachment: attachment, is_public: is_public, in_app: in_app).url
       else
+        # Setting is_public: false and in_app: true to force never adding verifier query param
+        processed_url = ProcessedUrl.new(match: match, attachment: attachment, is_public: false, in_app: true).url
         begin
-          uri = URI.parse(match.url)
+          uri = URI.parse(processed_url)
         rescue URI::InvalidURIError
-          uri = URI.parse(Addressable::URI.escape(match.url))
+          uri = URI.parse(Addressable::URI.escape(processed_url))
         end
         if attachment.previewable_media? && match.url.present?
           uri.query = (uri.query.to_s.split("&") + ["no_preview=1"]).join("&")
@@ -131,8 +133,8 @@ module UserContent
 
       unless @_attachment
         @_attachment = preloaded_attachments[match.obj_id]
-        @_attachment ||= Attachment.find_by_id(match.obj_id) if context.is_a?(User) || context.nil?
-        @_attachment ||= context.attachments.find_by_id(match.obj_id)
+        @_attachment ||= Attachment.find_by(id: match.obj_id) if context.is_a?(User) || context.nil?
+        @_attachment ||= context.attachments.find_by(id: match.obj_id)
       end
       @_attachment
     end

@@ -17,6 +17,7 @@
 %>
 
 <% blueprint_subscription ||= nil %>
+<% show_publish_controls ||= false %>
 <% if blueprint_subscription %>
   <script>
     function gotoBlueprintInfo() {
@@ -33,7 +34,7 @@
   </script>
 <% end %>
 <div>
-  <% if can_do(@context, @current_user, :change_course_state, :manage_courses_publish) && (@context.unpublished? || @context.unpublishable?) && @context.elementary_subject_course? %>
+  <% if show_publish_controls %>
     <div id="course_status">
       <h4>
         <%= t('headers.course_status', %{Course Status}) %>
@@ -120,7 +121,7 @@
     <% end %>
 
     <% if blueprint_subscription %>
-      <%= link_to "#!/blueprint/blueprint_subscriptions/#{blueprint_subscription.id}/#{blueprint_subscription.last_migration_id}", :onclick => 'gotoBlueprintInfo()', :class => 'Button Button--link Button--link--has-divider Button--course-settings blueprint_information_button' do %>
+      <%= link_to "#", :onclick => 'gotoBlueprintInfo()', :class => 'Button Button--link Button--link--has-divider Button--course-settings blueprint_information_button' do %>
         <i class="icon-blueprint"></i><%= t('Blueprint Information') %>
       <% end %>
     <% end %>

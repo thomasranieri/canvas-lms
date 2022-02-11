@@ -18,10 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'new_discussion_mention' do
+describe "new_discussion_mention" do
   before :once do
     discussion_topic_model
     entry = @topic.discussion_entries.create!(user: user_model)
@@ -38,8 +37,8 @@ describe 'new_discussion_mention' do
 
     it "renders" do
       msg = generate_message(notification_name, path_type, asset)
-      expect(msg.url).to match(/\/courses\/\d+\/discussion_topics\/\d+/)
-      expect(msg.body).to match(/\/courses\/\d+\/discussion_topics\/\d+/)
+      expect(msg.url).to match(%r{/courses/\d+/discussion_topics/\d+})
+      expect(msg.body).to match(%r{/courses/\d+/discussion_topics/\d+})
     end
 
     it "renders correct footer if replies are enabled" do

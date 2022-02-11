@@ -18,14 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
+require "spec_helper"
 
 describe IncomingMailProcessor::DirectoryMailbox do
-  include_examples 'Mailbox'
+  include_examples "Mailbox"
 
   def default_config
     {
-      :folder => "/tmp/directory_mailbox",
+      folder: "/tmp/directory_mailbox",
     }
   end
 
@@ -46,10 +46,10 @@ describe IncomingMailProcessor::DirectoryMailbox do
   describe ".each_message" do
     it "iterates through and yield files in a directory" do
       folder = default_config[:folder]
-      folder_entries = %w(. .. foo bar baz)
+      folder_entries = %w[. .. foo bar baz]
       expect(@mailbox).to receive(:files_in_folder).with(folder).and_return(folder_entries)
       folder_entries.each do |entry|
-        expect(@mailbox).to receive(:file?).with(folder, entry).and_return(!entry.include?('.'))
+        expect(@mailbox).to receive(:file?).with(folder, entry).and_return(!entry.include?("."))
       end
 
       expect(@mailbox).to receive(:read_file).with(folder, "foo").and_return("foo body")
@@ -65,10 +65,10 @@ describe IncomingMailProcessor::DirectoryMailbox do
 
     it "iterates with stride and offset" do
       folder = default_config[:folder]
-      folder_entries = %w(. .. foo bar baz)
+      folder_entries = %w[. .. foo bar baz]
       expect(@mailbox).to receive(:files_in_folder).with(folder).twice.and_return(folder_entries)
       folder_entries.each do |entry|
-        expect(@mailbox).to receive(:file?).with(folder, entry).and_return(!entry.include?('.'))
+        expect(@mailbox).to receive(:file?).with(folder, entry).and_return(!entry.include?("."))
       end
 
       # the crc32 of the filename is used to determine whether a given worker picks up the file
@@ -91,7 +91,7 @@ describe IncomingMailProcessor::DirectoryMailbox do
     end
   end
 
-  describe '#unprocessed_message_count' do
+  describe "#unprocessed_message_count" do
     it "returns nil" do
       expect(@mailbox.unprocessed_message_count).to be_nil
     end
@@ -108,7 +108,7 @@ describe IncomingMailProcessor::DirectoryMailbox do
 
     it "deletes files" do
       expect(@mailbox).to receive(:delete_file).with(default_config[:folder], "foo")
-      @mailbox.each_message do |id, body|
+      @mailbox.each_message do |id, _body|
         @mailbox.delete_message(id)
       end
     end
@@ -117,8 +117,8 @@ describe IncomingMailProcessor::DirectoryMailbox do
       folder = default_config[:folder]
       expect(@mailbox).to receive(:move_file).with(folder, "foo", "aside")
       expect(@mailbox).to receive(:folder_exists?).with(folder, "aside").and_return(true)
-      expect(@mailbox).to receive(:create_folder).never
-      @mailbox.each_message do |id, body|
+      expect(@mailbox).not_to receive(:create_folder)
+      @mailbox.each_message do |id, _body|
         @mailbox.move_message(id, "aside")
       end
     end
@@ -128,7 +128,7 @@ describe IncomingMailProcessor::DirectoryMailbox do
       expect(@mailbox).to receive(:move_file).with(folder, "foo", "aside")
       expect(@mailbox).to receive(:folder_exists?).with(folder, "aside").and_return(false)
       expect(@mailbox).to receive(:create_folder).with(default_config[:folder], "aside")
-      @mailbox.each_message do |id, body|
+      @mailbox.each_message do |id, _body|
         @mailbox.move_message(id, "aside")
       end
     end

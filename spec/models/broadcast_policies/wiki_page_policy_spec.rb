@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path('../../spec_helper', File.dirname(__FILE__))
 require_dependency "broadcast_policies/wiki_page_policy"
 
 module BroadcastPolicies
@@ -46,17 +45,17 @@ module BroadcastPolicies
     end
     let(:policy) { WikiPagePolicy.new(wiki_page) }
 
-    describe '#should_dispatch_updated_wiki_page?' do
+    describe "#should_dispatch_updated_wiki_page?" do
       before do
         allow(wiki_page).to receive(:wiki_page_changed).and_return(true)
         allow(wiki_page).to receive(:changed_state).with(:active).and_return(false)
       end
 
-      it 'is true when the changed_while_published? inputs are true' do
+      it "is true when the changed_while_published? inputs are true" do
         expect(policy.should_dispatch_updated_wiki_page?).to be_truthy
       end
 
-      it 'is true when the changed_state inputs are true' do
+      it "is true when the changed_state inputs are true" do
         allow(wiki_page).to receive(:wiki_page_changed).and_return(false)
         allow(wiki_page).to receive(:changed_state).with(:active).and_return(true)
         expect(policy.should_dispatch_updated_wiki_page?).to be_truthy

@@ -18,9 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-require 'canvas_cache'
-require 'timecop'
+require "spec_helper"
+require "canvas_cache"
+require "timecop"
 
 describe CanvasSecurity do
   describe "JWT tokens" do
@@ -92,7 +92,7 @@ describe CanvasSecurity do
 
         it "can unpack encrypted jwts again" do
           jwt = CanvasSecurity.create_encrypted_jwt(payload, signing_secret, encryption_secret)
-          original = CanvasSecurity.decrypt_services_jwt(jwt, signing_secret, encryption_secret)
+          original = CanvasSecurity.decrypt_encrypted_jwt(jwt, signing_secret, encryption_secret)
           expect(original[:arbitrary]).to eq("data")
         end
 
@@ -100,7 +100,7 @@ describe CanvasSecurity do
           different_secret = encryption_secret.upcase
           jwt = CanvasSecurity.create_encrypted_jwt(payload, signing_secret, different_secret)
           expect do
-            CanvasSecurity.decrypt_services_jwt(jwt, signing_secret, encryption_secret)
+            CanvasSecurity.decrypt_encrypted_jwt(jwt, signing_secret, encryption_secret)
           end.to raise_error(CanvasSecurity::InvalidToken)
         end
       end
@@ -124,7 +124,7 @@ describe CanvasSecurity do
         JSON::JWT.new({ a: 1 }.merge(claims)).sign(key, :HS256).to_s
       end
 
-      around(:example) do |example|
+      around do |example|
         Timecop.freeze(Time.utc(2013, 3, 13, 9, 12)) do
           example.run
         end
@@ -167,7 +167,7 @@ describe CanvasSecurity do
       end
 
       it "allows 5 minutes of future clock skew" do
-        back_to_the_future_jwt = test_jwt(exp: 1.hour.from_now, nbf: 1.minutes.from_now, iat: 1.minutes.from_now)
+        back_to_the_future_jwt = test_jwt(exp: 1.hour.from_now, nbf: 1.minute.from_now, iat: 1.minute.from_now)
         body = CanvasSecurity.decode_jwt(back_to_the_future_jwt, [key])
         expect(body[:a]).to eq 1
       end
@@ -182,6 +182,7 @@ describe CanvasSecurity do
 
   describe "hmac_sha512" do
     let(:message) { "asdf1234" }
+
     it "verifies items signed with the same secret" do
       shared_secret = "super-sekrit"
       signature = CanvasSecurity.sign_hmac_sha512(message, shared_secret)
@@ -204,15 +205,16 @@ describe CanvasSecurity do
     end
   end
 
-  describe '.config' do
+  describe ".config" do
     before { described_class.instance_variable_set(:@config, nil) }
+
     after  { described_class.instance_variable_set(:@config, nil) }
 
-    it 'loads config as erb from config/security.yml' do
+    it "loads config as erb from config/security.yml" do
       config = "test:\n  encryption_key: <%= ENV['ENCRYPTION_KEY'] %>"
-      expect(File).to receive(:read).with(Rails.root + 'config/security.yml').and_return(config)
-      expect(ENV).to receive(:[]).with('ENCRYPTION_KEY').and_return('secret')
-      expect(CanvasSecurity.config).to eq('encryption_key' => 'secret')
+      expect(File).to receive(:read).with(Rails.root.join("config/security.yml").to_s).and_return(config)
+      expect(ENV).to receive(:[]).with("ENCRYPTION_KEY").and_return("secret")
+      expect(CanvasSecurity.config).to eq("encryption_key" => "secret")
     end
   end
 end

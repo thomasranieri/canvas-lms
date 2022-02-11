@@ -16,7 +16,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import React, {PureComponent} from 'react'
+import React, {Component} from 'react'
 import {arrayOf, func, number, shape, string} from 'prop-types'
 import {connect} from 'react-redux'
 import classnames from 'classnames'
@@ -87,7 +87,7 @@ function MissingAssignment({
       color={course.color}
       points={points_possible}
       html_url={html_url}
-      date={moment(due_at).tz(timeZone)}
+      date={due_at && moment(due_at).tz(timeZone)}
       timeZone={timeZone}
       associated_item={convertSubmissionType(submission_types)}
       simplifiedControls
@@ -102,7 +102,7 @@ MissingAssignment.propTypes = {
   name: string.isRequired,
   points_possible: number.isRequired,
   html_url: string.isRequired,
-  due_at: string.isRequired,
+  due_at: string,
   submission_types: arrayOf(string).isRequired,
   timeZone: string.isRequired,
   course: shape(courseShape),
@@ -110,7 +110,9 @@ MissingAssignment.propTypes = {
 }
 
 // Themeable doesn't support pure functional components
-export class MissingAssignments extends PureComponent {
+// and redux's connect throws an error with PureComponent
+// eslint-disable-next-line react/prefer-stateless-function
+export class MissingAssignments extends Component {
   static propTypes = {
     courses: arrayOf(shape(courseShape)).isRequired,
     opportunities: shape(opportunityShape).isRequired,
@@ -144,7 +146,7 @@ export class MissingAssignments extends PureComponent {
           fluidWidth
           onToggle={() => toggleMissing()}
           summary={
-            <View data-testid="missing-data" margin="0 0 0 x-small">
+            <View data-testid="missing-data" margin="0 0 0 small">
               {getMissingItemsText(expanded, items.length)}
             </View>
           }
@@ -156,6 +158,7 @@ export class MissingAssignments extends PureComponent {
                 {...opp}
                 course={courses.find(c => c.id === opp.course_id)}
                 timeZone={timeZone}
+                responsiveSize={responsiveSize}
               />
             ))}
           </View>

@@ -38,7 +38,8 @@ class Loaders::AssociationLoader < GraphQL::Batch::Loader
   #
   # +associations+ are the associations to preload (this can anything that
   # +ActiveRecord::Associations::Preloader+ accepts)
-  def initialize(model, association)
+  def initialize(_model, association)
+    super()
     @association = association
   end
 
@@ -46,7 +47,7 @@ class Loaders::AssociationLoader < GraphQL::Batch::Loader
 
   def load(record)
     if record.association(@association).loaded?
-      return Promise.resolve(record.send(@association))
+      Promise.resolve(record.send(@association))
     else
       super
     end

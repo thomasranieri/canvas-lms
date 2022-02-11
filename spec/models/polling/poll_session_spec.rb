@@ -18,16 +18,14 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe Polling::PollSession do
   before :once do
     course_factory
-    @section = @course.course_sections.create!(name: 'Section 2')
+    @section = @course.course_sections.create!(name: "Section 2")
     teacher_in_course(course: @course, active_all: true)
 
-    @poll = Polling::Poll.create!(user: @teacher, question: 'A Test Poll')
-    @choice = @poll.poll_choices.create(text: 'A Poll Choice')
+    @poll = Polling::Poll.create!(user: @teacher, question: "A Test Poll")
+    @choice = @poll.poll_choices.create(text: "A Poll Choice")
   end
 
   context "creating a poll session" do
@@ -70,7 +68,7 @@ describe Polling::PollSession do
   end
 
   describe ".available_for" do
-    before(:each) do
+    before do
       @course1 = course_model
       @course2 = course_model
       @teacher1 = teacher_in_course(course: @course1).user
@@ -78,15 +76,15 @@ describe Polling::PollSession do
       @student1 = student_in_course(course: @course1).user
       @student2 = student_in_course(course: @course2).user
       @unenrolled_student = user_model
-      @poll1 = Polling::Poll.create!(user: @teacher1, question: 'A Test Poll')
-      @poll2 = Polling::Poll.create!(user: @teacher2, question: 'Another Test Poll')
+      @poll1 = Polling::Poll.create!(user: @teacher1, question: "A Test Poll")
+      @poll2 = Polling::Poll.create!(user: @teacher2, question: "Another Test Poll")
     end
 
     it "returns the poll sessions available for a user" do
       student1_sessions = []
       student2_sessions = []
 
-      3.times do |n|
+      3.times do
         student1_sessions << Polling::PollSession.create(poll: @poll1, course: @course1)
       end
 
@@ -94,7 +92,7 @@ describe Polling::PollSession do
       expect(Polling::PollSession.available_for(@student2).size).to eq 0
       expect(Polling::PollSession.available_for(@student1)).to match_array student1_sessions
 
-      2.times do |n|
+      2.times do
         student2_sessions << Polling::PollSession.create(poll: @poll2, course: @course2)
       end
 

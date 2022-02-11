@@ -21,6 +21,7 @@
 
 class ModuleProgressionVisibleLoader < GraphQL::Batch::Loader
   def initialize(user)
+    super()
     @user = user
   end
 
@@ -44,7 +45,7 @@ module Types
     implements Interfaces::TimestampInterface
     implements Interfaces::LegacyIDInterface
 
-    alias content_tag object
+    alias_method :content_tag, :object
 
     global_id_field :id
 

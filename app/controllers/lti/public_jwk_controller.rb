@@ -133,10 +133,10 @@ module Lti
   #       }
   #     }
   class PublicJwkController < ApplicationController
-    include Ims::Concerns::LtiServices
+    include ::Lti::IMS::Concerns::LtiServices
     include Api::V1::DeveloperKey
 
-    MIME_TYPE = 'application/vnd.ims.lis.v2.publicjwk+json'.freeze
+    MIME_TYPE = "application/vnd.ims.lis.v2.publicjwk+json"
 
     ACTION_SCOPE_MATCHERS = {
       update: all_of(TokenScopes::LTI_UPDATE_PUBLIC_JWK_SCOPE)

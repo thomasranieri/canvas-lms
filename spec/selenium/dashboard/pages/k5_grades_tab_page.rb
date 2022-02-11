@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require_relative '../../common'
-require_relative '../../helpers/color_common'
+require_relative "../../common"
+require_relative "../../helpers/color_common"
 
 module K5GradesTabPageObject
   include ColorCommon
@@ -59,6 +59,10 @@ module K5GradesTabPageObject
 
   def grades_table_row_selector
     "[data-testid='grades-table-row']"
+  end
+
+  def grades_assignments_links_selector
+    "[data-testid='grades-table-row'] a"
   end
 
   def grade_title_selector(title)
@@ -119,6 +123,10 @@ module K5GradesTabPageObject
     ff(grades_table_row_selector)
   end
 
+  def grades_assignments_links
+    ff(grades_assignments_links_selector)
+  end
+
   def grading_period_dropdown
     f(grading_period_dropdown_selector)
   end
@@ -169,9 +177,7 @@ module K5GradesTabPageObject
 
   #------------------------------Retrieve Text----------------------#
 
-  def grades_total_text
-    grades_total.text
-  end
+  delegate :text, to: :grades_total, prefix: true
 
   #----------------------------Element Management---------------------#
 end

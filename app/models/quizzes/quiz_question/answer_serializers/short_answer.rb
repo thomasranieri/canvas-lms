@@ -35,7 +35,7 @@ module Quizzes::QuizQuestion::AnswerSerializers
       rc = SerializedAnswer.new
 
       if !answer_text.is_a?(String)
-        return rc.reject :invalid_type, 'answer', String
+        return rc.reject :invalid_type, "answer", String
       elsif Util.text_too_long? answer_text
         return rc.reject :text_too_long
       end
@@ -45,14 +45,10 @@ module Quizzes::QuizQuestion::AnswerSerializers
     end
 
     # @return [String|NilClass] The textual answer, if any.
-    def deserialize(submission_data, full = false)
+    def deserialize(submission_data, full: false)
       text = submission_data[question_key]
 
-      if text.nil? || text.empty?
-        return nil
-      else
-        text
-      end
+      text.presence
     end
   end
 end

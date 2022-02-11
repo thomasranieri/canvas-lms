@@ -17,8 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require 'nokogiri'
+require "nokogiri"
 
 describe ContextExternalToolsHelper do
   include ContextExternalToolsHelper
@@ -31,7 +30,7 @@ describe ContextExternalToolsHelper do
   end
 
   shared_examples "#external_tools_menu_items" do
-    before :each do
+    before do
       html = helper.external_tools_menu_items(@mock_tools_hash, @menu_item_options)
       @parsed_html = Nokogiri::HTML5.fragment(html)
     end
@@ -103,28 +102,27 @@ describe ContextExternalToolsHelper do
       settings_hash
     end
 
-    before :each do
-      @controller = DummyController.new
+    before do
+      klass = Class.new(ApplicationController) do
+        include ContextExternalToolsHelper
+      end
+      @controller = klass.new
       allow(@controller).to receive(:external_tool_url).and_return("http://stub.dev/tool_url")
       # allow(@controller).to receive(:request).and_return(ActionDispatch::TestRequest.new)
       # @controller.instance_variable_set(:@context, @course)
     end
 
     before :once do
-      class DummyController < ApplicationController
-        include ContextExternalToolsHelper
-      end
-
       course_model
       @root_account = @course.root_account
-      @account = account_model(:root_account => @root_account, :parent_account => @root_account)
+      @account = account_model(root_account: @root_account, parent_account: @root_account)
       @course.update_attribute(:account, @account)
 
       tool_1 = @course.context_external_tools.create(
-        :name => "Awesome Tool with Icon Class",
-        :domain => "example.dev",
-        :consumer_key => '12345',
-        :shared_secret => 'secret'
+        name: "Awesome Tool with Icon Class",
+        domain: "example.dev",
+        consumer_key: "12345",
+        shared_secret: "secret"
       )
 
       tool_1_settings = tool_settings(:course_home_sub_navigation, true)
@@ -133,10 +131,10 @@ describe ContextExternalToolsHelper do
       tool_1.save!
 
       tool_2 = @course.context_external_tools.create(
-        :name => "Awesome Tool with Icon Class",
-        :domain => "example.dev",
-        :consumer_key => '12345',
-        :shared_secret => 'secret'
+        name: "Awesome Tool with Icon Class",
+        domain: "example.dev",
+        consumer_key: "12345",
+        shared_secret: "secret"
       )
 
       tool_2.course_home_sub_navigation = tool_settings(:course_home_sub_navigation)
@@ -145,10 +143,10 @@ describe ContextExternalToolsHelper do
       @mock_tools_hash = [tool_1, tool_2, tool_1]
 
       tool_3 = @course.context_external_tools.create(
-        :name => "Awesome Tool with Icon Class",
-        :domain => "example.dev",
-        :consumer_key => '12345',
-        :shared_secret => 'secret'
+        name: "Awesome Tool with Icon Class",
+        domain: "example.dev",
+        consumer_key: "12345",
+        shared_secret: "secret"
       )
 
       tool_3.course_home_sub_navigation = tool_settings(:course_home_sub_navigation, true)

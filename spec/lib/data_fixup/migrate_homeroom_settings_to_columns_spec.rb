@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::MigrateHomeroomSettingsToColumns do
   before :once do
     @c1 = course_factory
@@ -32,14 +30,14 @@ describe DataFixup::MigrateHomeroomSettingsToColumns do
     @c2.save!
 
     @c3 = course_factory
-    @c3.settings_frd[:homeroom_course_id] = 'null'
+    @c3.settings_frd[:homeroom_course_id] = "null"
     @c3.save!
   end
 
   it "migrates settings to columns" do
     DataFixup::MigrateHomeroomSettingsToColumns.run
     expect(Course.homeroom).to eq([@c1])
-    expect(Course.sync_homeroom_enrollments_enabled).to eq([@c2])
+    expect(Course.where(sync_enrollments_from_homeroom: true)).to eq([@c2])
     expect(@c2.reload.linked_homeroom_course).to eq @c1
   end
 

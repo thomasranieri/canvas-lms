@@ -16,8 +16,13 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {PacePlan, PlanContextTypes, WorkflowStates, PublishOptions} from '../types'
+import {PacePlan, PlanContextTypes, Progress, WorkflowStates} from '../types'
 import doFetchApi from '@canvas/do-fetch-api-effect'
+
+enum ApiMode {
+  PUBLISH,
+  COMPRESS
+}
 
 /* API helpers */
 
@@ -50,100 +55,90 @@ export const waitForActionCompletion = (actionInProgress: () => boolean, waitTim
 
 /* API methods */
 
-export const update = async (pacePlan: PacePlan, extraSaveParams = {}) =>
-  (
-    await doFetchApi<PacePlan>({
-      path: `/api/v1/courses/${pacePlan.course_id}/pace_plans/${pacePlan.id}`,
-      method: 'PUT',
-      body: {
-        ...extraSaveParams,
-        pace_plan: transformPacePlanForApi(pacePlan)
-      }
-    })
-  ).json
+export const update = (pacePlan: PacePlan, extraSaveParams = {}) =>
+  doFetchApi<{pace_plan: PacePlan; progress: Progress}>({
+    path: `/api/v1/courses/${pacePlan.course_id}/pace_plans/${pacePlan.id}`,
+    method: 'PUT',
+    body: {
+      ...extraSaveParams,
+      pace_plan: transformPacePlanForApi(pacePlan)
+    }
+  }).then(({json}) => json)
 
-export const create = async (pacePlan: PacePlan, extraSaveParams = {}) =>
-  (
-    await doFetchApi<PacePlan>({
-      path: `/api/v1/courses/${pacePlan.course_id}/pace_plans`,
-      method: 'POST',
-      body: {
-        ...extraSaveParams,
-        pace_plan: transformPacePlanForApi(pacePlan)
-      }
-    })
-  ).json
+export const create = (pacePlan: PacePlan, extraSaveParams = {}) =>
+  doFetchApi<{pace_plan: PacePlan; progress: Progress}>({
+    path: `/api/v1/courses/${pacePlan.course_id}/pace_plans`,
+    method: 'POST',
+    body: {
+      ...extraSaveParams,
+      pace_plan: transformPacePlanForApi(pacePlan)
+    }
+  }).then(({json}) => json)
 
-export const publish = async (
-  plan: PacePlan,
-  publishForOption: PublishOptions,
-  publishForSectionIds: Array<string>,
-  publishForEnrollmentIds: Array<string>
-) =>
-  (
-    await doFetchApi<{new_draft_plan: PacePlan}>({
-      path: `/api/v1/courses/${plan.course_id}/pace_plans/publish`,
-      method: 'POST',
-      body: {
-        context_type: plan.context_type,
-        context_id: plan.context_id,
-        publish_for_option: publishForOption,
-        publish_for_section_ids: publishForSectionIds,
-        publish_for_enrollment_ids: publishForEnrollmentIds
-      }
-    })
-  ).json
+// This is now just a convenience function for creating/update depending on the
+// state of the plan
+export const publish = (plan: PacePlan) => (plan?.id ? update(plan) : create(plan))
 
-export const resetToLastPublished = async (contextType: PlanContextTypes, contextId: string) =>
-  (
-    await doFetchApi<{pace_plan: PacePlan}>({
-      path: `/api/v1/pace_plans/reset_to_last_published`,
-      method: 'POST',
-      body: {
-        context_type: contextType,
-        context_id: contextId
-      }
-    })
-  ).json
+export const getPublishProgress = (progressId: string) =>
+  doFetchApi<Progress>({
+    path: `/api/v1/progress/${progressId}`
+  }).then(({json}) => json)
 
-export const load = async (pacePlanId: string) =>
-  (await doFetchApi({path: `/api/v1/pace_plans/${pacePlanId}`})).json
+export const resetToLastPublished = (contextType: PlanContextTypes, contextId: string) =>
+  doFetchApi<{pace_plan: PacePlan}>({
+    path: `/api/v1/pace_plans/reset_to_last_published`,
+    method: 'POST',
+    body: {
+      context_type: contextType,
+      context_id: contextId
+    }
+  }).then(({json}) => json?.pace_plan)
 
-export const getLatestDraftFor = async (context: PlanContextTypes, contextId: string) =>
-{
-  let url = `/api/v1/pace_plans/latest_draft_for?course_id=${contextId}`
+export const load = (pacePlanId: string) =>
+  doFetchApi<PacePlan>({path: `/api/v1/pace_plans/${pacePlanId}`}).then(({json}) => json)
+
+export const getNewPacePlanFor = (
+  courseId: string,
+  context: PlanContextTypes,
+  contextId: string
+) => {
+  let url = `/api/v1/courses/${courseId}/pace_plans/new`
   if (context === 'Section') {
-    url = `/api/v1/pace_plans/latest_draft_for?course_section_id=${contextId}`
+    url = `/api/v1/courses/${courseId}/pace_plans/new?course_section_id=${contextId}`
   } else if (context === 'Enrollment') {
-    url = `/api/v1/pace_plans/latest_draft_for?enrollment_id=${contextId}`
+    url = `/api/v1/courses/${courseId}/pace_plans/new?enrollment_id=${contextId}`
   }
-  return (await doFetchApi<{pace_plan: PacePlan}>({ path: url })).json
+  return doFetchApi<{pace_plan: PacePlan}>({path: url}).then(({json}) => json?.pace_plan)
 }
 
-export const republishAllPlansForCourse = async (courseId: string) =>
-  (
-    await doFetchApi({
-      path: `/api/v1/pace_plans/republish_all_plans`,
-      method: 'POST',
-      body: {course_id: courseId}
-    })
-  ).json
+export const republishAllPlansForCourse = (courseId: string) =>
+  doFetchApi({
+    path: `/api/v1/pace_plans/republish_all_plans`,
+    method: 'POST',
+    body: {course_id: courseId}
+  }).then(({json}) => json)
 
-export const republishAllPlans = async () =>
-  (
-    await doFetchApi({
-      path: `/api/v1/pace_plans/republish_all_plans`,
-      method: 'POST'
-    })
-  ).json
+export const republishAllPlans = () =>
+  doFetchApi({
+    path: `/api/v1/pace_plans/republish_all_plans`,
+    method: 'POST'
+  }).then(({json}) => json)
 
-export const relinkToParentPlan = async (planId: string) =>
-  (
-    await doFetchApi<{pace_plan: PacePlan}>({
-      path: `/api/v1/pace_plans/${planId}/relink_to_parent_plan`,
-      method: 'POST'
-    })
-  ).json
+export const relinkToParentPlan = (planId: string) =>
+  doFetchApi<{pace_plan: PacePlan}>({
+    path: `/api/v1/pace_plans/${planId}/relink_to_parent_plan`,
+    method: 'POST'
+  }).then(({json}) => json?.pace_plan)
+
+export const compress = (pacePlan: PacePlan, extraSaveParams = {}) =>
+  doFetchApi<{pace_plan: PacePlan; progress: Progress}>({
+    path: `/api/v1/courses/${pacePlan.course_id}/pace_plans/compress_dates`,
+    method: 'POST',
+    body: {
+      ...extraSaveParams,
+      pace_plan: transformPacePlanForApi(pacePlan, ApiMode.COMPRESS)
+    }
+  }).then(({json}) => json)
 
 /* API transformers
  * functions and interfaces to transform the frontend formatted objects
@@ -160,18 +155,23 @@ interface ApiPacePlanModuleItemsAttributes {
   readonly module_item_id: string
 }
 
-interface ApiFormattedPacePlan {
+interface CompressApiFormattedPacePlan {
   readonly start_date?: string
   readonly end_date?: string
-  readonly workflow_state: WorkflowStates
   readonly exclude_weekends: boolean
+  readonly pace_plan_module_items_attributes: ApiPacePlanModuleItemsAttributes[]
+}
+interface PublishApiFormattedPacePlan extends CompressApiFormattedPacePlan {
+  readonly workflow_state: WorkflowStates
   readonly context_type: PlanContextTypes
   readonly context_id: string
   readonly hard_end_dates: boolean
-  readonly pace_plan_module_items_attributes: ApiPacePlanModuleItemsAttributes[]
 }
 
-const transformPacePlanForApi = (pacePlan: PacePlan): ApiFormattedPacePlan => {
+const transformPacePlanForApi = (
+  pacePlan: PacePlan,
+  mode: ApiMode = ApiMode.PUBLISH
+): PublishApiFormattedPacePlan | CompressApiFormattedPacePlan => {
   const pacePlanItems: ApiPacePlanModuleItemsAttributes[] = []
   pacePlan.modules.forEach(module => {
     module.items.forEach(item => {
@@ -183,16 +183,21 @@ const transformPacePlanForApi = (pacePlan: PacePlan): ApiFormattedPacePlan => {
     })
   })
 
-  const apiFormattedPacePlan: ApiFormattedPacePlan = {
-    start_date: pacePlan.start_date,
-    end_date: pacePlan.end_date,
-    workflow_state: pacePlan.workflow_state,
-    exclude_weekends: pacePlan.exclude_weekends,
-    context_type: pacePlan.context_type,
-    context_id: pacePlan.context_id,
-    hard_end_dates: !!pacePlan.hard_end_dates,
-    pace_plan_module_items_attributes: pacePlanItems
-  }
-
-  return apiFormattedPacePlan
+  return mode === ApiMode.COMPRESS
+    ? {
+        start_date: pacePlan.start_date,
+        end_date: pacePlan.end_date,
+        exclude_weekends: pacePlan.exclude_weekends,
+        pace_plan_module_items_attributes: pacePlanItems
+      }
+    : {
+        start_date: pacePlan.start_date,
+        end_date: pacePlan.end_date,
+        workflow_state: pacePlan.workflow_state,
+        exclude_weekends: pacePlan.exclude_weekends,
+        context_type: pacePlan.context_type,
+        context_id: pacePlan.context_id,
+        hard_end_dates: !!pacePlan.hard_end_dates,
+        pace_plan_module_items_attributes: pacePlanItems
+      }
 }

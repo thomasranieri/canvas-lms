@@ -40,7 +40,8 @@ const PLANNER_CONFIG_KEYS = [
   'dateTimeFormatters',
   'externalFallbackFocusable',
   'env',
-  'singleCourse'
+  'singleCourse',
+  'observedUserId'
 ]
 
 const defaults = {plannerEnabled: true, isPlannerActive: () => {}}
@@ -85,13 +86,6 @@ describe('usePlanner hook', () => {
 
     expect(flashAlerts.showFlashError).toHaveBeenCalledWith('Failed to load the schedule tab')
     expect(result.current).toBe(false)
-  })
-
-  it('calls the provided callback if initialization succeeds', async () => {
-    const callbackFn = jest.fn()
-    const {waitForNextUpdate} = renderHook(() => usePlanner({...defaults, callback: callbackFn}))
-    await waitForNextUpdate()
-    expect(callbackFn).toHaveBeenCalled()
   })
 
   it('passes the provided focus fallback ref to the planner via initialization options', async () => {

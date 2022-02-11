@@ -28,18 +28,22 @@ import {
   MOCK_COURSE_TABS,
   MOCK_GRADING_PERIODS_EMPTY,
   MOCK_ASSIGNMENT_GROUPS,
+  MOCK_ASSIGNMENT_GROUPS_WITH_OBSERVED_USERS,
   MOCK_ENROLLMENTS,
+  MOCK_ENROLLMENTS_WITH_OBSERVED_USERS,
   MOCK_GROUPS
 } from './mocks'
 import {TAB_IDS} from '@canvas/k5/react/utils'
-import {MOCK_OBSERVER_LIST} from '@canvas/k5/react/__tests__/fixtures'
+import {MOCK_OBSERVED_USERS_LIST} from '@canvas/observer-picker/react/__tests__/fixtures'
 import sinon from 'sinon'
+import {OBSERVER_COOKIE_PREFIX} from '@canvas/observer-picker/ObserverGetObservee'
 
 const currentUser = {
   id: '1',
   display_name: 'Geoffrey Jellineck',
   avatar_image_url: 'http://avatar'
 }
+const observedUserCookieName = `${OBSERVER_COOKIE_PREFIX}${currentUser.id}`
 const defaultEnv = {
   current_user: currentUser,
   course_id: '30',
@@ -66,8 +70,13 @@ const defaultProps = {
   id: '30',
   timeZone: defaultEnv.TIMEZONE,
   canManage: false,
+  canReadAnnouncements: true,
   canReadAsAdmin: false,
-  courseOverview: '<h2>Time to learn!</h2>',
+  courseOverview: {
+    body: '<h2>Time to learn!</h2>',
+    url: 'home',
+    canEdit: true
+  },
   hideFinalGrades: false,
   userIsStudent: true,
   showStudentView: false,
@@ -96,15 +105,17 @@ const defaultProps = {
   pagesPath: '/courses/30/pages',
   hasWikiPages: true,
   hasSyllabusBody: true,
-  parentSupportEnabled: true,
-  observerList: MOCK_OBSERVER_LIST,
+  parentSupportEnabled: false,
+  observedUsersList: MOCK_OBSERVED_USERS_LIST,
   selfEnrollment: {
     option: null,
     url: null
   },
   assignmentsDueToday: {},
   assignmentsMissing: {},
-  assignmentsCompletedForToday: {}
+  assignmentsCompletedForToday: {},
+  currentUserRoles: ['user', 'student', 'teacher'],
+  isMasterCourse: false
 }
 const FETCH_IMPORTANT_INFO_URL = encodeURI('/api/v1/courses/30?include[]=syllabus_body')
 const FETCH_APPS_URL = '/api/v1/external_tools/visible_course_nav_tools?context_codes[]=course_30'
@@ -113,10 +124,17 @@ const FETCH_TABS_URL = '/api/v1/courses/30/tabs'
 const GRADING_PERIODS_URL = encodeURI(
   '/api/v1/courses/30?include[]=grading_periods&include[]=current_grading_period_scores&include[]=total_scores'
 )
+const OBSERVER_GRADING_PERIODS_URL = encodeURI(
+  '/api/v1/courses/30?include[]=grading_periods&include[]=current_grading_period_scores&include[]=total_scores&include[]=observed_users'
+)
 const ASSIGNMENT_GROUPS_URL = encodeURI(
   '/api/v1/courses/30/assignment_groups?include[]=assignments&include[]=submission&include[]=read_state&include[]=submission_comments'
 )
+const OBSERVER_ASSIGNMENT_GROUPS_URL = encodeURI(
+  '/api/v1/courses/30/assignment_groups?include[]=assignments&include[]=submission&include[]=read_state&include[]=submission_comments&include[]=observed_users'
+)
 const ENROLLMENTS_URL = '/api/v1/courses/30/enrollments?user_id=1'
+const OBSERVER_ENROLLMENTS_URL = '/api/v1/courses/30/enrollments?user_id=1&include=observed_users'
 
 const GROUPS_URL = encodeURI(
   '/api/v1/courses/30/groups?include[]=users&include[]=group_category&include[]=permissions&include_inactive_users=true'
@@ -184,6 +202,7 @@ afterEach(() => {
   moxios.uninstall()
   fetchMock.restore()
   fakeXhrServer.restore()
+  window.location.hash = ''
 })
 
 describe('K-5 Subject Course', () => {
@@ -326,9 +345,6 @@ describe('K-5 Subject Course', () => {
   })
 
   describe('Student View Button functionality', () => {
-    afterAll(() => {
-      window.location.hash = ''
-    })
     it('Shows the Student View button when the user has student view mode access', () => {
       const {queryByRole} = render(<K5Course {...defaultProps} showStudentView />)
       expect(queryByRole('link', {name: 'Student View'})).toBeInTheDocument()
@@ -385,7 +401,7 @@ describe('K-5 Subject Course', () => {
         url: 'http://enroll_url/'
       }
       const {getByRole} = render(<K5Course {...defaultProps} selfEnrollment={selfEnrollment} />)
-      const button = getByRole('link', {name: 'Join this Course'})
+      const button = getByRole('link', {name: 'Join this Subject'})
       expect(button).toBeInTheDocument()
       expect(button.href).toBe('http://enroll_url/')
     })
@@ -398,14 +414,14 @@ describe('K-5 Subject Course', () => {
       const {getByRole, getByText} = render(
         <K5Course {...defaultProps} selfEnrollment={selfEnrollment} />
       )
-      const button = getByRole('button', {name: 'Drop this Course'})
+      const button = getByRole('button', {name: 'Drop this Subject'})
       expect(button).toBeInTheDocument()
       act(() => button.click())
       expect(getByText('Drop Arts and Crafts')).toBeInTheDocument()
       expect(getByText('Confirm Unenrollment')).toBeInTheDocument()
       expect(
         getByText(
-          'Are you sure you want to unenroll in this course? You will no longer be able to see the course roster or communicate directly with the teachers, and you will no longer see course events in your stream and as notifications.'
+          'Are you sure you want to unenroll in this subject? You will no longer be able to see the subject roster or communicate directly with the teachers, and you will no longer see subject events in your stream and as notifications.'
         )
       ).toBeInTheDocument()
       expect(getByRole('button', {name: 'Cancel'})).toBeInTheDocument()
@@ -420,19 +436,19 @@ describe('K-5 Subject Course', () => {
       const {getByRole, getAllByRole, getByText} = render(
         <K5Course {...defaultProps} selfEnrollment={selfEnrollment} />
       )
-      const openModalButton = getByRole('button', {name: 'Drop this Course'})
+      const openModalButton = getByRole('button', {name: 'Drop this Subject'})
       act(() => openModalButton.click())
-      const dropButton = getAllByRole('button', {name: 'Drop this Course'})[1]
+      const dropButton = getAllByRole('button', {name: 'Drop this Subject'})[1]
       act(() => dropButton.click())
-      expect(getByText('Dropping course')).toBeInTheDocument()
+      expect(getByText('Dropping subject')).toBeInTheDocument()
       expect(fetchMock.called(selfEnrollment.url)).toBeTruthy()
     })
 
     it('renders neither if selfEnrollment is nil', () => {
       const {getByText, queryByText} = render(<K5Course {...defaultProps} />)
       expect(getByText('Arts and Crafts')).toBeInTheDocument()
-      expect(queryByText('Join this Course')).not.toBeInTheDocument()
-      expect(queryByText('Drop this Course')).not.toBeInTheDocument()
+      expect(queryByText('Join this Subject')).not.toBeInTheDocument()
+      expect(queryByText('Drop this Subject')).not.toBeInTheDocument()
     })
   })
 
@@ -474,9 +490,26 @@ describe('K-5 Subject Course', () => {
       expect(getByText('Time to learn!')).toBeInTheDocument()
     })
 
+    it('shows an edit button when front page is set', () => {
+      const {getByRole} = render(<K5Course {...defaultProps} defaultTab={TAB_IDS.HOME} />)
+      const button = getByRole('link', {name: 'Edit home page'})
+      expect(button).toBeInTheDocument()
+      expect(button.href).toContain('/courses/30/pages/home/edit')
+    })
+
+    const emptyCourseOverview = {
+      body: null,
+      url: null,
+      canEdit: null
+    }
+
     it('shows an empty home state if the front page is not set', () => {
       const {getByText, getByTestId} = render(
-        <K5Course {...defaultProps} courseOverview={null} defaultTab={TAB_IDS.HOME} />
+        <K5Course
+          {...defaultProps}
+          courseOverview={emptyCourseOverview}
+          defaultTab={TAB_IDS.HOME}
+        />
       )
       expect(getByTestId('empty-home-panda')).toBeInTheDocument()
       expect(getByText('This is where you’ll land when your home is complete.')).toBeInTheDocument()
@@ -485,21 +518,35 @@ describe('K-5 Subject Course', () => {
     describe('manage home button', () => {
       it('shows the home manage button to teachers when the front page is not set ', () => {
         const {getByTestId} = render(
-          <K5Course {...defaultProps} courseOverview={null} defaultTab={TAB_IDS.HOME} canManage />
+          <K5Course
+            {...defaultProps}
+            courseOverview={emptyCourseOverview}
+            defaultTab={TAB_IDS.HOME}
+            canManage
+          />
         )
         expect(getByTestId('manage-home-button')).toBeInTheDocument()
       })
 
       it('does not show the home manage button to students', () => {
         const {queryByTestId} = render(
-          <K5Course {...defaultProps} courseOverview={null} defaultTab={TAB_IDS.HOME} />
+          <K5Course
+            {...defaultProps}
+            courseOverview={emptyCourseOverview}
+            defaultTab={TAB_IDS.HOME}
+          />
         )
         expect(queryByTestId('manage-home-button')).not.toBeInTheDocument()
       })
 
       it('sends the user to the course pages list if the course has wiki pages', () => {
         const {getByTestId} = render(
-          <K5Course {...defaultProps} courseOverview={null} defaultTab={TAB_IDS.HOME} canManage />
+          <K5Course
+            {...defaultProps}
+            courseOverview={emptyCourseOverview}
+            defaultTab={TAB_IDS.HOME}
+            canManage
+          />
         )
         const manageHomeLink = getByTestId('manage-home-button')
         expect(manageHomeLink.href).toMatch('/courses/30/pages')
@@ -510,7 +557,7 @@ describe('K-5 Subject Course', () => {
           <K5Course
             {...defaultProps}
             hasWikiPages={false}
-            courseOverview={null}
+            courseOverview={emptyCourseOverview}
             defaultTab={TAB_IDS.HOME}
             canManage
           />
@@ -685,6 +732,9 @@ describe('K-5 Subject Course', () => {
     })
 
     describe('apps section', () => {
+      afterEach(() => {
+        fetchMock.restore()
+      })
       it("displays user's apps", async () => {
         const {getByText} = render(<K5Course {...defaultProps} defaultTab={TAB_IDS.RESOURCES} />)
         await waitFor(() => {
@@ -724,12 +774,49 @@ describe('K-5 Subject Course', () => {
     })
   })
 
-  describe('Parent Support', () => {
+  describe('Observer Support', () => {
+    beforeEach(() => {
+      fetchMock.get(OBSERVER_GRADING_PERIODS_URL, JSON.stringify(MOCK_GRADING_PERIODS_EMPTY))
+      fetchMock.get(
+        OBSERVER_ASSIGNMENT_GROUPS_URL,
+        JSON.stringify(MOCK_ASSIGNMENT_GROUPS_WITH_OBSERVED_USERS)
+      )
+      fetchMock.get(OBSERVER_ENROLLMENTS_URL, JSON.stringify(MOCK_ENROLLMENTS_WITH_OBSERVED_USERS))
+    })
+
+    afterEach(() => {
+      document.cookie = `${observedUserCookieName}=`
+    })
+
     it('shows picker when user is an observer', () => {
-      const {getByRole} = render(<K5Course {...defaultProps} />)
+      const {getByRole} = render(<K5Course {...defaultProps} parentSupportEnabled />)
       const select = getByRole('combobox', {name: 'Select a student to view'})
       expect(select).toBeInTheDocument()
       expect(select.value).toBe('Zelda')
+    })
+
+    it('shows the observee grades on the Grades Tab', async () => {
+      const {getByRole, getByText} = render(
+        <K5Course {...defaultProps} parentSupportEnabled defaultTab={TAB_IDS.GRADES} />
+      )
+      const select = getByRole('combobox', {name: 'Select a student to view'})
+      act(() => select.click())
+      act(() => getByText('Student 5').click())
+      await waitFor(() => {
+        const formattedSubmittedDate = tz.format(
+          '2021-09-20T23:55:08Z',
+          'date.formats.full_with_weekday'
+        )
+        ;[
+          'Assignment 3',
+          `Submitted ${formattedSubmittedDate}`,
+          'Assignments',
+          '6 pts',
+          'Out of 10 pts'
+        ].forEach(label => {
+          expect(getByText(label)).toBeInTheDocument()
+        })
+      })
     })
   })
 })

@@ -35,7 +35,13 @@ import useFetchApi from '@canvas/use-fetch-api-hook'
 import {showFlashError} from '@canvas/alerts/react/FlashAlert'
 import {createNewCourse, getAccountsFromEnrollments} from './utils'
 
-export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5User}) => {
+export const CreateCourseModal = ({
+  isModalOpen,
+  setModalOpen,
+  permissions,
+  restrictToMCCAccount,
+  isK5User
+}) => {
   const [loading, setLoading] = useState(true)
   const [allAccounts, setAllAccounts] = useState([])
   const [allHomerooms, setAllHomerooms] = useState([])
@@ -76,7 +82,7 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
       })
   }
 
-  const teacherFetchOpts = {
+  const teacherStudentFetchOpts = {
     path: '/api/v1/users/self/courses',
     success: useCallback(enrollments => {
       const accounts = getAccountsFromEnrollments(enrollments)
@@ -89,7 +95,8 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
     params: {
       per_page: 100,
       include: ['account'],
-      enrollment_type: 'teacher'
+      // Show teachers only accounts where they have a teacher enrollment
+      ...(permissions === 'teacher' && {enrollment_type: 'teacher'})
     }
   }
 
@@ -105,11 +112,28 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
     }
   }
 
+  const noEnrollmentsFetchOpts = {
+    path: '/api/v1/manually_created_courses_account',
+    success: useCallback(account => {
+      setAllAccounts(account)
+      setSelectedAccount(account[0])
+      setAccountSearchTerm(account[0].name)
+    }, [])
+  }
+
+  const useTeacherStudentOpts =
+    ['teacher', 'student'].includes(permissions) && !restrictToMCCAccount
+  const useNoEnrollmentsOpts =
+    permissions === 'no_enrollments' ||
+    (['teacher', 'student'].includes(permissions) && restrictToMCCAccount)
+
   useFetchApi({
     loading: setLoading,
     error: useCallback(err => showFlashError(I18n.t('Unable to get accounts'))(err), []),
     fetchAllPages: true,
-    ...(permissions === 'teacher' ? teacherFetchOpts : adminFetchOpts)
+    ...(permissions === 'admin' && adminFetchOpts),
+    ...(useTeacherStudentOpts && teacherStudentFetchOpts),
+    ...(useNoEnrollmentsOpts && noEnrollmentsFetchOpts)
   })
 
   const handleAccountSelected = id => {
@@ -159,7 +183,10 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
     },
     error: useCallback(err => showFlashError(I18n.t('Unable to get homerooms'))(err), []),
     fetchAllPages: true,
-    ...(permissions === 'teacher' ? teacherHomeroomFetchOpts : adminHomeroomFetchOpts)
+    // don't let students/users with no enrollments sync homeroom data
+    forceResult: ['no_enrollments', 'student'].includes(permissions) ? [] : undefined,
+    ...(permissions === 'teacher' && teacherHomeroomFetchOpts),
+    ...(permissions === 'admin' && adminHomeroomFetchOpts)
   })
 
   const handleHomeroomSelected = id => {
@@ -180,8 +207,10 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
       ))
   }
 
-  // Don't show the account select for teachers with only one account to show
-  const hideAccountSelect = permissions === 'teacher' && allAccounts?.length === 1
+  // Don't show the account select for non-admins with only one account to show
+  const hideAccountSelect = permissions !== 'admin' && allAccounts?.length === 1
+  // Don't show homeroom sync to non-k5 users or to students/users with no enrollments
+  const showHomeroomSyncOptions = isK5User && ['admin', 'teacher'].includes(permissions)
 
   return (
     <Modal label={modalLabel} open={isModalOpen} size="small" onDismiss={clearModal}>
@@ -210,15 +239,15 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
                 {accountOptions}
               </CanvasAsyncSelect>
             )}
-            {isK5User && (
+            {showHomeroomSyncOptions && (
               <Checkbox
-                label={I18n.t('Sync enrollments and course start/end dates from homeroom')}
+                label={I18n.t('Sync enrollments and subject start/end dates from homeroom')}
                 value="syncHomeroomEnrollments"
                 checked={syncHomeroomEnrollments}
                 onChange={event => setSyncHomeroomEnrollments(event.target.checked)}
               />
             )}
-            {isK5User && syncHomeroomEnrollments && (
+            {showHomeroomSyncOptions && syncHomeroomEnrollments && (
               <SimpleSelect
                 data-testid="homeroom-select"
                 renderLabel={I18n.t('Select a homeroom')}
@@ -265,6 +294,7 @@ export const CreateCourseModal = ({isModalOpen, setModalOpen, permissions, isK5U
 CreateCourseModal.propTypes = {
   isModalOpen: PropTypes.bool.isRequired,
   setModalOpen: PropTypes.func.isRequired,
-  permissions: PropTypes.oneOf(['admin', 'teacher']).isRequired,
+  permissions: PropTypes.oneOf(['admin', 'teacher', 'student', 'no_enrollments']).isRequired,
+  restrictToMCCAccount: PropTypes.bool.isRequired,
   isK5User: PropTypes.bool.isRequired
 }

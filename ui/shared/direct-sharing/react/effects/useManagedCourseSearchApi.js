@@ -18,9 +18,19 @@
 
 import useFetchApi from '@canvas/use-fetch-api-hook'
 
+export const MINIMUM_SEARCH_LENGTH = 2
+
 // The manageable_courses api returns the course name as `label` for some reason
 function convertManageableCoursesToApi(courses) {
   return courses.map(course => ({name: course.label, ...course}))
+}
+
+export function isSearchableTerm(value) {
+  if (ENV?.current_user_roles?.includes('admin')) {
+    return value.length >= MINIMUM_SEARCH_LENGTH
+  } else {
+    return value.length === 0 || value.length >= MINIMUM_SEARCH_LENGTH
+  }
 }
 
 export default function useManagedCourseSearchApi(fetchApiOpts = {}, includeConcluded = false) {
@@ -30,9 +40,15 @@ export default function useManagedCourseSearchApi(fetchApiOpts = {}, includeConc
   if (includeConcluded) {
     fetchApiOpts.params.include = 'concluded'
   }
+
+  const searchTerm = fetchApiOpts.params.term || ''
+  let forceResult
+  if (!isSearchableTerm(searchTerm)) forceResult = null
+
   useFetchApi({
     path: `/users/self/manageable_courses`,
     convert: convertManageableCoursesToApi,
+    forceResult,
     ...fetchApiOpts
   })
 }

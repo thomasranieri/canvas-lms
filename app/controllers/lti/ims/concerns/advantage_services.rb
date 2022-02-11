@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-module Lti::Ims::Concerns
+module Lti::IMS::Concerns
   module AdvantageServices
     extend ActiveSupport::Concern
     include LtiServices
@@ -42,7 +42,7 @@ module Lti::Ims::Concerns
       end
 
       def context
-        raise 'Abstract Method'
+        raise "Abstract Method"
       end
 
       def active_binding_for_account?
@@ -50,12 +50,8 @@ module Lti::Ims::Concerns
       end
 
       def tool
-        @_tool ||= begin
-          return nil unless context
-          return nil unless developer_key
-
-          ContextExternalTool.all_tools_for(context).where(developer_key: developer_key).take
-        end
+        @tool ||= context && developer_key &&
+                  ContextExternalTool.all_tools_for(context).where(developer_key: developer_key).take
       end
     end
   end

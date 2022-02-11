@@ -18,7 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper')
 require_relative "../graphql_spec_helper"
 
 describe Types::QuizType do
@@ -30,10 +29,10 @@ describe Types::QuizType do
   end
 
   it "has modules" do
-    module1 = quiz.context.context_modules.create!(name: 'Module 1')
-    module2 = quiz.context.context_modules.create!(name: 'Module 2')
-    quiz.context_module_tags.create!(context_module: module1, context: quiz.context, tag_type: 'context_module')
-    quiz.context_module_tags.create!(context_module: module2, context: quiz.context, tag_type: 'context_module')
+    module1 = quiz.context.context_modules.create!(name: "Module 1")
+    module2 = quiz.context.context_modules.create!(name: "Module 2")
+    quiz.context_module_tags.create!(context_module: module1, context: quiz.context, tag_type: "context_module")
+    quiz.context_module_tags.create!(context_module: module2, context: quiz.context, tag_type: "context_module")
     expect(quiz_type.resolve("modules { _id }")).to match_array([module1.id.to_s, module2.id.to_s])
   end
 end

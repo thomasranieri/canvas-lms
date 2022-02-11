@@ -18,10 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'peer_review_invitation' do
+describe "peer_review_invitation" do
   include MessagesCommon
 
   before :once do
@@ -30,11 +29,12 @@ describe 'peer_review_invitation' do
 
   let(:notification_name) { :peer_review_invitation }
   let(:asset) { @assessment_request }
-  let(:anonymous_user) { 'Anonymous User' }
+  let(:anonymous_user) { "Anonymous User" }
 
   context "anonymous peer disabled" do
     context ".email" do
       let(:path_type) { :email }
+
       it "renders" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).not_to include(anonymous_user)
@@ -43,6 +43,7 @@ describe 'peer_review_invitation' do
 
     context ".sms" do
       let(:path_type) { :sms }
+
       it "renders" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).not_to include(anonymous_user)
@@ -51,6 +52,7 @@ describe 'peer_review_invitation' do
 
     context ".summary" do
       let(:path_type) { :summary }
+
       it "renders" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).not_to include(anonymous_user)
@@ -59,6 +61,7 @@ describe 'peer_review_invitation' do
 
     context ".twitter" do
       let(:path_type) { :twitter }
+
       it "renders" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).not_to include(anonymous_user)
@@ -75,7 +78,8 @@ describe 'peer_review_invitation' do
 
     context ".email" do
       let(:path_type) { :email }
-      it 'shows anonymous when anonymous peer review enabled' do
+
+      it "shows anonymous when anonymous peer review enabled" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).to include(anonymous_user)
       end
@@ -83,7 +87,8 @@ describe 'peer_review_invitation' do
 
     context ".sms" do
       let(:path_type) { :sms }
-      it 'shows anonymous when anonymous peer review enabled' do
+
+      it "shows anonymous when anonymous peer review enabled" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).to include(anonymous_user)
       end
@@ -91,7 +96,8 @@ describe 'peer_review_invitation' do
 
     context ".summary" do
       let(:path_type) { :summary }
-      it 'shows anonymous when anonymous peer review enabled' do
+
+      it "shows anonymous when anonymous peer review enabled" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).to include(anonymous_user)
       end
@@ -100,7 +106,7 @@ describe 'peer_review_invitation' do
     context ".twitter" do
       let(:path_type) { :twitter }
 
-      it 'shows anonymous when anonymous peer review enabled' do
+      it "shows anonymous when anonymous peer review enabled" do
         message = generate_message(notification_name, path_type, asset)
         expect(message.body).to include(anonymous_user)
       end

@@ -23,7 +23,7 @@
   load_blueprint_courses_ui
   @has_content_notices = load_content_notices
   provide :head, include_common_stylesheets
-  set_badge_counts_for(@context, @current_user, @current_enrollment) if @set_badge_counts
+  set_badge_counts_for(@context, @current_user) if @set_badge_counts
   js_env notices: flash_notices()
 -%>
 <%= render :partial => "layouts/head" %>
@@ -33,6 +33,12 @@
   right_side = (yield :right_side).presence
 
   sticky_enabled = Account.site_admin.feature_enabled?(:sticky_left_nav)
+
+  if Account.site_admin.feature_enabled?(:remember_course_nav_collapsed_state)
+    # Collapse the course menu according to user preference, unless a certain action
+    # requests that it default to collapsed for that page
+    @collapse_course_menu ||= @current_user&.reload&.collapse_course_nav?
+  end
 
   if @collapse_course_menu
     subnav_menu_text = t('Show Navigation Menu')
@@ -133,7 +139,7 @@
             <div id="immersive_reader_mount_point"></div>
           <% end %>
           <% if show_student_view_button? %>
-            <%= link_to course_student_view_path(course_id: @context, redirect_to_referer: 1), :class => "btn", :id => "easy_student_view", :role => 'complementary', :method => :post do %>
+            <%= link_to course_student_view_path(course_id: @context, redirect_to_referer: 1), :class => "btn", :id => "easy_student_view", :method => :post do %>
               <i class="icon-student-view"></i> <%= t('Student View') %>
             <% end %>
           <% end %>
@@ -157,7 +163,7 @@
           style="display: <%= @collapse_course_menu ? "none" : "block" %>"
           >
           <% if sticky_enabled %>
-            <div class="ic-sticky-frame">
+            <div id="sticky-container" class="ic-sticky-frame">
           <% end %>
             <% if left_side %>
               <%= left_side %>
@@ -188,6 +194,38 @@
       <% end %>
       <div id="not_right_side" class="ic-app-main-content">
         <div id="content-wrapper" class="ic-Layout-contentWrapper">
+          <% if should_show_migration_limitation_message %>
+            <% js_bundle :quiz_migration_alerts %>
+            <div class="ic-notification ic-notification--info quiz_migration_notification">
+              <div class="ic-notification__icon" role="presentation">
+                <i class="icon-info"></i>
+                <span class="screenreader-only">
+                  <%= accessible_message_icon_text('information') %>
+                </span>
+              </div>
+              <div class="ic-notification__content">
+                <div class="ic-notification__message notification_message" style="margin-bottom:1rem;">
+                  <%= t 'Your Classic Quizzes have been migrated to New Quizzes! ' %><br />
+                  <%= t 'Please note:' %>
+                  <ul>
+                    <li><%= t 'Text No Question has moved to a Stimulus; please add a question so it can display within the quiz.' %></li>
+                    <li><%= t 'Classic Quizzes with New RCE audio/video may not have moved completely; these will need to be rebuilt.' %></li>
+                    <li><%= t 'LaTex equations are currently migrated as images, and the questions should not be edited.' %></li>
+                  </ul>
+                  <%= t 'We apologize for the inconvenience and thank you for your patience as we continue to improve the migration experience!' %>
+                </div>
+                <div class="ic-notification__actions">
+                  <a href="#"
+                    rel="<%= api_v1_course_dismiss_migration_limitation_msg_url(@context.id) %>"
+                    class="close_migration_notification_link Button Button--info"
+                    role="button"
+                  >
+                    <%= t('Close') %>
+                  </a>
+                </div>
+              </div>
+            </div>
+          <% end %>
           <%= render :partial => 'shared/content_notices' if @has_content_notices && @show_left_side %>
           <div id="content" class="ic-Layout-contentMain" role="main">
             <%= yield %>

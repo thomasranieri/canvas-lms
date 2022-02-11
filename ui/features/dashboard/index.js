@@ -16,13 +16,15 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import $ from 'jquery'
-import '@canvas/rails-flash-notifications'
-import '@canvas/jquery/jquery.disableWhileLoading'
 import React from 'react'
 import ReactDOM from 'react-dom'
-import DashboardHeader from './react/DashboardHeader'
+import $ from 'jquery'
+
 import ready from '@instructure/ready'
+
+import '@canvas/rails-flash-notifications'
+import '@canvas/jquery/jquery.disableWhileLoading'
+import DashboardHeader from './react/DashboardHeader'
 
 ready(() => {
   const dashboardHeaderContainer = document.getElementById('dashboard_header_container')

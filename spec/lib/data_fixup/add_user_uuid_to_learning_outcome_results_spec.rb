@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
-
 describe DataFixup::AddUserUuidToLearningOutcomeResults do
   let_once(:course) do
     Course.create!
@@ -35,11 +33,11 @@ describe DataFixup::AddUserUuidToLearningOutcomeResults do
   end
 
   let_once :learning_outcome_result do
-    outcome = course.created_learning_outcomes.create!(title: 'outcome')
+    outcome = course.created_learning_outcomes.create!(title: "outcome")
 
     LearningOutcomeResult.new(
       alignment: ContentTag.create!({
-                                      title: 'content',
+                                      title: "content",
                                       context: course,
                                       learning_outcome: outcome
                                     }),

@@ -46,8 +46,12 @@ module MicrosoftSync
     class << self
       # Returns a JSONified hash with class, message, public_message, and
       # public_interpolated_values. class and message are for internal debugging only.
-      def serialize(error)
-        result = { class: error.class.name, message: error.message&.truncate(1000) }
+      def serialize(error, **extra_metadata)
+        result = {
+          class: error.class.name,
+          message: error.message&.truncate(1000),
+          extra_metadata: extra_metadata
+        }
 
         if error.is_a?(MicrosoftSync::Errors::PublicError)
           locale_was = I18n.locale
@@ -65,6 +69,12 @@ module MicrosoftSync
         result.compact.to_json
       end
 
+      def extra_metadata_from_serialized(serialized_error)
+        return {} unless serialized_error
+
+        deserialize(serialized_error)[:extra_metadata] || {}
+      end
+
       # Takes an string returned by serialize() and returns the error
       # message to be shown to users, localized to the current locale.
       def deserialize_and_localize(serialized_error)
@@ -79,7 +89,7 @@ module MicrosoftSync
           interpolations = deserialized[:public_interpolated_values]
           I18n.t!(msg, interpolations || {})
         else
-          I18n.t('Microsoft Sync has encountered an internal error.')
+          I18n.t("Microsoft Sync has encountered an internal error.")
         end
       end
 
@@ -103,9 +113,9 @@ module MicrosoftSync
     # unknown problem.
     class GroupHasNoOwners < PublicError
       def self.public_message
-        I18n.t 'The team could be not be created because the Microsoft group has no owners. ' \
-               'This may be an intermittent error: please try to sync again, and ' \
-               'if the problem persists, contact support.'
+        I18n.t "The team could be not be created because the Microsoft group has no owners. " \
+               "This may be an intermittent error: please try to sync again, and " \
+               "if the problem persists, contact support."
       end
     end
 
@@ -113,20 +123,25 @@ module MicrosoftSync
     # (or possibly, in the case of partial sync, some have been manually removed)
     class MissingOwners < Errors::GracefulCancelError
       def self.public_message
-        I18n.t 'A Microsoft 365 Group must have owners, and no users ' \
-               'corresponding to the instructors of the Canvas course could be found on the ' \
-               'Microsoft side.'
+        I18n.t "A Microsoft 365 Group must have owners, and no users " \
+               "corresponding to the instructors of the Canvas course could be found on the " \
+               "Microsoft side. If you recently added and removed course owners, a re-sync " \
+               "may resolve the issue."
       end
     end
 
     class NotEducationTenant < Errors::GracefulCancelError
       def self.public_message
-        I18n.t 'The Microsoft 365 tenant provided in account settings is not an Education ' \
-               'tenant, so cannot be used with the Microsoft Teams Sync integration.'
+        I18n.t "The Microsoft 365 tenant provided in account settings is not an Education " \
+               "tenant, so cannot be used with the Microsoft Teams Sync integration."
       end
     end
 
     class TeamAlreadyExists < StandardError; end
+
+    class OwnersQuotaExceeded < StandardError; end
+
+    class MembersQuotaExceeded < StandardError; end
 
     # Makes public the status code but not anything about the response body.
     # The internal error message has the response body (truncated)
@@ -137,7 +152,7 @@ module MicrosoftSync
       attr_reader :code
 
       def self.public_message
-        I18n.t 'Unexpected reponse from Microsoft API: got %{status_code} status code'
+        I18n.t "Unexpected response from Microsoft API: got %{status_code} status code"
       end
 
       def public_interpolated_values
@@ -198,7 +213,7 @@ module MicrosoftSync
       include Throttled
 
       def initialize(**args)
-        @retry_after_seconds = args[:response].headers['Retry-After'].presence&.to_f
+        @retry_after_seconds = args[:response].headers["Retry-After"].presence&.to_f
         super(**args)
       end
     end

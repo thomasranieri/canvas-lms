@@ -5,14 +5,17 @@
   display: inline-block;
   height: 18px;
   width: 18px;
-  margin-#{direction(left)}: 10px;
+  @include desktop-only {
+    margin-#{direction(left)}: 10px;
+  }
   margin-#{direction(right)}: 10px;
   vertical-align: text-top;
 }
 
 .mastery {
+  padding-#{direction(left)}: 20px;
+
   @include desktop-only {
-    padding-#{direction(left)}: 16px;
     padding-top: 10px;
   }
 
@@ -28,7 +31,6 @@
   margin-#{direction(left)}: 20px;
   @include mobile-only {
     margin-#{direction(left)}: 0px;
-
   }
 }
 
@@ -43,7 +45,6 @@
     float: direction(left);
     display: flex;
     padding-top: 12px;
-    width:100%;
   }
   @include desktop-only {
     * {
@@ -51,6 +52,9 @@
       // to not wrap
       white-space: nowrap;
     }
+  }
+  &.individualOutcome * {
+    white-space: nowrap;
   }
 }
 

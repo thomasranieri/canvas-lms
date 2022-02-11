@@ -42,8 +42,7 @@ module CC::Importer::Canvas
     end
 
     # exports the package into the intermediary json
-    def export(to_export = SCRAPE_ALL_HASH)
-      to_export = SCRAPE_ALL_HASH.merge to_export if to_export
+    def export(_to_export = SCRAPE_ALL_HASH)
       unzip_archive
       set_progress(5)
 
@@ -95,7 +94,7 @@ module CC::Importer::Canvas
       Dir["#{folder}/**/**"].each do |path|
         next if File.directory?(path)
 
-        service_key = File.basename(path, '.json')
+        service_key = File.basename(path, ".json")
         json = File.read(path)
         begin
           data = JSON.parse(json)

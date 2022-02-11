@@ -17,7 +17,7 @@
  */
 import React from 'react'
 import {DiscussionEdit} from '../DiscussionEdit'
-import {render, fireEvent} from '@testing-library/react'
+import {render, fireEvent, waitFor} from '@testing-library/react'
 
 const setup = props => {
   return render(<DiscussionEdit {...props} />)
@@ -27,12 +27,22 @@ const defaultProps = ({
   show = undefined,
   value = undefined,
   onCancel = jest.fn(),
-  onSubmit = jest.fn()
+  onSubmit = jest.fn(),
+  isEdit = false,
+  updateDraft = jest.fn(),
+  draftSaved = false,
+  canReplyAnonymously = false,
+  discussionAnonymousState = null
 } = {}) => ({
   show,
   value,
+  draftSaved,
+  isEdit,
+  updateDraft,
   onCancel,
-  onSubmit
+  onSubmit,
+  canReplyAnonymously,
+  discussionAnonymousState
 })
 
 describe('DiscussionEdit', () => {
@@ -70,6 +80,73 @@ describe('DiscussionEdit', () => {
       const submitButton = getByTestId('DiscussionEdit-submit')
       fireEvent.click(submitButton)
       expect(onSubmitMock.mock.calls.length).toBe(1)
+    })
+  })
+
+  describe('Draft messages', () => {
+    beforeAll(() => {
+      window.ENV = {
+        draft_discussions: true
+      }
+    })
+
+    it('should find draft saving text', () => {
+      const container = setup(defaultProps({draftSaved: false}))
+      expect(container.queryByText('Saving')).toBeTruthy()
+      expect(container.queryByText('Saved')).toBeNull()
+    })
+
+    it('should find draft saved text', async () => {
+      const container = setup(defaultProps({draftSaved: true}))
+      await waitFor(() => expect(container.queryByText('Saving')).toBeNull())
+      expect(container.queryByText('Saved')).toBeTruthy()
+    })
+  })
+
+  describe('Anonymous Response Selector', () => {
+    beforeAll(() => {
+      ENV.current_user = {display_name: 'Ronald Weasley', avatar_image_url: ''}
+    })
+
+    describe('Topic is anonymous', () => {
+      it('should render when can reply anonymously', () => {
+        const container = setup(
+          defaultProps({canReplyAnonymously: true, discussionAnonymousState: 'full_anonymity'})
+        )
+        expect(container.queryByTestId('anonymous-response-selector')).toBeTruthy()
+      })
+
+      it('should not render when cannot reply anonymously', () => {
+        const container = setup(
+          defaultProps({canReplyAnonymously: false, discussionAnonymousState: 'full_anonymity'})
+        )
+        expect(container.queryByTestId('anonymous-response-selector')).toBeNull()
+      })
+    })
+
+    describe('Topic is not anonymous', () => {
+      it('should not render when can reply anonymously', () => {
+        const container = setup(defaultProps({canReplyAnonymously: false}))
+        expect(container.queryByTestId('anonymous-response-selector')).toBeNull()
+      })
+
+      it('should not render when cannot reply anonymously', () => {
+        const container = setup(defaultProps({canReplyAnonymously: false}))
+        expect(container.queryByTestId('anonymous-response-selector')).toBeNull()
+      })
+    })
+
+    describe('Editing a response', () => {
+      it('should not show anonymous response selector', () => {
+        const container = setup(
+          defaultProps({
+            canReplyAnonymously: true,
+            discussionAnonymousState: 'partial_anonymity',
+            isEdit: true
+          })
+        )
+        expect(container.queryByTestId('anonymous-response-selector')).toBeNull()
+      })
     })
   })
 })

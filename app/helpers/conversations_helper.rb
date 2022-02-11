@@ -18,22 +18,90 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
 module ConversationsHelper
+  def process_response(
+    conversation:,
+    context:,
+    current_user:,
+    session:,
+    recipients:,
+    context_code:,
+    message_ids:,
+    body:,
+    attachment_ids:,
+    domain_root_account_id:,
+    media_comment_id:,
+    media_comment_type:,
+    user_note:
+  )
+    if conversation.conversation.replies_locked_for?(current_user)
+      raise ConversationsHelper::RepliesLockedForUser.new(message: I18n.t("Unauthorized, unable to add messages to conversation"), status: :unauthorized, attribute: "workflow_state")
+    end
+
+    if context.is_a?(Course) && context.workflow_state == "completed" && !context.grants_right?(current_user, session, :read_as_admin)
+      raise ConversationsHelper::Error.new(message: I18n.t("Course concluded, unable to send messages"), status: :unauthorized, attribute: "workflow_state")
+    end
+
+    if body.blank?
+      raise ConversationsHelper::Error.new(message: I18n.t("Unable to create message without a body"), status: :bad_request, attribute: "empty_message")
+    end
+
+    recipients = normalize_recipients(
+      recipients: recipients,
+      context_code: context_code,
+      conversation_id: conversation.conversation_id,
+      current_user: current_user
+    )
+
+    if recipients && !conversation.conversation.can_add_participants?(recipients)
+      raise ConversationsHelper::Error.new(message: I18n.t("Too many participants for group conversation"), status: :bad_request, attribute: "recipients")
+    end
+
+    tags = infer_tags(
+      recipients: conversation.conversation.participants.pluck(:id),
+      context_code: context_code
+    )
+
+    validate_message_ids(message_ids, conversation, current_user: current_user)
+    message_args = build_message_args(
+      body: body,
+      attachment_ids: attachment_ids,
+      domain_root_account_id: domain_root_account_id,
+      media_comment_id: media_comment_id,
+      media_comment_type: media_comment_type,
+      user_note: user_note,
+      current_user: current_user
+    )
+
+    if conversation.should_process_immediately?
+      message = conversation.process_new_message(message_args, recipients, message_ids, tags)
+      { message: message, status: :ok }
+    else
+      conversation.delay(strand: "add_message_#{conversation.global_conversation_id}").process_new_message(message_args, recipients, message_ids, tags)
+      # The message is delayed and will be processed later so there is nothing to return
+      # right now. If there is no error, success can be assumed.
+      { message: nil, status: :accepted }
+    end
+  rescue ConversationsHelper::InvalidMessageForConversationError
+    raise ConversationsHelper::Error.new(message: I18n.t("not for this conversation"), status: :bad_request, attribute: "included_messages")
+  rescue ConversationsHelper::InvalidMessageParticipantError
+    raise ConversationsHelper::Error.new(message: I18n.t("not a participant"), status: :bad_request, attribute: "included_messages")
+  end
+
   def contexts_for(audience, context_tags)
-    result = { :courses => {}, :groups => {} }
+    result = { courses: {}, groups: {} }
     return result if audience.empty?
 
-    context_tags.inject(result) do |hash, tag|
+    context_tags.each do |tag|
       next unless tag =~ /\A(course|group)_(\d+)\z/
 
-      hash["#{$1}s".to_sym][$2.to_i] = []
-      hash
+      result["#{$1}s".to_sym][$2.to_i] = []
     end
 
     if audience.size == 1 && include_private_conversation_enrollments
       enrollments = Shard.partition_by_shard(result[:courses].keys) do |course_ids|
         next unless audience.first.associated_shards.include?(Shard.current)
 
-        Enrollment.where(course_id: course_ids, user_id: audience.first.id, workflow_state: 'active').select([:course_id, :type]).to_a
+        Enrollment.where(course_id: course_ids, user_id: audience.first.id, workflow_state: "active").select([:course_id, :type]).to_a
       end
       enrollments.each do |enrollment|
         result[:courses][enrollment.course_id] << enrollment.type
@@ -42,10 +110,10 @@ module ConversationsHelper
       memberships = Shard.partition_by_shard(result[:groups].keys) do |group_ids|
         next unless audience.first.associated_shards.include?(Shard.current)
 
-        GroupMembership.where(group_id: result[:groups].keys, user_id: audience.first.id, workflow_state: 'accepted').select(:group_id).to_a
+        GroupMembership.where(group_id: group_ids, user_id: audience.first.id, workflow_state: "accepted").select(:group_id).to_a
       end
       memberships.each do |membership|
-        result[:groups][membership.group_id] = ['Member']
+        result[:groups][membership.group_id] = ["Member"]
       end
     end
     result
@@ -78,6 +146,17 @@ module ConversationsHelper
       conversation_id: conversation_id,
       strict_checks: !Account.site_admin.grants_right?(current_user, session, :send_messages)
     )
+
+    # include users that were already part of the given conversation
+    if conversation_id && conversation_id != ""
+      unknown_users = users - known.pluck(:id)
+      conversation_participant_ids = Conversation.find(conversation_id).participants.pluck(:id)
+      unknown_users = unknown_users.select do |unknown_user|
+        conversation_participant_ids.include?(unknown_user)
+      end
+      known.concat(unknown_users.map { |id| MessageableUser.find(id) })
+    end
+
     contexts.each { |c| known.concat(current_user.address_book.known_in_context(c)) }
     @recipients = known.uniq(&:id)
     @recipients.reject! { |u| u.id == current_user.id } unless @recipients == [current_user] && recipients.count == 1
@@ -106,7 +185,6 @@ module ConversationsHelper
 
   def valid_context?(context)
     case context
-    when nil then false
     when Account then valid_account_context?(context)
     when Course, Group then context.membership_for_user(@current_user) || context.grants_right?(@current_user, session, :send_messages)
     else false
@@ -151,23 +229,23 @@ module ConversationsHelper
         attachment_ids: attachment_ids,
         forwarded_message_ids: forwarded_message_ids,
         root_account_id: domain_root_account_id,
-        media_comment: infer_media_comment(media_comment_id, media_comment_type),
+        media_comment: infer_media_comment(media_comment_id, media_comment_type, domain_root_account_id, current_user),
         generate_user_note: user_note
       }
     ]
   end
 
-  def infer_media_comment(media_id, media_type)
+  def infer_media_comment(media_id, media_type, root_account_id, user)
     if media_id.present? && media_type.present?
       media_comment = MediaObject.by_media_id(media_id).first
       unless media_comment
         media_comment ||= MediaObject.new
         media_comment.media_type = media_type
         media_comment.media_id = media_id
-        media_comment.root_account_id = @domain_root_account.id
-        media_comment.user = @current_user
+        media_comment.root_account_id = root_account_id
+        media_comment.user = user
       end
-      media_comment.context = @current_user
+      media_comment.context = user
       media_comment.save
       media_comment
     end
@@ -202,7 +280,7 @@ module ConversationsHelper
       raise InvalidContextError
     end
 
-    if context.is_a?(Course) && context.workflow_state == 'completed' && !context.grants_right?(@current_user, session, :read_as_admin)
+    if context.is_a?(Course) && context.workflow_state == "completed" && !context.grants_right?(@current_user, session, :read_as_admin)
       raise CourseConcludedError
     end
   end
@@ -223,6 +301,19 @@ module ConversationsHelper
       raise InvalidMessageParticipantError unless found_count == message_ids.count
     end
   end
+
+  class Error < StandardError
+    attr_accessor :message, :status, :attribute
+
+    def initialize(message:, status:, attribute:)
+      super
+      @message = message
+      @status = status
+      @attribute = attribute
+    end
+  end
+
+  class RepliesLockedForUser < Error; end
 
   class InvalidContextError < StandardError; end
 

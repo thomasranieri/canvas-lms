@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require 'spec_helper'
-
 describe MasterCourses::ChildSubscription do
   describe "is_child_course?" do
     before :once do
@@ -34,7 +32,7 @@ describe MasterCourses::ChildSubscription do
     it "caches the result" do
       enable_cache do
         expect(check).to be_falsey
-        expect(MasterCourses::ChildSubscription).to receive(:where).never
+        expect(MasterCourses::ChildSubscription).not_to receive(:where)
         expect(check).to be_falsey
         expect(MasterCourses::ChildSubscription.is_child_course?(@course.id)).to be_falsey # should work with ids too
       end
@@ -60,10 +58,10 @@ describe MasterCourses::ChildSubscription do
       expect(sub.root_account_id).to eq child_course.root_account_id
       expect(child_course.reload.syllabus_master_template_id).to eq @template.id.to_s
 
-      original_page = master_course.wiki_pages.create!(:title => "blah")
+      original_page = master_course.wiki_pages.create!(title: "blah")
       mc_tag = @template.create_content_tag_for!(original_page)
 
-      page_copy = child_course.wiki_pages.create!(:title => "blah", :migration_id => mc_tag.migration_id)
+      page_copy = child_course.wiki_pages.create!(title: "blah", migration_id: mc_tag.migration_id)
       child_tag = sub.create_content_tag_for!(page_copy)
       expect(child_tag.root_account_id).to eq child_course.root_account_id
 

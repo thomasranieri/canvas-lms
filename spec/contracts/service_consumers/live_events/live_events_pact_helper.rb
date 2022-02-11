@@ -18,9 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'pact/messages'
-require_relative '../pact_config'
-require_relative '../../../spec_helper'
+require "pact/messages"
+require_relative "../pact_config"
+require_relative "../../../spec_helper"
 
 Pact::Messages.pact_broker_url = PactConfig.broker_uri
 
@@ -39,7 +39,7 @@ module LiveEvents
     class Event
       attr_reader :event_message, :event_name, :event_settings, :event_subscriber, :stream_client
 
-      def initialize(event_name:, event_subscriber:, event_settings: nil, stream_client: nil) # rubocop:disable Lint/UnusedMethodArgument, Naming/VariableName
+      def initialize(event_name:, event_subscriber:, event_settings: nil, stream_client: nil)
         @event_name = event_name
         @event_settings = event_settings || LiveEvents::PactHelper::FakeSettings.new
         @event_subscriber = event_subscriber
@@ -57,7 +57,7 @@ module LiveEvents
           JSON.parse(event[:data])
         end
         @event_message = @event_data.reverse.find do |msg|
-          msg.dig('attributes', 'event_name') == @event_name
+          msg.dig("attributes", "event_name") == @event_name
         end
       end
 
@@ -114,7 +114,7 @@ module LiveEvents
         @data = []
       end
 
-      def put_records(records:, stream_name:) # rubocop:disable Lint/UnusedMethodArgument
+      def put_records(records:, stream_name:)
         @data += records
       end
     end
@@ -123,16 +123,16 @@ module LiveEvents
       attr_reader :kinesis_stream_name, :aws_region
 
       def initialize(kinesis_stream_name: nil, aws_region: nil)
-        @kinesis_stream_name = kinesis_stream_name || 'fake_stream'
-        @aws_region = aws_region || 'us-east-1'
+        @kinesis_stream_name = kinesis_stream_name || "fake_stream"
+        @aws_region = aws_region || "us-east-1"
       end
 
       def call
         {
-          'kinesis_stream_name' => kinesis_stream_name,
-          'aws_region' => aws_region,
-          'aws_access_key_id' => 'key',
-          'aws_secret_access_key_dec' => 'secret'
+          "kinesis_stream_name" => kinesis_stream_name,
+          "aws_region" => aws_region,
+          "aws_access_key_id" => "key",
+          "aws_secret_access_key_dec" => "secret"
         }
       end
     end

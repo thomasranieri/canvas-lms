@@ -18,10 +18,9 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
-require File.expand_path(File.dirname(__FILE__) + '/messages_helper')
+require_relative "messages_helper"
 
-describe 'conversation_message' do
+describe "conversation_message" do
   before :once do
     @teacher_enrollment = course_with_teacher
     user_enrollment = student_in_course

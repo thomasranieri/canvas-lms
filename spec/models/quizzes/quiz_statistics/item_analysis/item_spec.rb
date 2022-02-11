@@ -17,29 +17,34 @@
 # You should have received a copy of the GNU Affero General Public License along
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 
-require File.expand_path(File.dirname(__FILE__) + '/../../../../spec_helper.rb')
-require File.expand_path(File.dirname(__FILE__) + '/common.rb')
+require_relative "common"
 
 describe Quizzes::QuizStatistics::ItemAnalysis::Item do
+  let(:no_dev_item) do
+    simple_quiz_with_submissions %w[T T], %w[T T], %w[T T], %w[T T]
+    @summary = Quizzes::QuizStatistics::ItemAnalysis::Summary.new(@quiz)
+    @summary.sorted_items.last
+  end
+  let(:item) do
+    @summary = Quizzes::QuizStatistics::ItemAnalysis::Summary.new(@quiz)
+    @summary.sorted_items.last
+  end
+
   describe ".from" do
     it "creates an item for a supported question type" do
-      qq = { :question_type => "true_false_question", :answers => [] }
+      qq = { question_type: "true_false_question", answers: [] }
       expect(Quizzes::QuizStatistics::ItemAnalysis::Item.from(nil, qq)).not_to be_nil
     end
 
     it "does not create an item for an unsupported question type" do
-      qq = { :question_type => "essay_question" }
+      qq = { question_type: "essay_question" }
       expect(Quizzes::QuizStatistics::ItemAnalysis::Item.from(nil, qq)).to be_nil
     end
   end
 
-  before(:once) {
-    simple_quiz_with_submissions %w{T T A}, %w{T T A}, %w{T F A}, %w{T T B}, %w{T T}
-  }
-  let(:item) {
-    @summary = Quizzes::QuizStatistics::ItemAnalysis::Summary.new(@quiz)
-    @summary.sorted_items.last
-  }
+  before(:once) do
+    simple_quiz_with_submissions %w[T T A], %w[T T A], %w[T F A], %w[T T B], %w[T T]
+  end
 
   describe "#num_respondents" do
     it "returns all respondents" do
@@ -60,7 +65,7 @@ describe Quizzes::QuizStatistics::ItemAnalysis::Item do
       expect(item.num_respondents(:bottom)).to eq 0 # there is a guy, but he didn't answer this question
     end
 
-    it "correctlies evaluate multiple filters" do
+    it "evaluates multiple filters correctly" do
       expect(item.num_respondents(:top, :correct)).to eq 1
       expect(item.num_respondents(:top, :incorrect)).to eq 0
       expect(item.num_respondents(:middle, :correct)).to eq 1
@@ -103,11 +108,6 @@ describe Quizzes::QuizStatistics::ItemAnalysis::Item do
     it "matches R's output" do
       expect(item.point_biserials).to be_approximately [0.5, -0.5, nil, nil]
     end
-  end
-  let(:no_dev_item) do
-    simple_quiz_with_submissions %w|T T|, %w|T T|, %w|T T|, %w|T T|
-    @summary = Quizzes::QuizStatistics::ItemAnalysis::Summary.new(@quiz)
-    @summary.sorted_items.last
   end
 
   it "explodes when the standard deviation is 0" do

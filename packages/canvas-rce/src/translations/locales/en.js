@@ -52,6 +52,8 @@ const locale = {
     "message": "Apply changes to all instances of this Button and Icon in the Course"
   },
   "apps_54d24a47": { "message": "Apps" },
+  "arrows_464a3e54": { "message": "Arrows" },
+  "art_icon_8e1daad": { "message": "Art Icon" },
   "aspect_ratio_will_be_preserved_cb5fdfb8": {
     "message": "Aspect ratio will be preserved"
   },
@@ -60,14 +62,14 @@ const locale = {
   "audio_and_video_recording_not_supported_please_use_5ce3f0d7": {
     "message": "Audio and video recording not supported; please use a different browser."
   },
+  "audio_options_feb58e2c": { "message": "Audio Options" },
+  "audio_options_tray_33a90711": { "message": "Audio Options Tray" },
   "audio_player_for_title_20cc70d": { "message": "Audio player for { title }" },
   "auto_saved_content_exists_would_you_like_to_load_t_fee528f2": {
     "message": "Auto-saved content exists. Would you like to load the auto-saved content instead?"
   },
-  "automatically_open_an_in_line_preview_preview_disp_ed784ffe": {
-    "message": "Automatically open an in-line preview. (Preview displays only after saving)"
-  },
   "available_folders_694d0436": { "message": "Available folders" },
+  "basic_554cdc0a": { "message": "Basic" },
   "below_81d4dceb": { "message": "Below" },
   "bottom_third_5f5fec1d": { "message": "Bottom Third" },
   "button_color_608a0242": { "message": "Button Color" },
@@ -83,6 +85,7 @@ const locale = {
   "circle_484abe63": { "message": "Circle" },
   "circle_unordered_list_9e3a0763": { "message": "circle unordered list" },
   "clear_2084585f": { "message": "Clear" },
+  "clear_image_3213fe62": { "message": "Clear image" },
   "clear_selected_file_82388e50": { "message": "Clear selected file" },
   "clear_selected_file_filename_2fe8a58e": {
     "message": "Clear selected file: { filename }"
@@ -102,6 +105,9 @@ const locale = {
     "message": "Close a menu or dialog. Also returns you to the editor area"
   },
   "close_d634289d": { "message": "Close" },
+  "closed_caption_file_must_be_less_than_maxkb_kb_5880f752": {
+    "message": "Closed caption file must be less than { maxKb } kb"
+  },
   "closed_captions_subtitles_e6aaa016": {
     "message": "Closed Captions/Subtitles"
   },
@@ -135,6 +141,9 @@ const locale = {
   "creative_commons_license_725584ae": {
     "message": "Creative Commons License:"
   },
+  "crop_image_41bf940c": { "message": "Crop image" },
+  "crop_image_807ebb08": { "message": "Crop Image" },
+  "current_image_f16c249c": { "message": "Current Image" },
   "custom_6979cd81": { "message": "Custom" },
   "date_added_ed5ad465": { "message": "Date Added" },
   "decorative_image_3c28aa7d": { "message": "Decorative Image" },
@@ -145,12 +154,15 @@ const locale = {
   "default_numerical_ordered_list_48dd3548": {
     "message": "default numerical ordered list"
   },
+  "delimiters_4db4840d": { "message": "Delimiters" },
   "describe_the_image_e65d2e32": { "message": "(Describe the image)" },
   "describe_the_video_2fe8f46a": { "message": "(Describe the video)" },
   "details_98a31b68": { "message": "Details" },
+  "diamond_b8dfe7ae": { "message": "Diamond" },
+  "dimension_type_55c83e4e": { "message": "Dimension type" },
   "dimensions_45ddb7b7": { "message": "Dimensions" },
   "directionality_26ae9e08": { "message": "Directionality" },
-  "disable_in_line_preview_2a675175": { "message": "Disable in-line preview." },
+  "directly_edit_latex_b7e9235b": { "message": "Directly Edit LaTeX" },
   "discussions_a5f96392": { "message": "Discussions" },
   "discussions_index_6c36ced": { "message": "Discussions Index" },
   "display_options_315aba85": { "message": "Display Options" },
@@ -183,10 +195,13 @@ const locale = {
   "embed_preview_2d741e1f": { "message": "Embed Preview" },
   "embed_video_a97a64af": { "message": "Embed Video" },
   "embedded_content_aaeb4d3d": { "message": "embedded content" },
+  "engineering_icon_f8f3cf43": { "message": "Engineering Icon" },
+  "english_icon_25bfe845": { "message": "English Icon" },
   "enter_at_least_3_characters_to_search_4f037ee0": {
     "message": "Enter at least 3 characters to search"
   },
   "equation_1c5ac93c": { "message": "Equation" },
+  "equation_editor_39fbc3f1": { "message": "Equation Editor" },
   "expand_preview_by_default_2abbf9f8": {
     "message": "Expand preview by Default"
   },
@@ -224,6 +239,7 @@ const locale = {
     "message": "Go to the editor''s toolbar"
   },
   "grades_a61eba0a": { "message": "Grades" },
+  "greek_65c5b3f7": { "message": "Greek" },
   "group_documents_8bfd6ae6": { "message": "Group Documents" },
   "group_files_4324f3df": { "message": "Group Files" },
   "group_files_82e5dcdb": { "message": "Group files" },
@@ -234,6 +250,7 @@ const locale = {
   "heading_2_5b84eed2": { "message": "Heading 2" },
   "heading_3_2c83de44": { "message": "Heading 3" },
   "heading_4_b2e74be7": { "message": "Heading 4" },
+  "health_icon_8d292eb5": { "message": "Health Icon" },
   "height_69b03e15": { "message": "Height" },
   "hexagon_d8468e0d": { "message": "Hexagon" },
   "hide_description_bfb5502e": { "message": "Hide description" },
@@ -253,6 +270,7 @@ const locale = {
   "image_8ad06": { "message": "Image" },
   "image_options_5412d02c": { "message": "Image Options" },
   "image_options_tray_90a46006": { "message": "Image Options Tray" },
+  "image_to_crop_3a34487d": { "message": "Image to crop" },
   "images_7ce26570": { "message": "Images" },
   "increase_indent_6d550a4a": { "message": "Increase indent" },
   "insert_593145ef": { "message": "Insert" },
@@ -269,8 +287,11 @@ const locale = {
   "invalid_file_type_881cc9b2": { "message": "Invalid file type" },
   "invalid_url_cbde79f": { "message": "Invalid URL" },
   "keyboard_shortcuts_ed1844bd": { "message": "Keyboard Shortcuts" },
+  "language_arts_35b79a8b": { "message": "Language Arts" },
+  "languages_835813f0": { "message": "Languages" },
   "large_9c5e80e7": { "message": "Large" },
   "left_to_right_e9b4fd06": { "message": "Left-to-Right" },
+  "library_4b05885e": { "message": "Library" },
   "link_7262adec": { "message": "Link" },
   "link_options_a16b758b": { "message": "Link Options" },
   "links_14b70841": { "message": "Links" },
@@ -282,17 +303,24 @@ const locale = {
   "loading_failed_e6a9d8ef": { "message": "Loading failed." },
   "loading_folders_d8b5869e": { "message": "Loading folders" },
   "loading_please_wait_d276220a": { "message": "Loading, please wait" },
+  "loading_preview_9f077aa1": { "message": "Loading preview" },
   "locked_762f138b": { "message": "Locked" },
+  "math_ede93050": { "message": "Math" },
   "media_af190855": { "message": "Media" },
   "medium_5a8e9ead": { "message": "Medium" },
   "middle_27dc1d5": { "message": "Middle" },
+  "misc_3b692ea7": { "message": "Misc" },
   "miscellaneous_e9818229": { "message": "Miscellaneous" },
   "modules_c4325335": { "message": "Modules" },
+  "multi_color_image_63d7372f": { "message": "Multi Color Image" },
+  "music_8678b13": { "message": "Music" },
+  "must_be_at_least_percentage_22e373b6": {
+    "message": "Must be at least { percentage }%"
+  },
   "must_be_at_least_width_x_height_px_41dc825e": {
     "message": "Must be at least { width } x { height }px"
   },
   "my_files_2f621040": { "message": "My files" },
-  "my_images_427f9b0c": { "message": "My Images" },
   "name_1aed4a1b": { "message": "Name" },
   "navigate_through_the_menu_or_toolbar_415a4e50": {
     "message": "Navigate through the menu or toolbar"
@@ -311,6 +339,7 @@ const locale = {
     "message": "No results found for { term }."
   },
   "none_3b5e34d2": { "message": "None" },
+  "none_selected_b93d56d2": { "message": "None Selected" },
   "octagon_e48be9f": { "message": "Octagon" },
   "open_this_keyboard_shortcuts_dialog_9658b83a": {
     "message": "Open this keyboard shortcuts dialog"
@@ -318,6 +347,7 @@ const locale = {
   "open_title_application_fd624fc5": {
     "message": "Open { title } application"
   },
+  "operators_a2ef9a93": { "message": "Operators" },
   "options_3ab0ea65": { "message": "Options" },
   "ordered_and_unordered_lists_cfadfc38": {
     "message": "Ordered and Unordered Lists"
@@ -330,7 +360,15 @@ const locale = {
   },
   "pages_e5414c2c": { "message": "Pages" },
   "paragraph_5e5ad8eb": { "message": "Paragraph" },
+  "pentagon_17d82ea3": { "message": "Pentagon" },
   "people_b4ebb13c": { "message": "People" },
+  "percentage_34ab7c2c": { "message": "Percentage" },
+  "percentage_must_be_a_number_8033c341": {
+    "message": "Percentage must be a number"
+  },
+  "performing_arts_258f265": { "message": "Performing Arts" },
+  "physical_education_b1031a43": { "message": "Physical Education" },
+  "pixels_52ece7d1": { "message": "Pixels" },
   "posted_when_a578f5ab": { "message": "Posted: { when }" },
   "preformatted_d0670862": { "message": "Preformatted" },
   "pretty_html_editor_28748756": { "message": "Pretty HTML Editor" },
@@ -347,6 +385,8 @@ const locale = {
   "raw_html_editor_e3993e41": { "message": "Raw HTML Editor" },
   "record_7c9448b": { "message": "Record" },
   "record_upload_media_5fdce166": { "message": "Record/Upload Media" },
+  "relationships_6602af70": { "message": "Relationships" },
+  "religion_afb0a930": { "message": "Religion" },
   "remove_link_d1f2f4d0": { "message": "Remove Link" },
   "resize_ec83d538": { "message": "Resize" },
   "restore_auto_save_deccd84b": { "message": "Restore auto-save?" },
@@ -359,18 +399,21 @@ const locale = {
   "saved_buttons_and_icons_8278eed2": { "message": "Saved Buttons and Icons" },
   "search_280d00bd": { "message": "Search" },
   "search_term_b2d2235": { "message": "Search Term" },
+  "select_crop_shape_d441feeb": { "message": "Select crop shape" },
   "select_language_7c93a900": { "message": "Select Language" },
   "selected_274ce24f": { "message": "Selected" },
   "shift_o_to_open_the_pretty_html_editor_55ff5a31": {
     "message": "Shift-O to open the pretty html editor."
   },
+  "show_audio_options_b489926b": { "message": "Show audio options" },
   "show_embed_options_ef8d7ef": { "message": "Show embed options" },
   "show_image_options_1e2ecc6b": { "message": "Show image options" },
   "show_link_options_545338fd": { "message": "Show link options" },
   "show_video_options_6ed3721a": { "message": "Show video options" },
+  "single_color_image_4e5d4dbc": { "message": "Single Color Image" },
   "size_b30e1077": { "message": "Size" },
-  "size_of_file_is_greater_than_the_maximum_max_mb_al_6eb3fa9a": {
-    "message": "Size of { file } is greater than the maximum { max } MB allowed file size."
+  "size_of_caption_file_is_greater_than_the_maximum_m_bff5f86e": {
+    "message": "Size of caption file is greater than the maximum { max } kb allowed file size."
   },
   "small_b070434a": { "message": "Small" },
   "something_went_wrong_89195131": { "message": "Something went wrong." },
@@ -515,7 +558,9 @@ const locale = {
   "yes_dde87d5": { "message": "Yes" },
   "you_may_not_upload_an_empty_file_11c31eb2": {
     "message": "You may not upload an empty file."
-  }
+  },
+  "zoom_in_image_bb97d4f": { "message": "Zoom in image" },
+  "zoom_out_image_d0a0a2ec": { "message": "Zoom out image" }
 }
 
 

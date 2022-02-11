@@ -22,10 +22,11 @@ module MessagesCommon
   def generate_message(notification_name, path_type, *)
     message = super
     expect(message.body).not_to be_nil
-    if path_type == :email
+    case path_type
+    when :email
       expect(message.subject).not_to be_nil
       expect(message.url).not_to be_nil
-    elsif path_type == :twitter
+    when :twitter
       expect(message.main_link).to be_present
     end
     message
@@ -36,7 +37,7 @@ shared_examples_for "a message" do
   include MessagesCommon
 
   def message_data_with_default
-    if self.respond_to?(:message_data)
+    if respond_to?(:message_data)
       message_data
     else
       {}
@@ -45,6 +46,7 @@ shared_examples_for "a message" do
 
   context ".email" do
     let(:path_type) { :email }
+
     it "renders" do
       generate_message(notification_name, path_type, asset, message_data_with_default)
     end
@@ -52,6 +54,7 @@ shared_examples_for "a message" do
 
   context ".sms" do
     let(:path_type) { :sms }
+
     it "renders" do
       generate_message(notification_name, path_type, asset, message_data_with_default)
     end
@@ -59,6 +62,7 @@ shared_examples_for "a message" do
 
   context ".summary" do
     let(:path_type) { :summary }
+
     it "renders" do
       generate_message(notification_name, path_type, asset, message_data_with_default)
     end
@@ -66,6 +70,7 @@ shared_examples_for "a message" do
 
   context ".twitter" do
     let(:path_type) { :twitter }
+
     it "renders" do
       generate_message(notification_name, path_type, asset, message_data_with_default)
     end
@@ -73,6 +78,7 @@ shared_examples_for "a message" do
 
   context ".push" do
     let(:path_type) { :push }
+
     it "renders" do
       generate_message(notification_name, path_type, asset, message_data_with_default)
     end

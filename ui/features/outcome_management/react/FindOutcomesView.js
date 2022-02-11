@@ -54,9 +54,11 @@ const FindOutcomesView = ({
   const isRootGroup = collection?.isRootGroup
   const outcomesCount = outcomesGroup?.outcomesCount || 0
   const outcomes = outcomesGroup?.outcomes
+  const notImportedOutcomesCount = outcomesGroup?.notImportedOutcomesCount || 0
   const enabled =
     !!outcomesCount &&
     outcomesCount > 0 &&
+    notImportedOutcomesCount > 0 &&
     [IMPORT_NOT_STARTED, IMPORT_FAILED].includes(importGroupStatus)
   const [scrollContainer, setScrollContainer] = useState(null)
   const {isMobileView} = useCanvasContext()
@@ -218,12 +220,33 @@ const FindOutcomesView = ({
                 </View>
               )}
               {outcomes?.edges?.map(
-                ({_id: linkId, node: {_id, title, description, isImported}}, index) => (
+                (
+                  {
+                    _id: linkId,
+                    node: {
+                      _id,
+                      title,
+                      description,
+                      calculationMethod,
+                      calculationInt,
+                      masteryPoints,
+                      ratings,
+                      friendlyDescription,
+                      isImported
+                    }
+                  },
+                  index
+                ) => (
                   <FindOutcomeItem
                     key={linkId}
                     id={_id}
                     title={title}
                     description={description}
+                    calculationMethod={calculationMethod}
+                    calculationInt={calculationInt}
+                    masteryPoints={masteryPoints}
+                    ratings={ratings}
+                    friendlyDescription={friendlyDescription?.description}
                     isFirst={index === 0}
                     importOutcomeStatus={importOutcomesStatus?.[_id]}
                     isImported={isImported}

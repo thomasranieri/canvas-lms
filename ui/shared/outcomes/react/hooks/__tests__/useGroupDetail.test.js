@@ -28,12 +28,19 @@ import {FIND_GROUP_OUTCOMES} from '@canvas/outcomes/graphql/Management'
 
 jest.mock('@canvas/alerts/react/FlashAlert')
 
-const outcomeTitles = result => {
-  return result.current.group.outcomes.edges.map(edge => edge.node.title)
-}
+const outcomeTitles = result => result.current.group.outcomes.edges.map(edge => edge.node.title)
+const outcomeFriendlyDescriptions = result =>
+  result.current.group.outcomes.edges.map(edge => edge.node.friendlyDescription?.description || '')
 
 describe('groupDetailHook', () => {
   let cache, mocks, showFlashAlertSpy
+  const searchMocks = [
+    ...groupDetailMocks(),
+    ...groupDetailMocks({
+      groupId: '1',
+      searchQuery: 'search'
+    })
+  ]
 
   beforeEach(() => {
     jest.useFakeTimers()
@@ -49,7 +56,14 @@ describe('groupDetailHook', () => {
   const wrapper = ({children}) => (
     <MockedProvider cache={cache} mocks={mocks}>
       <OutcomesContext.Provider
-        value={{env: {contextType: 'Account', contextId: '1', rootIds: [ACCOUNT_GROUP_ID]}}}
+        value={{
+          env: {
+            contextType: 'Account',
+            contextId: '1',
+            rootIds: [ACCOUNT_GROUP_ID]
+          }
+        }}
+        f
       >
         {children}
       </OutcomesContext.Provider>
@@ -111,7 +125,6 @@ describe('groupDetailHook', () => {
 
   describe('should flash a screenreader message when group has finshed loading', () => {
     it('shows pluralized info message when a group has more than 1 outcome', async () => {
-      mocks = [...groupDetailMocks()]
       const {result} = renderHook(id => useGroupDetail({id}), {wrapper, initialProps: '1'})
       await act(async () => jest.runAllTimers())
       expect(result.current.group.title).toBe('Group 1')
@@ -161,6 +174,7 @@ describe('groupDetailHook', () => {
     await act(async () => jest.runAllTimers())
     expect(result.current.group.title).toBe('Group 1')
     expect(outcomeTitles(result)).toEqual(['Outcome 1 - Group 1', 'Outcome 2 - Group 1'])
+    expect(outcomeFriendlyDescriptions(result)).toEqual(['', ''])
     act(() => rerender('200'))
     await act(async () => jest.runAllTimers())
     expect(result.current.group.title).toBe('Refetched Group 200')
@@ -169,6 +183,7 @@ describe('groupDetailHook', () => {
       'Refetched Outcome 2 - Group 200',
       'Newly Created Outcome - Group 200'
     ])
+    expect(outcomeFriendlyDescriptions(result)).toEqual(['friendly', '', ''])
   })
 
   it('should not load group info if ACCOUNT_GROUP_ID passed as id', async () => {
@@ -181,8 +196,7 @@ describe('groupDetailHook', () => {
   })
 
   it('should load group info if search length is equal to 0 or greater than 2', async () => {
-    mocks = [...groupDetailMocks(), ...groupDetailMocks({groupId: '1', searchQuery: 'search'})]
-
+    mocks = searchMocks
     const hook = renderHook(
       search =>
         useGroupDetail({
@@ -211,7 +225,7 @@ describe('groupDetailHook', () => {
   })
 
   it('should search for group outcomes correctly with pagination', async () => {
-    mocks = [...groupDetailMocks(), ...groupDetailMocks({groupId: '1', searchQuery: 'search'})]
+    mocks = searchMocks
     const {result} = renderHook(
       () =>
         useGroupDetail({
@@ -255,8 +269,7 @@ describe('groupDetailHook', () => {
   })
 
   it('if searching, should remove outcomes from not searching cache', async () => {
-    mocks = [...groupDetailMocks(), ...groupDetailMocks({groupId: '1', searchQuery: 'search'})]
-
+    mocks = searchMocks
     const hook = renderHook(
       search =>
         useGroupDetail({

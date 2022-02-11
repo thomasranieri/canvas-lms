@@ -31,7 +31,7 @@ describe "_tool_sequence_footer" do
   end
 
   context "when user can view speedgrader" do
-    before(:each) do
+    before do
       view_context(@course, @ta)
     end
 
@@ -47,10 +47,10 @@ describe "_tool_sequence_footer" do
   end
 
   context "when user cannot view speedgrader" do
-    before(:each) do
+    before do
       view_context(@course, @ta)
-      @course.account.role_overrides.create!(permission: 'view_all_grades', role: ta_role, enabled: false)
-      @course.account.role_overrides.create!(permission: 'manage_grades', role: ta_role, enabled: false)
+      @course.account.role_overrides.create!(permission: "view_all_grades", role: ta_role, enabled: false)
+      @course.account.role_overrides.create!(permission: "manage_grades", role: ta_role, enabled: false)
     end
 
     it "does not render a speedgrader link container if user cannot view speedgrader" do

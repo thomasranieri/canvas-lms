@@ -18,8 +18,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper.rb')
-
 describe "CanvasSort::First" do
   it "is equal to itself" do
     expect(CanvasSort::First).to eq CanvasSort::First
@@ -62,7 +60,7 @@ describe "CanvasSort::First" do
   end
 
   it "sorts with a few strings" do
-    expect([CanvasSort::Last, 'a', CanvasSort::First, 'b'].sort).to eq [CanvasSort::First, 'a', 'b', CanvasSort::Last]
+    expect([CanvasSort::Last, "a", CanvasSort::First, "b"].sort).to eq [CanvasSort::First, "a", "b", CanvasSort::Last]
   end
 
   it "sorts with a few numbers" do

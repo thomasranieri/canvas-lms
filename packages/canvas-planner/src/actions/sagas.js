@@ -20,7 +20,11 @@ import axios from 'axios'
 import parseLinkHeader from 'parse-link-header'
 import {put, select, call, all, takeEvery} from 'redux-saga/effects'
 import {getFirstLoadedMoment, getLastLoadedMoment} from '../utilities/dateUtils'
-import {getContextCodesFromState, transformApiToInternalGrade} from '../utilities/apiUtils'
+import {
+  getContextCodesFromState,
+  transformApiToInternalGrade,
+  observedUserId
+} from '../utilities/apiUtils'
 import {alert} from '../utilities/alertUtils'
 import formatMessage from '../format-message'
 
@@ -152,13 +156,24 @@ export function* loadAllOpportunitiesSaga() {
   try {
     let loadingUrl = '/api/v1/users/self/missing_submissions'
     const items = []
-    const {courses, singleCourse} = yield select()
-    const course_ids = singleCourse ? courses.map(({id}) => id) : undefined
+    const {courses, singleCourse, selectedObservee, currentUser, weeklyDashboard} = yield select()
+    const observed_user_id = observedUserId({selectedObservee, currentUser})
+    let course_ids
+    if (observed_user_id) {
+      course_ids = selectedObservee.contextCodes?.map(c => c.split('_')[1])
+    } else {
+      course_ids = singleCourse ? courses.map(({id}) => id) : undefined
+    }
     while (loadingUrl != null) {
+      const filter = ['submittable']
+      if (weeklyDashboard) {
+        filter.push('current_grading_period')
+      }
       const response = yield call(sendBasicFetchRequest, loadingUrl, {
+        observed_user_id,
         course_ids,
         include: ['planner_overrides'],
-        filter: ['submittable'],
+        filter,
         per_page: MAX_PAGE_SIZE
       })
       items.push(...response.data)

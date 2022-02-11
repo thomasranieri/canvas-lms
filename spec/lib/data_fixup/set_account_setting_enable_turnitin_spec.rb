@@ -18,12 +18,10 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require 'spec_helper'
-
 describe DataFixup::SetAccountSettingEnableTurnitin do
   let(:account) do
-    Account.create!(name: 'turnitin tester', turnitin_account_id: '1234',
-                    turnitin_shared_secret: '1234')
+    Account.create!(name: "turnitin tester", turnitin_account_id: "1234",
+                    turnitin_shared_secret: "1234")
   end
 
   it "adds enable_turnitin to accounts that have a non-null account_id and crypted_secret" do

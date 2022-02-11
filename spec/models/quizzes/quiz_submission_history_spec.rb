@@ -17,8 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe Quizzes::QuizSubmissionHistory do
   context "submissions with history" do
     before :once do
@@ -53,7 +51,7 @@ describe Quizzes::QuizSubmissionHistory do
       it "sorts attempts sequentially" do
         attempts = Quizzes::QuizSubmissionHistory.new(@submission)
         expect(attempts.length).to eq 2
-        expect(attempts.map { |attempt| attempt.number }).to eq [1, 2]
+        expect(attempts.map(&:number)).to eq [1, 2]
       end
     end
 

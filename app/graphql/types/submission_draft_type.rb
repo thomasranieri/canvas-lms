@@ -20,7 +20,7 @@
 
 module Types
   class SubmissionDraftType < ApplicationObjectType
-    graphql_name 'SubmissionDraft'
+    graphql_name "SubmissionDraft"
 
     implements Interfaces::LegacyIDInterface
 
@@ -47,13 +47,26 @@ module Types
                 request: context[:request],
                 preloaded_attachments: preloaded_attachments,
                 user: current_user,
-                options: { :rewrite_api_urls => rewrite_urls }
+                options: { rewrite_api_urls: rewrite_urls }
               )
             end
           end
         end
       end
     end
+
+    field :external_tool, Types::ExternalToolType, null: true
+    def external_tool
+      return nil if object.lti_launch_url.blank?
+
+      ContextExternalTool.find_external_tool(
+        object.lti_launch_url,
+        object.submission.course,
+        object.context_external_tool_id
+      )
+    end
+
+    field :lti_launch_url, Types::UrlType, null: true
 
     field :meets_media_recording_criteria, Boolean, null: false
     def meets_media_recording_criteria
@@ -93,10 +106,17 @@ module Types
       object.meets_student_annotation_criteria?
     end
 
+    field :meets_basic_lti_launch_criteria, Boolean, null: false
+    def meets_basic_lti_launch_criteria
+      object.meets_basic_lti_launch_criteria?
+    end
+
     field :media_object, Types::MediaObjectType, null: true
     def media_object
       Loaders::MediaObjectLoader.load(object.media_object_id)
     end
+
+    field :resource_link_lookup_uuid, String, null: true
 
     field :submission_attempt, Integer, null: false
 

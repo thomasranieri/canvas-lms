@@ -32,7 +32,9 @@ import propTypes from '../propTypes'
 const STUDENT_SETTINGS = [
   'allow_student_forum_attachments',
   'allow_student_discussion_editing',
-  'allow_student_discussion_topics'
+  'allow_student_discussion_topics',
+  'allow_student_discussion_reporting',
+  'allow_student_anonymous_discussion_topics'
 ]
 
 export default class DiscussionSettings extends Component {
@@ -118,10 +120,21 @@ export default class DiscussionSettings extends Component {
               label={I18n.t('Create discussion topics')}
               value="allow_student_discussion_topics"
             />
+            {ENV.discussion_anonymity_enabled && (
+              <Checkbox
+                id="allow_student_anonymous_discussion_topics"
+                disabled={
+                  this.props.isSavingSettings ||
+                  !this.state.studentSettings.includes('allow_student_discussion_topics')
+                }
+                label={I18n.t('Create anonymous discussion topics')}
+                value="allow_student_anonymous_discussion_topics"
+              />
+            )}
             <Checkbox
               id="allow_student_discussion_editing"
               disabled={this.props.isSavingSettings}
-              label={I18n.t('Edit and delete their own posts')}
+              label={I18n.t('Edit and delete their own replies')}
               value="allow_student_discussion_editing"
             />
             <Checkbox
@@ -130,6 +143,14 @@ export default class DiscussionSettings extends Component {
               label={I18n.t('Attach files to discussions')}
               value="allow_student_forum_attachments"
             />
+            {ENV.student_reporting_enabled && (
+              <Checkbox
+                id="allow_student_discussion_reporting"
+                disabled={this.props.isSavingSettings}
+                label={I18n.t('Report replies')}
+                value="allow_student_discussion_reporting"
+              />
+            )}
           </CheckboxGroup>
         </div>
       )
@@ -166,7 +187,7 @@ export default class DiscussionSettings extends Component {
         <Modal
           open={this.props.isSettingsModalOpen}
           onDismiss={this.props.toggleModalOpen}
-          label={I18n.t('Edit Discussion Settings')}
+          label={I18n.t('Discussion Settings')}
           onExited={this.exited}
         >
           <Modal.Body>
@@ -181,7 +202,7 @@ export default class DiscussionSettings extends Component {
                   this.setState({markAsRead: event.target.checked})
                 }}
                 defaultChecked={this.props.userSettings.manual_mark_as_read}
-                label={I18n.t('Manually mark posts as read')}
+                label={I18n.t('Manually mark replies as read')}
                 value="small"
               />
               {this.renderTeacherOptions()}

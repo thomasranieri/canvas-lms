@@ -17,7 +17,7 @@
  */
 
 import {AlertManagerContext} from '@canvas/alerts/react/AlertManager'
-import {ApolloProvider} from 'react-apollo'
+import {AnonymousUser} from '../../../../graphql/AnonymousUser'
 import {Discussion} from '../../../../graphql/Discussion'
 import {DiscussionEntry} from '../../../../graphql/DiscussionEntry'
 import {DiscussionEntryPermissions} from '../../../../graphql/DiscussionEntryPermissions'
@@ -25,13 +25,11 @@ import {DiscussionPermissions} from '../../../../graphql/DiscussionPermissions'
 import {DiscussionThreadContainer} from '../DiscussionThreadContainer'
 import {fireEvent, render} from '@testing-library/react'
 import {getSpeedGraderUrl} from '../../../utils'
-import {handlers} from '../../../../graphql/mswHandlers'
-import {mswClient} from '../../../../../../shared/msw/mswClient'
-import {mswServer} from '../../../../../../shared/msw/mswServer'
+import {MockedProvider} from '@apollo/react-testing'
 import React from 'react'
-import {waitFor} from '@testing-library/dom'
-import {graphql} from 'msw'
+import {updateDiscussionEntryParticipantMock} from '../../../../graphql/Mocks'
 import {User} from '../../../../graphql/User'
+import {waitFor} from '@testing-library/dom'
 
 jest.mock('../../../utils', () => ({
   ...jest.requireActual('../../../utils'),
@@ -39,7 +37,6 @@ jest.mock('../../../utils', () => ({
 }))
 
 describe('DiscussionThreadContainer', () => {
-  const server = mswServer(handlers)
   const onFailureStub = jest.fn()
   const onSuccessStub = jest.fn()
   const openMock = jest.fn()
@@ -47,7 +44,8 @@ describe('DiscussionThreadContainer', () => {
     delete window.location
     window.open = openMock
     window.ENV = {
-      course_id: '1'
+      course_id: '1',
+      SPEEDGRADER_URL_TEMPLATE: '/courses/1/gradebook/speed_grader?assignment_id=1&:student_id'
     }
 
     window.matchMedia = jest.fn().mockImplementation(() => {
@@ -59,23 +57,12 @@ describe('DiscussionThreadContainer', () => {
         removeListener: jest.fn()
       }
     })
-
-    // eslint-disable-next-line no-undef
-    fetchMock.dontMock()
-    server.listen()
   })
 
   afterEach(() => {
-    server.resetHandlers()
     onFailureStub.mockClear()
     onSuccessStub.mockClear()
     openMock.mockClear()
-  })
-
-  afterAll(() => {
-    server.close()
-    // eslint-disable-next-line no-undef
-    fetchMock.enableMocks()
   })
 
   const defaultProps = ({
@@ -88,15 +75,15 @@ describe('DiscussionThreadContainer', () => {
     ...propOverrides
   })
 
-  const setup = props => {
+  const setup = (props, mocks) => {
     return render(
-      <ApolloProvider client={mswClient}>
+      <MockedProvider mocks={mocks}>
         <AlertManagerContext.Provider
           value={{setOnFailure: onFailureStub, setOnSuccess: onSuccessStub}}
         >
           <DiscussionThreadContainer {...props} />
         </AlertManagerContext.Provider>
-      </ApolloProvider>
+      </MockedProvider>
     )
   }
 
@@ -105,59 +92,69 @@ describe('DiscussionThreadContainer', () => {
     expect(container).toBeTruthy()
   })
 
+  it('renders an attachment if it exists', async () => {
+    const container = setup(defaultProps())
+    expect(await container.findByText('288777.jpeg')).toBeInTheDocument()
+  })
+
   it('should not render reply button if reply permission is false', () => {
     const {queryByTestId} = setup(
       defaultProps({
         discussionEntryOverrides: {permissions: DiscussionEntryPermissions.mock({reply: false})}
       })
     )
-    expect(queryByTestId('threading-toolbar-reply')).toBeFalsy()
+    expect(queryByTestId('threading-toolbar-reply')).not.toBeInTheDocument()
   })
 
   it('should render reply button if reply permission is true', () => {
     const {queryByTestId} = setup(defaultProps())
-    expect(queryByTestId('threading-toolbar-reply')).toBeTruthy()
+    expect(queryByTestId('threading-toolbar-reply')).toBeInTheDocument()
   })
 
   describe('delete permission', () => {
     it('removed when false', async () => {
-      const new_prop = defaultProps()
-      new_prop.discussionEntry.permissions.delete = false
-      const {getByTestId, queryAllByText} = setup(new_prop)
+      const props = defaultProps()
+      props.discussionEntry.permissions.delete = false
+      const {getByTestId, queryAllByText} = setup(props)
       fireEvent.click(getByTestId('thread-actions-menu'))
 
       expect(queryAllByText('Delete').length).toBe(0)
     })
 
     it('present when true', async () => {
-      const {getByTestId, queryAllByText} = setup(defaultProps())
+      const {getByTestId, getByText} = setup(defaultProps())
       fireEvent.click(getByTestId('thread-actions-menu'))
 
-      const deletes = queryAllByText('Delete')
-      expect(deletes.length).toBe(1)
+      expect(getByText('Delete')).toBeInTheDocument()
     })
   })
 
   describe('Roles', () => {
     it('does not display author role if not the author', async () => {
       const {queryByTestId} = setup(defaultProps())
-      expect(queryByTestId('pill-Author')).toBeFalsy()
+      expect(queryByTestId('pill-Author')).not.toBeInTheDocument()
     })
 
     it('displays author role if the post is from the author', async () => {
-      const new_prop = defaultProps({
+      const props = defaultProps({
         discussionOverrides: {author: User.mock({_id: '3', displayName: 'Charles Xavier'})},
         discussionEntryOverrides: {author: User.mock({_id: '3', displayName: 'Charles Xavier'})}
       })
-      const {queryByTestId} = setup(new_prop)
+      const {queryByTestId} = setup(props)
 
-      expect(queryByTestId('pill-Author')).toBeTruthy()
+      expect(queryByTestId('pill-Author')).toBeInTheDocument()
     })
   })
 
   describe('read state', () => {
     it('indicates the update to the user', async () => {
-      const {getByTestId} = setup(defaultProps())
+      const {getByTestId} = setup(
+        defaultProps(),
+        updateDiscussionEntryParticipantMock({
+          read: false,
+          forcedReadState: true
+        })
+      )
 
       fireEvent.click(getByTestId('thread-actions-menu'))
       fireEvent.click(getByTestId('markAsUnread'))
@@ -169,22 +166,15 @@ describe('DiscussionThreadContainer', () => {
     })
 
     describe('error handling', () => {
-      beforeEach(() => {
-        server.use(
-          graphql.mutation('UpdateDiscussionEntryParticipant', (req, res, ctx) => {
-            return res.once(
-              ctx.errors([
-                {
-                  message: 'foobar'
-                }
-              ])
-            )
+      it('indicates the failure to the user', async () => {
+        const {getByTestId} = setup(
+          defaultProps(),
+          updateDiscussionEntryParticipantMock({
+            read: false,
+            forcedReadState: true,
+            shouldError: true
           })
         )
-      })
-
-      it('indicates the failure to the user', async () => {
-        const {getByTestId} = setup(defaultProps())
 
         fireEvent.click(getByTestId('thread-actions-menu'))
         fireEvent.click(getByTestId('markAsUnread'))
@@ -199,7 +189,12 @@ describe('DiscussionThreadContainer', () => {
 
   describe('ratings', () => {
     it('indicates the update to the user', async () => {
-      const {getByTestId} = setup(defaultProps())
+      const {getByTestId} = setup(
+        defaultProps(),
+        updateDiscussionEntryParticipantMock({
+          rating: 'liked'
+        })
+      )
 
       fireEvent.click(getByTestId('like-button'))
 
@@ -210,22 +205,14 @@ describe('DiscussionThreadContainer', () => {
     })
 
     describe('error handling', () => {
-      beforeEach(() => {
-        server.use(
-          graphql.mutation('UpdateDiscussionEntryParticipant', (req, res, ctx) => {
-            return res.once(
-              ctx.errors([
-                {
-                  message: 'foobar'
-                }
-              ])
-            )
+      it('indicates the failure to the user', async () => {
+        const {getByTestId} = setup(
+          defaultProps(),
+          updateDiscussionEntryParticipantMock({
+            rating: 'liked',
+            shouldError: true
           })
         )
-      })
-
-      it('indicates the failure to the user', async () => {
-        const {getByTestId} = setup(defaultProps())
 
         fireEvent.click(getByTestId('like-button'))
 
@@ -245,7 +232,7 @@ describe('DiscussionThreadContainer', () => {
       fireEvent.click(getByTestId('inSpeedGrader'))
 
       await waitFor(() => {
-        expect(openMock).toHaveBeenCalledWith(getSpeedGraderUrl('1', '1', '2'), `_blank`)
+        expect(openMock).toHaveBeenCalledWith(getSpeedGraderUrl('2'), `_blank`)
       })
     })
 
@@ -289,7 +276,7 @@ describe('DiscussionThreadContainer', () => {
             }
           })
         )
-        expect(container.getByTestId('is-unread')).toBeTruthy()
+        expect(container.getByTestId('is-unread')).toBeInTheDocument()
       })
 
       it('root is unread and child reply is unread', () => {
@@ -298,8 +285,9 @@ describe('DiscussionThreadContainer', () => {
             discussionEntryOverrides: {entryParticipant: {read: false, rating: false}}
           })
         )
-        expect(container.getByTestId('is-unread')).toBeTruthy()
+        expect(container.getByTestId('is-unread')).toBeInTheDocument()
       })
+
       it('root is unread and child is read', () => {
         const container = setup(
           defaultProps({
@@ -313,7 +301,7 @@ describe('DiscussionThreadContainer', () => {
             }
           })
         )
-        expect(container.getByTestId('is-unread')).toBeTruthy()
+        expect(container.getByTestId('is-unread')).toBeInTheDocument()
       })
     })
 
@@ -331,7 +319,7 @@ describe('DiscussionThreadContainer', () => {
             }
           })
         )
-        expect(container.queryByTestId('is-unread')).toBeNull()
+        expect(container.queryByTestId('is-unread')).not.toBeInTheDocument()
       })
     })
   })
@@ -339,36 +327,36 @@ describe('DiscussionThreadContainer', () => {
   describe('Expand-Button', () => {
     it('should render expand when nested replies are present', () => {
       const {getByTestId} = setup(defaultProps())
-      expect(getByTestId('expand-button')).toBeTruthy()
+      expect(getByTestId('expand-button')).toBeInTheDocument()
     })
 
     it('should expand replies when expand button is clicked', () => {
       const {getByTestId} = setup(defaultProps())
       fireEvent.click(getByTestId('expand-button'))
-      expect(getByTestId('collapse-replies')).toBeTruthy()
+      expect(getByTestId('collapse-replies')).toBeInTheDocument()
     })
 
-    it('should collapse replies when expand button is clicked', async () => {
+    it('should collapse replies when expand button is clicked', () => {
       const {getByTestId, queryByTestId} = setup(defaultProps())
       fireEvent.click(getByTestId('expand-button'))
-      expect(getByTestId('collapse-replies')).toBeTruthy()
+      expect(getByTestId('collapse-replies')).toBeInTheDocument()
 
       fireEvent.click(getByTestId('expand-button'))
 
-      expect(queryByTestId('collapse-replies')).toBeNull()
+      expect(queryByTestId('collapse-replies')).not.toBeInTheDocument()
     })
 
     it('should collapse replies when collapse button is clicked', () => {
       const {getByTestId, queryByTestId} = setup(defaultProps())
       fireEvent.click(getByTestId('expand-button'))
-      expect(getByTestId('collapse-replies')).toBeTruthy()
+      expect(getByTestId('collapse-replies')).toBeInTheDocument()
 
       fireEvent.click(getByTestId('collapse-replies'))
 
-      expect(queryByTestId('collapse-replies')).toBeNull()
+      expect(queryByTestId('collapse-replies')).not.toBeInTheDocument()
     })
 
-    it('pluralizes reply message correctly when there is only a single reply', async () => {
+    it('pluralizes reply message correctly when there is only a single reply', () => {
       const {getAllByText} = setup(
         defaultProps({
           discussionEntryOverrides: {
@@ -383,7 +371,7 @@ describe('DiscussionThreadContainer', () => {
       expect(getAllByText('1 reply, 1 unread').length).toBe(2)
     })
 
-    it('pluralizes replies message correctly when there are multiple replies', async () => {
+    it('pluralizes replies message correctly when there are multiple replies', () => {
       const {getAllByText} = setup(
         defaultProps({
           discussionEntryOverrides: {rootEntryParticipantCounts: {unreadCount: 1, repliesCount: 2}}
@@ -392,7 +380,7 @@ describe('DiscussionThreadContainer', () => {
       expect(getAllByText('2 replies, 1 unread')).toBeTruthy()
     })
 
-    it('does not display unread count if it is 0', async () => {
+    it('does not display unread count if it is 0', () => {
       const {queryAllByText} = setup(
         defaultProps({
           discussionEntryOverrides: {rootEntryParticipantCounts: {unreadCount: 0, repliesCount: 2}}
@@ -400,6 +388,83 @@ describe('DiscussionThreadContainer', () => {
       )
       expect(queryAllByText('2 replies, 0 unread').length).toBe(0)
       expect(queryAllByText('2 replies').length).toBe(2)
+    })
+  })
+
+  describe('Report Reply', () => {
+    it('does not show Report', () => {
+      const {getByTestId, queryByText} = setup(defaultProps())
+
+      fireEvent.click(getByTestId('thread-actions-menu'))
+
+      expect(queryByText('Report')).toBeNull()
+    })
+
+    describe('when feature flag and setting is enabled', () => {
+      beforeAll(() => {
+        window.ENV.student_reporting_enabled = true
+      })
+
+      it('show Report', () => {
+        const {getByTestId, queryByText} = setup(defaultProps())
+
+        fireEvent.click(getByTestId('thread-actions-menu'))
+
+        expect(queryByText('Report')).toBeTruthy()
+      })
+
+      it('show Reported', () => {
+        const {getByTestId, queryByText} = setup(
+          defaultProps({
+            discussionEntryOverrides: {
+              entryParticipant: {
+                reportType: 'other'
+              }
+            }
+          })
+        )
+
+        fireEvent.click(getByTestId('thread-actions-menu'))
+
+        expect(queryByText('Reported')).toBeTruthy()
+      })
+
+      it('can Report', async () => {
+        const {getByTestId, queryByText} = setup(
+          defaultProps(),
+          updateDiscussionEntryParticipantMock({
+            reportType: 'other'
+          })
+        )
+
+        fireEvent.click(getByTestId('thread-actions-menu'))
+        fireEvent.click(queryByText('Report'))
+        fireEvent.click(queryByText('Other'))
+        fireEvent.click(getByTestId('report-reply-submit-button'))
+
+        await waitFor(() => {
+          expect(onSuccessStub).toHaveBeenCalledWith('You have reported this reply.', false)
+        })
+      })
+    })
+  })
+
+  describe('anonymous author', () => {
+    beforeAll(() => {
+      window.ENV.discussion_anonymity_enabled = true
+    })
+
+    afterAll(() => {
+      window.ENV.discussion_anonymity_enabled = false
+    })
+
+    it('renders name', () => {
+      const props = defaultProps({
+        discussionEntryOverrides: {author: null, anonymousAuthor: AnonymousUser.mock()}
+      })
+      const container = setup(props)
+      expect(container.queryByText('Sorry, Something Broke')).toBeNull()
+      expect(container.getByText('Anonymous 1')).toBeInTheDocument()
     })
   })
 })

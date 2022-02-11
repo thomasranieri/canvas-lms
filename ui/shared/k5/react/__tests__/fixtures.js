@@ -17,6 +17,8 @@
  *
  */
 
+import moment from 'moment-timezone'
+
 export const GRADING_PERIODS = [
   {
     id: '1',
@@ -89,6 +91,39 @@ export const MOCK_ASSIGNMENTS = [
   }
 ]
 
+export const MOCK_OBSERVEE_ASSIGNMENTS = [
+  {
+    context_code: 'course_31',
+    context_color: null,
+    context_name: 'Math',
+    html_url: 'http://localhost:3000/courses/31/assignments/111',
+    id: 'assignment_111',
+    important_dates: true,
+    start_at: '2021-10-02T13:59:59Z',
+    title: 'Number theory',
+    type: 'assignment',
+    assignment: {
+      due_at: '2021-10-02T13:59:59Z', // 7:59am MT, 7:44pm Kathmandu
+      submission_types: ['online_text_entry', 'online_url', 'media_recording', 'online_upload']
+    }
+  },
+  {
+    context_code: 'course_32',
+    context_color: '#CCCCCC',
+    context_name: 'Physics',
+    html_url: 'http://localhost:3000/courses/32/assignments/200',
+    id: 'assignment_200',
+    important_dates: true,
+    start_at: '2021-010-04T05:59:59Z',
+    title: 'Dynamics',
+    type: 'assignment',
+    assignment: {
+      due_at: '2021-10-04T11:30:00Z', // 5:30am MT, 5:15pm Kathmandu
+      submission_types: ['online_quiz']
+    }
+  }
+]
+
 export const MOCK_CARDS = [
   {
     id: '1',
@@ -102,6 +137,7 @@ export const MOCK_CARDS = [
     isHomeroom: false,
     isK5Subject: true,
     canManage: true,
+    canReadAnnouncements: true,
     published: true
   },
   {
@@ -116,6 +152,7 @@ export const MOCK_CARDS = [
     isHomeroom: true,
     isK5Subject: false,
     canManage: true,
+    canReadAnnouncements: true,
     published: false
   },
   {
@@ -127,6 +164,24 @@ export const MOCK_CARDS = [
     color: 'red',
     courseCode: 'DA-MATHS',
     enrollmentState: 'invited',
+    isHomeroom: false,
+    isK5Subject: true,
+    canManage: true,
+    canReadAnnouncements: true,
+    published: true
+  }
+]
+
+export const MOCK_CARDS_2 = [
+  {
+    id: '23',
+    assetString: 'course_23',
+    href: '/courses/23',
+    shortName: 'Economics 203',
+    originalName: 'UGLY-SIS-ECON-203',
+    color: 'yellow',
+    courseCode: 'ECON-203',
+    enrollmentState: 'active',
     isHomeroom: false,
     isK5Subject: true,
     canManage: true,
@@ -147,21 +202,47 @@ export const MOCK_EVENTS = [
   }
 ]
 
-export const MOCK_OBSERVER_LIST = [
+export const MOCK_OBSERVEE_EVENTS = [
   {
-    id: '13',
-    name: 'Zelda',
-    avatar_url: 'http://avatar'
-  },
+    context_color: '#CCCCCC',
+    context_name: 'Math',
+    html_url: 'http://localhost:3000/calendar?event_id=99&include_contexts=course_31',
+    id: '100',
+    important_dates: true,
+    start_at: '2021-10-30T07:00:00Z', // 1am MT, 12:45pm Kathmandu
+    title: 'First Quiz',
+    type: 'event'
+  }
+]
+
+export const MOCK_PLANNER_ITEM = [
   {
-    id: '4',
-    name: 'Student 4',
-    avatar_url: 'http://canvas.instructure.com/images/messages/avatar-50.png'
-  },
-  {
-    id: '2',
-    name: 'Student 2',
-    avatar_url:
-      'http://localhost:3000/images/thumbnails/424/pLccjAlvK1xtbcCRgvSMElUOwCBnFU26kgXRif8h'
+    context_name: 'Course2',
+    context_type: 'Course',
+    course_id: '1',
+    html_url: '/courses/2/assignments/15',
+    new_activity: false,
+    plannable: {
+      created_at: '2021-03-16T17:17:17Z',
+      due_at: moment().toISOString(),
+      id: '15',
+      points_possible: 10,
+      title: 'Assignment 15',
+      updated_at: '2021-03-16T17:31:52Z'
+    },
+    plannable_date: moment().toISOString(),
+    plannable_id: '15',
+    plannable_type: 'assignment',
+    planner_override: null,
+    submissions: {
+      excused: false,
+      graded: false,
+      has_feedback: false,
+      late: false,
+      missing: true,
+      needs_grading: false,
+      redo_request: false,
+      submitted: false
+    }
   }
 ]

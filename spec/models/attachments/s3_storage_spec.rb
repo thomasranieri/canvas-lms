@@ -17,8 +17,6 @@
 # with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 
-require File.expand_path(File.dirname(__FILE__) + '/../../spec_helper.rb')
-
 describe Attachments::S3Storage do
   describe "#sign_policy" do
     # example values from http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-post-example.html
@@ -26,7 +24,7 @@ describe Attachments::S3Storage do
     let(:access_key_id) { "AKIAIOSFODNN7EXAMPLE" }
     let(:secret_access_key) { "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY" }
     let(:datetime) { "20151229T000000Z" }
-    let(:string_to_sign) { <<~STS.gsub("\n", "") }
+    let(:string_to_sign) { <<~BASE64.delete("\n") }
       eyAiZXhwaXJhdGlvbiI6ICIyMDE1LTEyLTMwVDEyOjAwOjAwLjAwMFoiLA0KICAiY29uZ
       Gl0aW9ucyI6IFsNCiAgICB7ImJ1Y2tldCI6ICJzaWd2NGV4YW1wbGVidWNrZXQifSwNCi
       AgICBbInN0YXJ0cy13aXRoIiwgIiRrZXkiLCAidXNlci91c2VyMS8iXSwNCiAgICB7ImF
@@ -40,7 +38,7 @@ describe Attachments::S3Storage do
       AxNTEyMjkvdXMtZWFzdC0xL3MzL2F3czRfcmVxdWVzdCJ9LA0KICAgIHsieC1hbXotYWx
       nb3JpdGhtIjogIkFXUzQtSE1BQy1TSEEyNTYifSwNCiAgICB7IngtYW16LWRhdGUiOiAi
       MjAxNTEyMjlUMDAwMDAwWiIgfQ0KICBdDQp9
-    STS
+    BASE64
     let(:signature) { "8afdbf4008c03f22c2cd3cdb72e4afbb1f6a588f3255ac628749a66d7f09699e" }
     let(:bucket) do
       config = double("config", {
@@ -52,10 +50,9 @@ describe Attachments::S3Storage do
     end
 
     it "follows the v4 signing example from AWS" do
-      client = double("client", client: config)
       expect(attachment).to receive(:bucket).and_return(bucket)
       store = Attachments::S3Storage.new(attachment)
-      sig_key, sig_val = store.sign_policy(string_to_sign, datetime)
+      _sig_key, sig_val = store.sign_policy(string_to_sign, datetime)
       expect(sig_val).to eq signature
     end
   end

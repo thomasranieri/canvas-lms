@@ -107,9 +107,11 @@ export default class AssignmentGroupColumnHeader extends ColumnHeader {
       onSortByGradeDescending: func.isRequired,
       settingKey: string.isRequired
     }).isRequired,
+    onApplyScoreToUngraded: func,
     viewUngradedAsZero: bool.isRequired,
     weightedGroups: bool.isRequired,
     onMenuDismiss: Menu.propTypes.onDismiss.isRequired,
+    isRunningScoreToUngraded: bool,
     ...ColumnHeader.propTypes
   }
 
@@ -182,6 +184,19 @@ export default class AssignmentGroupColumnHeader extends ColumnHeader {
                         </Menu.Item>
                       </Menu.Group>
                     </Menu>
+
+                    {this.props.onApplyScoreToUngraded != null && <Menu.Separator />}
+
+                    {this.props.onApplyScoreToUngraded != null && (
+                      <Menu.Item
+                        disabled={this.props.isRunningScoreToUngraded}
+                        onSelect={this.props.onApplyScoreToUngraded}
+                      >
+                        {this.props.isRunningScoreToUngraded
+                          ? I18n.t('Applying Score to Ungraded')
+                          : I18n.t('Apply Score to Ungraded')}
+                      </Menu.Item>
+                    )}
                   </Menu>
                 </div>
               </Grid.Col>

@@ -20,19 +20,20 @@ import PropTypes from 'prop-types'
 import React from 'react'
 
 import {Button} from '@instructure/ui-buttons'
+import {Flex} from '@instructure/ui-flex'
 import {
   IconCollectionSaveLine,
   IconComposeLine,
-  IconMiniArrowDownLine,
+  IconMoreLine,
   IconRemoveFromCollectionLine,
   IconReplyAll2Line,
   IconReplyLine,
-  IconSettingsLine,
   IconTrashLine
 } from '@instructure/ui-icons'
 import {Menu} from '@instructure/ui-menu'
 import {Tooltip} from '@instructure/ui-tooltip'
 import I18n from 'i18n!conversations_2'
+import {View} from '@instructure/ui-view'
 
 const Settings = props => (
   <Menu
@@ -40,12 +41,10 @@ const Settings = props => (
     trigger={
       <Tooltip renderTip={I18n.t('More options')} placement="top">
         <Button
-          renderIcon={IconSettingsLine}
+          renderIcon={IconMoreLine}
           disabled={props.settingsDisabled}
           data-testid="settings"
-        >
-          <IconMiniArrowDownLine />
-        </Button>
+        />
       </Tooltip>
     }
     disabled={props.settingsDisabled}
@@ -108,43 +107,49 @@ export const MessageActionButtons = props => {
   }
 
   return (
-    <>
-      <ActionButton
-        tip={I18n.t('Compose a new message')}
-        icon={IconComposeLine}
-        onClick={props.compose}
-        testid="compose"
-      />
-      <ActionButton
-        tip={I18n.t('Reply')}
-        icon={IconReplyLine}
-        onClick={props.reply}
-        disabled={props.replyDisabled}
-        testid="reply"
-      />
-      <ActionButton
-        tip={I18n.t('Reply all')}
-        icon={IconReplyAll2Line}
-        onClick={props.replyAll}
-        disabled={props.replyDisabled}
-        testid="reply-all"
-      />
-      <ActionButton
-        tip={props.unarchive ? I18n.t('Unarchive') : I18n.t('Archive')}
-        icon={props.unarchive ? IconRemoveFromCollectionLine : IconCollectionSaveLine}
-        onClick={props.unarchive ? props.unarchive : props.archive}
-        disabled={props.archiveDisabled}
-        testid={props.unarchive ? 'unarchive' : 'archive'}
-      />
-      <ActionButton
-        tip={I18n.t('Delete')}
-        icon={IconTrashLine}
-        onClick={props.delete}
-        disabled={props.deleteDisabled}
-        testid="delete"
-      />
-      <Settings {...props} />
-    </>
+    <Flex>
+      <Flex.Item shouldGrow>
+        <View padding="0 medium 0 0">
+          <ActionButton
+            tip={I18n.t('Compose a new message')}
+            icon={IconComposeLine}
+            onClick={props.compose}
+            testid="compose"
+          />
+        </View>
+      </Flex.Item>
+      <Flex.Item>
+        <ActionButton
+          tip={I18n.t('Reply')}
+          icon={IconReplyLine}
+          onClick={props.reply}
+          disabled={props.replyDisabled}
+          testid="reply"
+        />
+        <ActionButton
+          tip={I18n.t('Reply all')}
+          icon={IconReplyAll2Line}
+          onClick={props.replyAll}
+          disabled={props.replyDisabled}
+          testid="reply-all"
+        />
+        <ActionButton
+          tip={props.unarchive ? I18n.t('Unarchive') : I18n.t('Archive')}
+          icon={props.unarchive ? IconRemoveFromCollectionLine : IconCollectionSaveLine}
+          onClick={props.unarchive ? props.unarchive : props.archive}
+          disabled={props.archiveDisabled}
+          testid={props.unarchive ? 'unarchive' : 'archive'}
+        />
+        <ActionButton
+          tip={I18n.t('Delete')}
+          icon={IconTrashLine}
+          onClick={props.delete}
+          disabled={props.deleteDisabled}
+          testid="delete"
+        />
+        <Settings {...props} />
+      </Flex.Item>
+    </Flex>
   )
 }
 

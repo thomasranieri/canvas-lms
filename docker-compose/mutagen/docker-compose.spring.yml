@@ -16,7 +16,7 @@ services:
     command: bundle exec spring server
     volumes:
       - code:/usr/src/app
-      - bundler:/home/docker/.bundler/
+      - bundle:/home/docker/.bundle/
       - canvas-docker-gems:/home/docker/.gem/
       - yarn-cache:/home/docker/.cache/yarn
     environment:
@@ -25,3 +25,4 @@ services:
       SPRING_TMP_PATH: tmp
       SPRING_SOCKET: tmp/spring.sock
       SPRING_PIDFILE: tmp/spring.pid
+      POSTGRES_PASSWORD: sekret

@@ -73,22 +73,14 @@ ready(() => {
     const container = document.getElementById('create_subject_modal_container')
     if (container) {
       startButton.addEventListener('click', () => {
-        let role
-        if (ENV.current_user_roles.includes('admin')) {
-          role = 'admin'
-        } else if (ENV.current_user_roles.includes('teacher')) {
-          role = 'teacher'
-        } else {
-          // should never get here
-          return
-        }
         ReactDOM.render(
           <CreateCourseModal
             isModalOpen
             setModalOpen={isOpen => {
               if (!isOpen) ReactDOM.unmountComponentAtNode(container)
             }}
-            permissions={role}
+            permissions={ENV.CREATE_COURSES_PERMISSIONS.PERMISSION}
+            restrictToMCCAccount={ENV.CREATE_COURSES_PERMISSIONS.RESTRICT_TO_MCC_ACCOUNT}
             isK5User={ENV.K5_USER}
           />,
           container

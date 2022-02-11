@@ -20,7 +20,7 @@ import fetchMock from 'fetch-mock'
 
 import {
   fetchCourseInstructors,
-  fetchGrades,
+  transformGrades,
   fetchGradesForGradingPeriod,
   fetchLatestAnnouncement,
   readableRoleName,
@@ -32,15 +32,13 @@ import {
   fetchImportantInfos,
   parseAnnouncementDetails,
   groupAnnouncementsByHomeroom,
-  groupImportantDates,
-  parseObserverList
+  groupImportantDates
 } from '../utils'
 
 import {MOCK_ASSIGNMENTS, MOCK_EVENTS} from './fixtures'
 
 const ANNOUNCEMENT_URL =
   '/api/v1/announcements?context_codes=course_test&active_only=true&per_page=1'
-const GRADES_URL = /\/api\/v1\/users\/self\/courses\?.*/
 const GRADING_PERIODS_URL = /\/api\/v1\/users\/self\/enrollments\?.*/
 const USERS_URL =
   '/api/v1/courses/test/users?enrollment_type[]=teacher&enrollment_type[]=ta&include[]=avatar_url&include[]=bio&include[]=enrollments'
@@ -118,7 +116,7 @@ describe('readableRoleName', () => {
   })
 })
 
-describe('fetchGrades', () => {
+describe('transformGrades', () => {
   const defaultCourse = {
     id: '1',
     name: 'Intro to Everything',
@@ -152,8 +150,7 @@ describe('fetchGrades', () => {
   }
 
   it('translates courses to just course and grade-relevant properties', async () => {
-    fetchMock.get(GRADES_URL, JSON.stringify([defaultCourse]))
-    const courseGrades = await fetchGrades()
+    const courseGrades = transformGrades([defaultCourse])
     expect(courseGrades).toEqual([
       {
         courseId: '1',
@@ -198,8 +195,7 @@ describe('fetchGrades', () => {
   })
 
   it("doesn't use current period score if the course has only one grading period", async () => {
-    fetchMock.get(GRADES_URL, JSON.stringify([{...defaultCourse, has_grading_periods: false}]))
-    const courseGrades = await fetchGrades()
+    const courseGrades = transformGrades([{...defaultCourse, has_grading_periods: false}])
     expect(courseGrades).toEqual([
       {
         courseId: '1',
@@ -235,28 +231,25 @@ describe('fetchGrades', () => {
   })
 
   it('populates totalGradeForAllGradingPeriods and totalScoreForAllGradingPeriods if totals option is true', async () => {
-    fetchMock.get(
-      GRADES_URL,
-      JSON.stringify([
-        {
-          ...defaultCourse,
-          enrollments: [
-            {
-              current_grading_period_id: '1',
-              current_grading_period_title: 'The first one',
-              totals_for_all_grading_periods_option: true,
-              current_period_computed_current_score: 80,
-              current_period_computed_current_grade: 'B-',
-              computed_current_score: 89,
-              computed_current_grade: 'B+',
-              type: 'student'
-            }
-          ]
-        }
-      ])
-    )
+    const courseWithTotals = [
+      {
+        ...defaultCourse,
+        enrollments: [
+          {
+            current_grading_period_id: '1',
+            current_grading_period_title: 'The first one',
+            totals_for_all_grading_periods_option: true,
+            current_period_computed_current_score: 80,
+            current_period_computed_current_grade: 'B-',
+            computed_current_score: 89,
+            computed_current_grade: 'B+',
+            type: 'student'
+          }
+        ]
+      }
+    ]
 
-    const courseGrades = await fetchGrades()
+    const courseGrades = transformGrades(courseWithTotals)
     expect(courseGrades).toEqual([
       {
         courseId: '1',
@@ -726,6 +719,14 @@ describe('parseAnnouncementDetails', () => {
     const announcementDetails = parseAnnouncementDetails({...announcement, attachments: []}, course)
     expect(announcementDetails.announcement.attachment).toBeUndefined()
   })
+
+  it('handles a missing posted_at date', () => {
+    const announcementDetails = parseAnnouncementDetails(
+      {...announcement, posted_at: undefined},
+      course
+    )
+    expect(announcementDetails.announcement.postedDate).toBeUndefined()
+  })
 })
 
 describe('groupAnnouncementsByHomeroom', () => {
@@ -862,25 +863,5 @@ describe('groupImportantDates', () => {
     expect(event.type).toBe('event')
     expect(event.url).toBe('http://localhost:3000/calendar?event_id=99&include_contexts=course_30')
     expect(event.start).toBe('2021-06-30T07:00:00Z')
-  })
-})
-
-describe('parseObserverList', () => {
-  it('transforms attribute names', () => {
-    const users = parseObserverList([
-      {id: '4', name: 'Student 4', avatar_url: 'https://url_here'},
-      {id: '6', name: 'Student 6'}
-    ])
-    expect(users.length).toBe(2)
-    expect(users[0].id).toBe('4')
-    expect(users[0].name).toBe('Student 4')
-    expect(users[0].avatarUrl).toBe('https://url_here')
-    expect(users[1].id).toBe('6')
-    expect(users[1].name).toBe('Student 6')
-  })
-
-  it('returns empty list if no observers passed', () => {
-    const users = parseObserverList([])
-    expect(users.length).toBe(0)
   })
 })

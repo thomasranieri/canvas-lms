@@ -42,6 +42,7 @@ import {isGraded, isPostable, similarityIcon} from '@canvas/grading/SubmissionHe
 import studentViewedAtTemplate from '../jst/student_viewed_at.handlebars'
 import submissionsDropdownTemplate from '../jst/submissions_dropdown.handlebars'
 import speechRecognitionTemplate from '../jst/speech_recognition.handlebars'
+import unsubmittedCommentsTemplate from '../jst/unsubmitted_comment.handlebars'
 import {Tooltip} from '@instructure/ui-tooltip'
 import {
   IconUploadLine,
@@ -185,6 +186,7 @@ let $comment_saved
 let $comment_saved_message
 let $reassignment_complete
 let $selectmenu
+let $word_count
 let browserableCssClasses
 let snapshotCache
 let sectionToShow
@@ -1031,9 +1033,11 @@ function refreshGrades(callback) {
   const courseId = ENV.course_id
   const assignmentId = EG.currentStudent.submission.assignment_id
   const studentId = EG.currentStudent.submission[anonymizableUserId]
-  const url = `/api/v1/courses/${courseId}/assignments/${assignmentId}/submissions/${studentId}.json?include[]=submission_history`
+  const resourceSegment = isAnonymous ? 'anonymous_submissions' : 'submissions'
+  const params = {'include[]': 'submission_history'}
+  const url = `/api/v1/courses/${courseId}/assignments/${assignmentId}/${resourceSegment}/${studentId}.json`
   const currentStudentIDAsOfAjaxCall = EG.currentStudent[anonymizableId]
-  $.getJSON(url, submission => {
+  $.getJSON(url, params, submission => {
     const studentToRefresh = window.jsonData.studentMap[currentStudentIDAsOfAjaxCall]
     EG.setOrUpdateSubmission(submission)
 
@@ -1183,12 +1187,14 @@ function getLateMissingAndExcusedPills() {
 function updateSubmissionAndPageEffects(data) {
   const submission = EG.currentStudent.submission
 
-  makeSubmissionUpdateRequest(submission, ENV.course_id, data)
+  makeSubmissionUpdateRequest(submission, isAnonymous, ENV.course_id, data)
     .then(() => {
       refreshGrades(() => {
-        EG.refreshSubmissionsToView()
-        styleSubmissionStatusPills(getLateMissingAndExcusedPills())
-        renderStatusMenu(statusMenuComponent(submission), availableMountPointForStatusMenu())
+        EG.showSubmissionDetails()
+        if (availableMountPointForStatusMenu()) {
+          styleSubmissionStatusPills(getLateMissingAndExcusedPills())
+          renderStatusMenu(statusMenuComponent(submission), availableMountPointForStatusMenu())
+        }
       })
     })
     .catch(showFlashError())
@@ -1385,11 +1391,84 @@ EG = {
     EG.goToStudent(resolvedId, HISTORY_REPLACE)
   },
 
-  skipRelativeToCurrentIndex(offset) {
-    const {length: students} = jsonData.studentsWithSubmissions
-    const newIndex = (this.currentIndex() + offset + students) % students
+  anyUnpostedComment() {
+    return !!(
+      $.trim($add_a_comment_textarea.val()).length ||
+      $('#media_media_recording').data('comment_id') ||
+      $add_a_comment.find("input[type='file']:visible").length
+    )
+  },
 
-    this.goToStudent(jsonData.studentsWithSubmissions[newIndex][anonymizableId], HISTORY_PUSH)
+  skipRelativeToCurrentIndex(offset) {
+    const nextStudent = offset => {
+      const {length: students} = jsonData.studentsWithSubmissions
+      const newIndex = (this.currentIndex() + offset + students) % students
+      this.goToStudent(jsonData.studentsWithSubmissions[newIndex][anonymizableId], HISTORY_PUSH)
+      const nextSubmission = jsonData.studentsWithSubmissions[newIndex].submission
+      if (nextSubmission.missing && nextSubmission.grader_id) {
+        updateSubmissionAndPageEffects()
+      }
+    }
+
+    const doNotShowModalSetting = 'speedgrader.dont_show_unposted_comment_dialog.' + assignmentUrl
+
+    if (
+      ENV.speedgrader_dialog_for_unposted_comments &&
+      !userSettings.get(doNotShowModalSetting) &&
+      this.anyUnpostedComment()
+    ) {
+      const closeDialog = () => {
+        if ($(document).find('.do-not-show-again input').is(':checked')) {
+          userSettings.set(doNotShowModalSetting, true)
+        }
+        $dialog.dialog('close')
+        $dialog.dialog('destroy').remove() // this actually removes it from DOM
+      }
+
+      const $dialog = $(
+        unsubmittedCommentsTemplate({
+          message: I18n.t(
+            'You have created a comment that has not been posted. Do you want to proceed and save this comment as a draft? (You can post draft comments at any time.)'
+          )
+        })
+      ).dialog({
+        title: I18n.t('Your comment is not posted'),
+        minWidth: 500,
+        minHeight: 200,
+        resizable: false,
+        dialogClass: 'no-close',
+        modal: true,
+        create(e, ui) {
+          const pane = $(this).dialog('widget').find('.ui-dialog-buttonpane')
+          $(
+            `<label class='do-not-show-again'><input type='checkbox'/>&nbsp;${I18n.t(
+              'Do not show again for this assignment'
+            )}</label>`
+          ).prependTo(pane)
+        },
+        buttons: [
+          {
+            id: 'unposted_comment_cancel',
+            class: 'dialog_button',
+            text: I18n.t('Cancel'),
+            click: () => {
+              closeDialog()
+            }
+          },
+          {
+            id: 'unposted_comment_proceed',
+            class: 'dialog_button',
+            text: I18n.t('Proceed'),
+            click: () => {
+              closeDialog()
+              nextStudent(offset)
+            }
+          }
+        ]
+      })
+    } else {
+      nextStudent(offset)
+    }
   },
 
   next() {
@@ -1663,9 +1742,8 @@ EG = {
         this.currentStudent.rubric_assessments = []
       }
 
-      this.currentStudent.rubric_assessments = this.currentStudent.rubric_assessments.concat(
-        provisionalAssessments
-      )
+      this.currentStudent.rubric_assessments =
+        this.currentStudent.rubric_assessments.concat(provisionalAssessments)
     }
 
     if (anonymousGraders) {
@@ -2021,6 +2099,19 @@ EG = {
     }
   },
 
+  updateWordCount(wordCount) {
+    if (ENV.FEATURES?.word_count_in_speed_grader) {
+      // xsslint safeString.method toLocaleString
+      // xsslint safeString.method t
+      const wordCountHTML = wordCount
+        ? `<label>${I18n.t('Word Count')}:</label> ${I18n.t('word', {
+            count: wordCount
+          })}`
+        : ''
+      $word_count.html($.raw(wordCountHTML))
+    }
+  },
+
   handleSubmissionSelectionChange() {
     clearInterval(sessionTimer)
 
@@ -2176,6 +2267,7 @@ EG = {
         .click(function (event) {
           event.preventDefault()
           EG.loadSubmissionPreview($(this).data('attachment'), null)
+          EG.updateWordCount(attachment.word_count)
         })
         .end()
         .find('a.submission-file-download')
@@ -2237,6 +2329,7 @@ EG = {
     // load up a preview of one of the attachments if we can.
     this.loadSubmissionPreview(preview_attachment, submission)
     renderSubmissionCommentsDownloadLink(submission)
+    EG.updateWordCount(preview_attachment ? preview_attachment.word_count : submission.word_count)
 
     // if there is any submissions after this one, show a notice that they are not looking at the newest
     $submission_not_newest_notice.showIf(
@@ -2402,7 +2495,10 @@ EG = {
       const missing =
         currentSubmission.submission_history[index].submission?.missing ||
         currentSubmission.submission_history[index]?.missing
-      if (missing) {
+      const late =
+        currentSubmission.submission_history[index].submission?.late ||
+        currentSubmission.submission_history[index]?.late
+      if (missing || late) {
         this.refreshSubmissionsToView()
         $submission_details.show()
       } else {
@@ -2947,9 +3043,10 @@ EG = {
   },
 
   currentDisplayedSubmission() {
-    const displayedHistory = this.currentStudent.submission?.submission_history?.[
-      this.currentStudent.submission.currentSelectedIndex
-    ]
+    const displayedHistory =
+      this.currentStudent.submission?.submission_history?.[
+        this.currentStudent.submission.currentSelectedIndex
+      ]
     return displayedHistory?.submission || this.currentStudent.submission
   },
 
@@ -3170,7 +3267,16 @@ EG = {
 
     // update the nested submission in submission_history if needed
     if (student.submission?.submission_history?.[historyIndex]?.submission) {
-      submission.submission_history[historyIndex].submission = $.extend(true, {}, submission)
+      const versionedAttachments =
+        submission.submission_history[historyIndex].submission?.versioned_attachments || []
+      submission.submission_history[historyIndex].submission = $.extend(
+        true,
+        {},
+        {
+          ...submission,
+          versioned_attachments: versionedAttachments
+        }
+      )
     }
 
     $.extend(true, student.submission, submission)
@@ -3222,6 +3328,11 @@ EG = {
       EG.currentStudent,
       $grade
     )
+
+    const isInModeration = isModerated && !jsonData.grades_published_at
+    if (!isInModeration) {
+      updateSubmissionAndPageEffects()
+    }
 
     if (grade.toUpperCase() === 'EX') {
       formData['submission[excuse]'] = true
@@ -3320,7 +3431,7 @@ EG = {
     ) {
       $grade.val(submission.grade)
     } else {
-      grade = EG.getGradeToShow(submission, ENV.grading_role)
+      grade = EG.getGradeToShow(submission)
       $grade.val(grade.entered)
     }
 
@@ -3385,7 +3496,7 @@ EG = {
     return formattedGrade
   },
 
-  getGradeToShow(submission, grading_role) {
+  getGradeToShow(submission) {
     const grade = {entered: ''}
 
     if (submission) {
@@ -3396,23 +3507,12 @@ EG = {
           grade.pointsDeducted = I18n.n(-submission.points_deducted)
         }
 
-        let enteredScore = submission.entered_score
-        let enteredGrade = submission.entered_grade
-
-        if (submission.provisional_grade_id) {
-          enteredScore = submission.score
-          enteredGrade = submission.grade
-        }
-
-        if (enteredScore != null && ['moderator', 'provisional_grader'].includes(grading_role)) {
-          grade.entered = GradeFormatHelper.formatGrade(round(enteredScore, 2))
-          grade.adjusted = GradeFormatHelper.formatGrade(round(submission.score, 2))
-        } else if (submission.entered_grade != null) {
-          if (enteredGrade !== '' && !isNaN(enteredGrade)) {
-            grade.entered = GradeFormatHelper.formatGrade(round(enteredGrade, 2))
+        if (submission.entered_grade != null) {
+          if (submission.entered_grade !== '' && !isNaN(submission.entered_grade)) {
+            grade.entered = GradeFormatHelper.formatGrade(round(submission.entered_grade, 2))
             grade.adjusted = GradeFormatHelper.formatGrade(round(submission.grade, 2))
           } else {
-            grade.entered = GradeFormatHelper.formatGrade(enteredGrade)
+            grade.entered = GradeFormatHelper.formatGrade(submission.entered_grade)
             grade.adjusted = GradeFormatHelper.formatGrade(submission.grade)
           }
         }
@@ -3853,6 +3953,7 @@ function setupSelectors() {
   $width_resizer = $('#width_resizer')
   $window = $(window)
   $x_of_x_students = $('#x_of_x_students_frd')
+  $word_count = $('#submission_word_count')
   assignmentUrl = $('#assignment_url').attr('href')
   browserableCssClasses = /^(image|html|code)$/
   fileIndex = 1

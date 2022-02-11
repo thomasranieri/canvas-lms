@@ -33,9 +33,11 @@ module DataFixup
     #   the column(s), and the default_value is passed separately, and applied to all of
     #   the columns.
     def self.run(klass, fields, default_value: false, batch_size: 1000)
-      if fields.is_a?(Array)
-        fields = fields.map { |f| [f, default_value] }.to_h
-      elsif fields.is_a?(Hash)
+      case fields
+      when Array
+        fields = fields.index_with { default_value }
+      when Hash
+        # already correct type
       else
         fields = { fields => default_value }
       end
@@ -47,7 +49,7 @@ module DataFixup
       else
         # update all fields in a single query, by assigning the existing non-NULL values
         # over themselves, or the default value if it is NULL
-        updates = fields.map { |(f, v)| "#{f}=COALESCE(#{f},#{klass.connection.quote(v)})" }.join(', ')
+        updates = fields.map { |(f, v)| "#{f}=COALESCE(#{f},#{klass.connection.quote(v)})" }.join(", ")
       end
 
       klass.find_ids_in_ranges(batch_size: batch_size) do |start_id, end_id|

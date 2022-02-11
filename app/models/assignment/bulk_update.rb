@@ -29,18 +29,18 @@ class Assignment::BulkUpdate
     @context.grading_periods?
   end
 
-  def run(progress, data)
-    # data looks like [:id, :all_dates => [:id, :base, :due_at, :unlock_at, :lock_at]]
-    assignment_data = data.index_by { |a| a['id'] }
-    assignments = @context.active_assignments.where(id: assignment_data.keys).preload(:assignment_overrides).index_by(&:id)
+  def run(progress, assignment_data)
+    # assignment_data looks like [:id, :all_dates => [:id, :base, :due_at, :unlock_at, :lock_at]]
+    assignment_data_hash = assignment_data.index_by { |a| a["id"] }
+    assignments = @context.active_assignments.where(id: assignment_data_hash.keys).preload(:assignment_overrides).index_by(&:id)
     assignments_to_save = Set.new
 
     # 1. update AR models (in memory!)
-    assignment_data.each do |id, data|
-      dates = data['all_dates']
+    assignment_data_hash.each do |id, data|
+      dates = data["all_dates"]
       next unless dates.present?
 
-      base, overrides = dates.partition { |date| date['base'] }
+      base, overrides = dates.partition { |date| date["base"] }
 
       # 1a. update the assignment
       assignment = assignments[id.to_i]
@@ -49,16 +49,16 @@ class Assignment::BulkUpdate
       if base.any?
         assignment.content_being_saved_by(@current_user)
         assignment.updating_user = @current_user
-        assignment.assign_attributes(base.first.slice(*%w(due_at unlock_at lock_at)))
+        assignment.assign_attributes(base.first.slice(*%w[due_at unlock_at lock_at]))
         assignments_to_save << assignment if assignment.changed?
       end
 
       # 1b. update associated overrides
       overrides.each do |override_data|
-        override = assignment.assignment_overrides.detect { |o| o.id == override_data['id'].to_i }
-        raise ActiveRecord::RecordNotFound, "invalid assignment override id #{override_data['id']} for assignment #{assignment.id}" unless override
+        override = assignment.assignment_overrides.detect { |o| o.id == override_data["id"].to_i }
+        raise ActiveRecord::RecordNotFound, "invalid assignment override id #{override_data["id"]} for assignment #{assignment.id}" unless override
 
-        %w(due_at unlock_at lock_at).each do |date|
+        %w[due_at unlock_at lock_at].each do |date|
           if override_data.key?(date)
             override.send("#{date}=", override_data[date])
             override.send("#{date}_overridden=", true)
@@ -78,12 +78,12 @@ class Assignment::BulkUpdate
     all_errors = []
     assignments_to_save.each do |assignment|
       if !grading_periods_allow_submittable_update?(assignment, {}) || !assignment.valid?
-        all_errors << { 'assignment_id' => assignment.id }
+        all_errors << { "assignment_id" => assignment.id }
                       .merge(assignment.errors.to_hash.deep_stringify_keys)
       end
       assignment.assignment_overrides.each do |override|
         if !grading_periods_allow_assignment_override_update?(override) || !override.valid?
-          all_errors << { 'assignment_id' => assignment.id, 'assignment_override_id' => override.id }
+          all_errors << { "assignment_id" => assignment.id, "assignment_override_id" => override.id }
                         .merge(override.errors.to_hash.deep_stringify_keys)
         end
       end
@@ -113,6 +113,8 @@ class Assignment::BulkUpdate
 
     # 4. clear caches
     Assignment.clear_cache_keys(assignments_to_save, :availability)
+    quizzes = assignments_to_save.select(&:quiz?).map(&:quiz)
+    Quizzes::Quiz.clear_cache_keys(quizzes, :availability) if quizzes.any?
     DueDateCacher.recompute_course(@context, assignments: assignments_to_save, update_grades: true, executing_user: @current_user)
 
     progress.complete

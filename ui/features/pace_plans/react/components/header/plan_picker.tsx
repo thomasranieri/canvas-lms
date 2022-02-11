@@ -19,6 +19,7 @@
 import React, {useState} from 'react'
 import keycode from 'keycode'
 import {connect} from 'react-redux'
+// @ts-ignore: TS doesn't understand i18n scoped imports
 import I18n from 'i18n!pace_plans_plan_picker'
 
 import {ApplyTheme} from '@instructure/ui-themeable'
@@ -28,8 +29,11 @@ import {TextInput} from '@instructure/ui-text-input'
 import {TruncateText} from '@instructure/ui-truncate-text'
 import {View} from '@instructure/ui-view'
 
+import UnpublishedWarningModal from './unpublished_warning_modal'
+
 import {StoreState, Enrollment, Section, PlanContextTypes} from '../../types'
 import {Course} from '../../shared/types'
+import {getUnpublishedChangeCount} from '../../reducers/pace_plans'
 import {getSortedEnrollments} from '../../reducers/enrollments'
 import {getSortedSections} from '../../reducers/sections'
 import {getCourse} from '../../reducers/course'
@@ -47,6 +51,7 @@ interface StoreProps {
   readonly sections: Section[]
   readonly selectedContextId: string
   readonly selectedContextType: PlanContextTypes
+  readonly changeCount: number
 }
 
 interface DispatchProps {
@@ -63,6 +68,7 @@ const createContextKey = (contextType: PlanContextTypes, contextId: string): str
 const parseContextKey = (key: string): ContextArgs => key.split(':') as ContextArgs
 
 export const PlanPicker: React.FC<ComponentProps> = ({
+  changeCount,
   course,
   enrollments,
   sections,
@@ -71,6 +77,8 @@ export const PlanPicker: React.FC<ComponentProps> = ({
   setSelectedPlanContext
 }) => {
   const [open, setOpen] = useState(false)
+  const [pendingContext, setPendingContext] = useState('')
+  const hasChanges = changeCount > 0
 
   let selectedContextName = I18n.t('Course Pace Plan')
   if (selectedContextType === 'Section') {
@@ -91,7 +99,13 @@ export const PlanPicker: React.FC<ComponentProps> = ({
     }
   }
 
-  const handleSelect = (_, value: string) => setSelectedPlanContext(...parseContextKey(value))
+  const handleSelect = (_, value: string) => {
+    if (hasChanges) {
+      setPendingContext(value)
+    } else {
+      setSelectedPlanContext(...parseContextKey(value))
+    }
+  }
 
   const renderOption = (contextKey: string, label: string, key?: string) => (
     <Item value={contextKey} defaultSelected={contextKey === selectedContextKey} key={key}>
@@ -108,6 +122,7 @@ export const PlanPicker: React.FC<ComponentProps> = ({
         open ? <IconArrowOpenUpSolid inline={false} /> : <IconArrowOpenDownSolid inline={false} />
       }
       value={selectedContextName}
+      data-testid="pace-plan-picker"
       interaction="readonly"
       role="button"
       onKeyDown={handleKeyDown}
@@ -133,17 +148,28 @@ export const PlanPicker: React.FC<ComponentProps> = ({
         onSelect={handleSelect}
       >
         {renderOption(createContextKey('Course', course.id), I18n.t('Course Pace Plan'))}
-        <Menu id="pace-plan-menu" label={I18n.t('Sections')}>
-          {sections.map(s =>
-            renderOption(createContextKey('Section', s.id), s.name, `section-${s.id}`)
-          )}
-        </Menu>
-        <Menu id="pace-plan-menu" label={I18n.t('Students')}>
+        {/* Commenting out since we're not implementing sections yet */}
+        {/* <Menu id="pace-plan-menu" label={I18n.t('Sections')}> */}
+        {/*  {sections.map(s => */}
+        {/*    renderOption(createContextKey('Section', s.id), s.name, `section-${s.id}`) */}
+        {/*  )} */}
+        {/* </Menu> */}
+        <Menu id="pace-plan-student-menu" label={I18n.t('Students')}>
           {enrollments.map(e =>
             renderOption(createContextKey('Enrollment', e.id), e.full_name, `student-${e.id}`)
           )}
         </Menu>
       </Menu>
+      <UnpublishedWarningModal
+        open={!!pendingContext}
+        onCancel={() => {
+          setPendingContext('')
+        }}
+        onConfirm={() => {
+          setSelectedPlanContext(...parseContextKey(pendingContext))
+          setPendingContext('')
+        }}
+      />
     </ApplyTheme>
   )
 }
@@ -153,7 +179,8 @@ const mapStateToProps = (state: StoreState) => ({
   enrollments: getSortedEnrollments(state),
   sections: getSortedSections(state),
   selectedContextId: getSelectedContextId(state),
-  selectedContextType: getSelectedContextType(state)
+  selectedContextType: getSelectedContextType(state),
+  changeCount: getUnpublishedChangeCount(state)
 })
 
 export default connect(mapStateToProps, {
