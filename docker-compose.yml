@@ -21,3 +21,8 @@ services:
 
   redis:
     image: redis:alpine
+
+  adminer:
+    image: adminer
+    ports:
+      - "127.0.0.1:19402:8080"
