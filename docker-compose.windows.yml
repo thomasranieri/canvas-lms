@@ -1,0 +1,8 @@
+services:
+  windows-canvas-docker:
+    image: ubuntu
+    command: apt-get install curl && curl -fsSL https://get.docker.com | sh
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/canvas-source-code
+#docker run --rm -it -v /var/run/docker.sock:/var/run/docker.sock -v ${PWD}:/canvas-lms-source ubuntu bash
