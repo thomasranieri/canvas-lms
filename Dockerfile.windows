@@ -19,4 +19,7 @@ ENV PATH=/home/gitpod/.nvm/versions/node/v${NODE_VERSION}/bin:$PATH
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 RUN sudo apt-get update && sudo apt-get -y install yarn=1.10.1-1
+RUN sudo chown gitpod /workspace
 WORKDIR /canvas-source-code
+COPY . .
+#RUN ./windows.entrypoint.sh
