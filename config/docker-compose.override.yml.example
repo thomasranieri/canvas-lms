@@ -41,6 +41,7 @@ services:
     environment: &BASE-ENV
       ENCRYPTION_KEY: facdd3a131ddd8988b14f6e4e01039c93cfa0160
       RAILS_ENV: development
+      APP_DOMAIN: localhost
 
   webpack:
     <<: *BASE
@@ -57,6 +58,10 @@ services:
       # AR_QUERY_TRACE: 'true'
       # AR_QUERY_TRACE_TYPE: 'all' # 'all', 'write', or 'read'
       # AR_QUERY_TRACE_LINES: 10
+    env_file:
+      - ./.env
+    ports:
+      - "127.0.0.1:80:80"
 
   postgres:
     volumes:
