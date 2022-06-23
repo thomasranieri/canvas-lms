@@ -5,7 +5,6 @@ services:
     build:
       context: .
     volumes:
-      - .:/usr/src/app
       - api_docs:/usr/src/app/public/doc/api
       - brandable_css_brands:/usr/src/app/app/stylesheets/brandable_css_brands
       - bundler:/home/docker/.bundle/
@@ -41,7 +40,7 @@ services:
     environment: &BASE-ENV
       ENCRYPTION_KEY: facdd3a131ddd8988b14f6e4e01039c93cfa0160
       RAILS_ENV: development
-      APP_DOMAIN: localhost
+      DISABLE_SPRING: 1
 
   webpack:
     <<: *BASE
