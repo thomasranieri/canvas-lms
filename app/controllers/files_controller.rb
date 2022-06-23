@@ -130,7 +130,7 @@ class FilesController < ApplicationController
   # brand-config-uploaded JS to work
   # verify_authenticity_token is manually-invoked where @context is not
   # an Account in show_relative
-  #protect_from_forgery except: [:api_capture, :show_relative, :show], with: :exception
+  protect_from_forgery except: [:api_capture, :show_relative], with: :exception
 
   before_action :require_user, only: :create_pending
   before_action :require_context, except: %i[
@@ -146,7 +146,7 @@ class FilesController < ApplicationController
 
   before_action :open_limited_cors, only: [:show]
 
-  skip_before_action :verify_authenticity_token, only: [:api_create, :show]
+  skip_before_action :verify_authenticity_token, only: :api_create
   before_action :verify_api_id, only: %i[
     api_show api_create_success api_file_status api_update destroy reset_verifier
   ]
@@ -491,7 +491,6 @@ class FilesController < ApplicationController
   #
   # @returns File
   def api_show
-    File.write('/usr/src/app/log/DELME.log', 'api_show', mode: 'a')
     get_context
     @attachment = @context ? @context.attachments.not_deleted.find_by(id: params[:id]) : Attachment.not_deleted.find_by(id: params[:id])
     unless @attachment
@@ -511,11 +510,6 @@ class FilesController < ApplicationController
   end
 
   def show
-    File.write('/usr/src/app/log/DELME.log', 'abc', mode: 'a')
-    File.write('/usr/src/app/log/DELME.log', @context, mode: 'a')
-    
-    #verify_authenticity_token unless @context.is_a?(Account)
-    
     GuardRail.activate(:secondary) do
       params[:id] ||= params[:file_id]
       get_context
@@ -670,16 +664,9 @@ class FilesController < ApplicationController
   protected :render_attachment
 
   def show_relative
-    File.write('/usr/src/app/log/DELME.log', 'show_relative', mode: 'a')
     path = params[:file_path]
     file_id = params[:file_id]
     file_id = nil unless Api::ID_REGEX.match?(file_id.to_s)
-
-    p ""
-    p "Inside show_relative"
-    p @context
-    p ""
-
 
     # Manually-invoke verify_authenticity_token for non-Account contexts
     # This is to allow Account-level file downloads to skip request forgery protection

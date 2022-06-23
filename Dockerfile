@@ -102,9 +102,3 @@ RUN set -eux; \
     /home/docker/.bundle/ \
     /home/docker/.cache/yarn \
     /home/docker/.gem/
-
-COPY . .
-USER root
-RUN chown -R docker:docker app
-USER docker
-RUN bundle install
