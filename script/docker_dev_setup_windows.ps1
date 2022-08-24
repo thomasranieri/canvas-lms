@@ -16,4 +16,4 @@ docker-compose run --no-deps --rm web ./script/install_assets.sh -c compile #tak
 docker-compose run --no-deps --rm web bundle exec rake db:migrate RAILS_ENV=development
 docker-compose run --no-deps --rm web bundle exec rake db:initial_setup #takes about 6 minutes
 
-#Go to http;//localhost/, then wait about 8 minutes.
+#Go to http;//localhost/, then wait about 8-12 minutes.
