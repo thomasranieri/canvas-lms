@@ -1,0 +1,8 @@
+production:
+  domain: localhost
+
+development:
+  domain: localhost
+
+test:
+  domain: localhost

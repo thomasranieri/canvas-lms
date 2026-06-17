@@ -1,0 +1,9 @@
+production:
+  keep_after_complete: false
+
+development:
+  data_folder: exports/
+  keep_after_complete: false
+
+test:
+  keep_after_complete: false

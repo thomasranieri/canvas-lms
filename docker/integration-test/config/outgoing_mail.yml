@@ -1,0 +1,9 @@
+# All environments use test delivery so no actual mail is sent.
+production: &default
+  delivery_method: "test"
+
+development:
+  <<: *default
+
+test:
+  <<: *default
