@@ -5,6 +5,7 @@
 set -euo pipefail
 
 RUBY="3.4"
+PG_VERSION="16"
 APP_HOME="/usr/src/app"
 GEM_HOME="/home/docker/.gem/${RUBY}"
 BUNDLE_APP_CONFIG="/home/docker/.bundle"
@@ -17,7 +18,7 @@ log() { echo "[db-init] $*"; }
 
 # ── Start PostgreSQL ──────────────────────────────────────────────────────────
 log "Starting PostgreSQL..."
-su -s /bin/bash postgres -c "pg_ctlcluster 14 main start"
+su -s /bin/bash postgres -c "pg_ctlcluster ${PG_VERSION} main start"
 
 log "Waiting for PostgreSQL to accept connections..."
 until su -s /bin/bash postgres -c "pg_isready -q -h ${DB_HOST}"; do
@@ -115,6 +116,6 @@ su -s /bin/bash docker -c "
 
 # ── Stop PostgreSQL ───────────────────────────────────────────────────────────
 log "Stopping PostgreSQL..."
-su -s /bin/bash postgres -c "pg_ctlcluster 14 main stop"
+su -s /bin/bash postgres -c "pg_ctlcluster ${PG_VERSION} main stop"
 
 log "Database initialisation complete."

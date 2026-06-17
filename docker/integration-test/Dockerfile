@@ -1,10 +1,17 @@
 # Single-container Canvas LMS image for integration testing.
 #
-# Bundles PostgreSQL 14, Redis, and Canvas into one image with
+# Bundles PostgreSQL 16, Redis, and Canvas into one image with
 # pre-compiled assets and a pre-migrated database baked in.
 # No docker-compose, no separate service containers needed.
 #
-# Build (from repo root, takes ~30-60 min):
+# Prerequisites — run once on the host before building:
+#   mkdir -p docker/integration-test/vendor
+#   curl -fsSL -o docker/integration-test/vendor/node-v20.9.0-linux-x64.tar.xz \
+#     https://nodejs.org/dist/v20.9.0/node-v20.9.0-linux-x64.tar.xz
+#   curl -fsSL -o docker/integration-test/vendor/ruby-3.4.9.tar.gz \
+#     https://github.com/ruby/ruby/archive/refs/tags/v3_4_9.tar.gz
+#
+# Build (from repo root, ~45-75 min):
 #   docker build -f docker/integration-test/Dockerfile \
 #     -t canvas-integration .
 #
@@ -16,28 +23,23 @@
 #
 # Rails console:
 #   docker exec -it <container> \
-#     su -s /bin/bash docker -c \
-#     "cd /usr/src/app && bundle exec rails c"
+#     su -s /bin/bash docker -c "cd /usr/src/app && bundle exec rails c"
 
-ARG RUBY=3.4
-
-FROM instructure/ruby-passenger:$RUBY-jammy
+FROM mirror.gcr.io/library/ubuntu:24.04
 LABEL maintainer="Instructure"
 
-ARG RUBY=3.4
-ARG POSTGRES_CLIENT=14
+ENV DEBIAN_FRONTEND=noninteractive
 ENV APP_HOME=/usr/src/app/
 ENV RAILS_ENV=development
-ENV NGINX_MAX_UPLOAD_SIZE=10g
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 ENV LC_CTYPE=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ARG CANVAS_RAILS=8.0
 ENV CANVAS_RAILS=${CANVAS_RAILS}
-ENV NODE_MAJOR=20
-ENV GEM_HOME=/home/docker/.gem/$RUBY
-ENV PATH=${APP_HOME}bin:$GEM_HOME/bin:$PATH
+ENV RUBY=3.4
+ENV GEM_HOME=/home/docker/.gem/${RUBY}
+ENV PATH=${APP_HOME}bin:${GEM_HOME}/bin:/opt/node/bin:${PATH}
 ENV BUNDLE_APP_CONFIG=/home/docker/.bundle
 
 # Fixed credentials for embedded services — override via env if needed
@@ -48,85 +50,104 @@ ENV ENCRYPTION_KEY=integrationtestencryptionkey000000000000000000000000000000000
 
 WORKDIR $APP_HOME
 
-USER root
-
-RUN mkdir -p /etc/apt/keyrings \
-  && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
-  && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_MAJOR}.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
-  && printf 'path-exclude /usr/share/doc/*\npath-exclude /usr/share/man/*' > /etc/dpkg/dpkg.cfg.d/01_nodoc \
-  && echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
-  && curl -sS https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
-  && add-apt-repository ppa:git-core/ppa -ny \
-  && apt-get update -qq \
+# ── System packages ───────────────────────────────────────────────────────────
+RUN apt-get update -qq \
   && apt-get install -qqy --no-install-recommends \
-       nodejs \
+       # Ruby build dependencies
+       build-essential autoconf bison \
+       libssl-dev libyaml-dev libffi-dev libreadline-dev \
+       zlib1g-dev libgmp-dev libgdbm-dev libdb-dev \
+       # Canvas runtime dependencies
        libxmlsec1-dev \
        python3-lxml \
        python-is-python3 \
        libicu-dev \
        libidn11-dev \
        parallel \
-       postgresql-14 \
-       postgresql-14-pgvector \
+       # Databases and services
+       postgresql \
+       postgresql-contrib \
+       postgresql-16-pgvector \
        redis-server \
        supervisor \
+       # Utilities
        tzdata \
        unzip \
        pbzip2 \
        fontforge \
        git \
-       build-essential \
-  && rm -rf /var/lib/apt/lists/* \
-  && mkdir -p /home/docker/.gem/ruby/$RUBY_MAJOR.0
+       curl \
+       ca-certificates \
+       xz-utils \
+  && rm -rf /var/lib/apt/lists/*
 
-# Tune PostgreSQL for a low-resource single-container setup
-RUN echo "max_locks_per_transaction = 640" >> /etc/postgresql/14/main/postgresql.conf \
-  && echo "max_stack_depth = 5MB" >> /etc/postgresql/14/main/postgresql.conf \
-  && echo "shared_buffers = 256MB" >> /etc/postgresql/14/main/postgresql.conf \
-  && echo "effective_cache_size = 256MB" >> /etc/postgresql/14/main/postgresql.conf \
-  && echo "random_page_cost = 1.0" >> /etc/postgresql/14/main/postgresql.conf \
-  # Trust all localhost connections so no password is required inside the container
-  && sed -i 's|^host.*127\.0\.0\.1/32.*$|host all all 127.0.0.1/32 trust|' /etc/postgresql/14/main/pg_hba.conf \
-  && sed -i 's|^host.*::1/128.*$|host all all ::1/128 trust|' /etc/postgresql/14/main/pg_hba.conf
+# ── Node.js 20 (pre-downloaded tarball) ──────────────────────────────────────
+COPY docker/integration-test/vendor/node-v20.9.0-linux-x64.tar.xz /tmp/node.tar.xz
+RUN tar -xJf /tmp/node.tar.xz -C /opt \
+  && mv /opt/node-v20.9.0-linux-x64 /opt/node \
+  && rm /tmp/node.tar.xz \
+  && node --version && npm --version
 
-RUN gem install bundler --no-document -v 2.5.10 \
-  && find $GEM_HOME ! -user docker | xargs chown docker:docker
+# ── Ruby 3.4 (compiled from source) ──────────────────────────────────────────
+COPY docker/integration-test/vendor/ruby-3.4.9.tar.gz /tmp/ruby.tar.gz
+RUN tar -xzf /tmp/ruby.tar.gz -C /tmp \
+  && cd /tmp/ruby-3.4.9 \
+  && ./configure \
+       --prefix=/usr/local \
+       --enable-shared \
+       --disable-install-doc \
+       --with-jemalloc \
+       2>&1 | tail -5 \
+  && make -j$(nproc) 2>&1 | tail -5 \
+  && make install 2>&1 | tail -5 \
+  && cd / && rm -rf /tmp/ruby-3.4.9 /tmp/ruby.tar.gz \
+  && ruby --version
+
+# ── Bundler + Yarn ────────────────────────────────────────────────────────────
+RUN gem install bundler --no-document -v 2.6.7
 RUN npm install -g npm@9.8.1 && npm cache clean --force
-
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable && corepack prepare yarn@1.19.1 --activate
 
+# ── PostgreSQL tuning ─────────────────────────────────────────────────────────
+RUN echo "max_locks_per_transaction = 640" >> /etc/postgresql/16/main/postgresql.conf \
+  && echo "max_stack_depth = 5MB" >> /etc/postgresql/16/main/postgresql.conf \
+  && echo "shared_buffers = 256MB" >> /etc/postgresql/16/main/postgresql.conf \
+  && echo "effective_cache_size = 256MB" >> /etc/postgresql/16/main/postgresql.conf \
+  && echo "random_page_cost = 1.0" >> /etc/postgresql/16/main/postgresql.conf \
+  # Trust all localhost connections (no password required inside the container)
+  && sed -i 's|^host.*127\.0\.0\.1/32.*$|host all all 127.0.0.1/32 trust|' /etc/postgresql/16/main/pg_hba.conf \
+  && sed -i 's|^host.*::1/128.*$|host all all ::1/128 trust|' /etc/postgresql/16/main/pg_hba.conf
+
+# ── App user + directories ────────────────────────────────────────────────────
+RUN useradd -m -s /bin/bash -u 1000 docker
 USER docker
 
-RUN set -eux; \
-  mkdir -p \
-    .yardoc \
-    app/stylesheets/brandable_css_brands \
-    app/views/info \
-    config/locales/generated \
-    log \
-    node_modules \
-    packages/js-utils/es \
-    packages/js-utils/lib \
-    packages/js-utils/node_modules \
-    pacts \
-    public/dist \
-    public/javascripts/translations \
-    reports \
-    tmp \
+RUN mkdir -p \
+    ${APP_HOME}.yardoc \
+    ${APP_HOME}app/stylesheets/brandable_css_brands \
+    ${APP_HOME}app/views/info \
+    ${APP_HOME}config/locales/generated \
+    ${APP_HOME}log \
+    ${APP_HOME}node_modules \
+    ${APP_HOME}packages/js-utils/es \
+    ${APP_HOME}packages/js-utils/lib \
+    ${APP_HOME}packages/js-utils/node_modules \
+    ${APP_HOME}pacts \
+    ${APP_HOME}public/dist \
+    ${APP_HOME}public/javascripts/translations \
+    ${APP_HOME}reports \
+    ${APP_HOME}tmp \
     /home/docker/.bundle/ \
     /home/docker/.cache/yarn \
-    /home/docker/.gem/
+    ${GEM_HOME}
 
-# Copy application code
+# ── Application ───────────────────────────────────────────────────────────────
 COPY --chown=docker:docker . ${APP_HOME}
-
-# Overlay integration-test configs (database, redis, security, etc.)
 COPY --chown=docker:docker docker/integration-test/config/ config/
 
 # Install Ruby gems
-RUN unset RUBY \
-  && bundle config --global build.nokogiri --use-system-libraries \
+RUN bundle config --global build.nokogiri --use-system-libraries \
   && bundle config --global build.ffi --enable-system-libffi \
   && bundle install --jobs 4
 
@@ -134,16 +155,15 @@ RUN unset RUBY \
 RUN yarn install --frozen-lockfile \
   || yarn install --frozen-lockfile --network-concurrency 1
 
-# Pre-compile all assets; node_modules removed afterwards to slim the image
+# Pre-compile all assets
 ENV COMPILE_ASSETS_BRAND_CONFIGS=0
 ENV COMPILE_ASSETS_NPM_INSTALL=0
 RUN bin/rails canvas:compile_assets --trace \
   && rm -rf node_modules
 
 # ── Database initialisation ───────────────────────────────────────────────────
-# Start postgres, create DBs, run Canvas migrations, stop postgres.
-# The resulting data directory is baked into this image layer so containers
-# start instantly with a fully migrated database.
+# Start postgres temporarily, create DBs, run Canvas migrations, stop.
+# The data directory is baked into this layer — containers start instantly.
 USER root
 COPY docker/integration-test/db-init.sh /usr/local/bin/db-init.sh
 RUN chmod +x /usr/local/bin/db-init.sh && /usr/local/bin/db-init.sh
