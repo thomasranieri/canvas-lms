@@ -72,7 +72,7 @@ log "Migrating canvas_development..."
 RAILS_ENV=development su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
@@ -87,7 +87,7 @@ log "Migrating canvas_test..."
 su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
@@ -103,7 +103,7 @@ log "Seeding canvas_development..."
 su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
