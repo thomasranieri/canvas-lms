@@ -37,8 +37,8 @@ ENV LC_CTYPE=en_US.UTF-8
 ENV LC_ALL=en_US.UTF-8
 ARG CANVAS_RAILS=8.0
 ENV CANVAS_RAILS=${CANVAS_RAILS}
-ENV RUBY=3.4
-ENV GEM_HOME=/home/docker/.gem/${RUBY}
+ENV RUBY_MINOR=3.4
+ENV GEM_HOME=/home/docker/.gem/${RUBY_MINOR}
 ENV PATH=${APP_HOME}bin:${GEM_HOME}/bin:/opt/node/bin:${PATH}
 ENV BUNDLE_APP_CONFIG=/home/docker/.bundle
 
@@ -50,6 +50,15 @@ ENV ENCRYPTION_KEY=integrationtestencryptionkey000000000000000000000000000000000
 
 WORKDIR $APP_HOME
 
+# ── Trust Anthropic egress gateway CA (required for HTTPS in this env) ───────
+COPY docker/integration-test/anthropic-egress-ca.crt /usr/local/share/ca-certificates/anthropic-egress-ca.crt
+RUN apt-get update -qq \
+  && apt-get install -qqy --no-install-recommends ca-certificates \
+  && update-ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+# Node.js uses its own bundled CA store; point it to the system bundle
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
 # ── System packages ───────────────────────────────────────────────────────────
 RUN apt-get update -qq \
   && apt-get install -qqy --no-install-recommends \
@@ -57,6 +66,8 @@ RUN apt-get update -qq \
        build-essential autoconf automake libtool bison \
        libssl-dev libyaml-dev libffi-dev libreadline-dev \
        zlib1g-dev libgmp-dev libgdbm-dev libdb-dev \
+       # Bootstrap Ruby needed to compile Ruby from source
+       ruby \
        # Canvas runtime dependencies
        libxmlsec1-dev \
        python3-lxml \
@@ -89,7 +100,10 @@ RUN tar -xJf /tmp/node.tar.xz -C /opt \
   && node --version && npm --version
 
 # ── Ruby 3.4 (compiled from source) ──────────────────────────────────────────
+# The GitHub source archive doesn't bundle gems; pre-copy them so make
+# doesn't attempt HTTPS downloads (which fail in this network environment).
 COPY docker/integration-test/vendor/ruby-3.4.9.tar.gz /tmp/ruby.tar.gz
+COPY docker/integration-test/vendor/ruby-bundled-gems/ /tmp/ruby-bundled-gems/
 RUN tar -xzf /tmp/ruby.tar.gz -C /tmp \
   && cd /tmp/ruby-3_4_9 \
   && ./autogen.sh \
@@ -97,10 +111,10 @@ RUN tar -xzf /tmp/ruby.tar.gz -C /tmp \
        --prefix=/usr/local \
        --enable-shared \
        --disable-install-doc \
-       2>&1 | tail -5 \
-  && make -j$(nproc) 2>&1 | tail -5 \
-  && make install 2>&1 | tail -5 \
-  && cd / && rm -rf /tmp/ruby-3_4_9 /tmp/ruby.tar.gz \
+  && mkdir -p gems && cp /tmp/ruby-bundled-gems/*.gem gems/ \
+  && make -j$(nproc) \
+  && make install \
+  && cd / && rm -rf /tmp/ruby-3_4_9 /tmp/ruby.tar.gz /tmp/ruby-bundled-gems \
   && ruby --version
 
 # ── Bundler + Yarn ────────────────────────────────────────────────────────────
@@ -120,7 +134,9 @@ RUN echo "max_locks_per_transaction = 640" >> /etc/postgresql/16/main/postgresql
   && sed -i 's|^host.*::1/128.*$|host all all ::1/128 trust|' /etc/postgresql/16/main/pg_hba.conf
 
 # ── App user + directories ────────────────────────────────────────────────────
-RUN useradd -m -s /bin/bash -u 1000 docker
+RUN useradd -m -s /bin/bash docker 2>/dev/null || true \
+  && chown -R docker:docker /home/docker \
+  && chown docker:docker ${APP_HOME}
 USER docker
 
 RUN mkdir -p \
@@ -152,8 +168,11 @@ RUN bundle config --global build.nokogiri --use-system-libraries \
   && bundle install --jobs 4
 
 # Install JS dependencies
-RUN yarn install --frozen-lockfile \
-  || yarn install --frozen-lockfile --network-concurrency 1
+# sentry-cdn.com is blocked in this network env; SENTRYCLI_SKIP_DOWNLOAD=1
+# tells @sentry/cli's install script to skip the binary download entirely.
+ENV SENTRYCLI_SKIP_DOWNLOAD=1
+RUN yarn install --frozen-lockfile --ignore-engines \
+  || yarn install --frozen-lockfile --ignore-engines --network-concurrency 1
 
 # Pre-compile all assets
 ENV COMPILE_ASSETS_BRAND_CONFIGS=0
