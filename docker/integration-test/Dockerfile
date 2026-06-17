@@ -54,7 +54,7 @@ WORKDIR $APP_HOME
 RUN apt-get update -qq \
   && apt-get install -qqy --no-install-recommends \
        # Ruby build dependencies
-       build-essential autoconf bison \
+       build-essential autoconf automake libtool bison \
        libssl-dev libyaml-dev libffi-dev libreadline-dev \
        zlib1g-dev libgmp-dev libgdbm-dev libdb-dev \
        # Canvas runtime dependencies
@@ -92,6 +92,7 @@ RUN tar -xJf /tmp/node.tar.xz -C /opt \
 COPY docker/integration-test/vendor/ruby-3.4.9.tar.gz /tmp/ruby.tar.gz
 RUN tar -xzf /tmp/ruby.tar.gz -C /tmp \
   && cd /tmp/ruby-3_4_9 \
+  && ./autogen.sh \
   && ./configure \
        --prefix=/usr/local \
        --enable-shared \
