@@ -91,16 +91,15 @@ RUN tar -xJf /tmp/node.tar.xz -C /opt \
 # ── Ruby 3.4 (compiled from source) ──────────────────────────────────────────
 COPY docker/integration-test/vendor/ruby-3.4.9.tar.gz /tmp/ruby.tar.gz
 RUN tar -xzf /tmp/ruby.tar.gz -C /tmp \
-  && cd /tmp/ruby-3.4.9 \
+  && cd /tmp/ruby-3_4_9 \
   && ./configure \
        --prefix=/usr/local \
        --enable-shared \
        --disable-install-doc \
-       --with-jemalloc \
        2>&1 | tail -5 \
   && make -j$(nproc) 2>&1 | tail -5 \
   && make install 2>&1 | tail -5 \
-  && cd / && rm -rf /tmp/ruby-3.4.9 /tmp/ruby.tar.gz \
+  && cd / && rm -rf /tmp/ruby-3_4_9 /tmp/ruby.tar.gz \
   && ruby --version
 
 # ── Bundler + Yarn ────────────────────────────────────────────────────────────
