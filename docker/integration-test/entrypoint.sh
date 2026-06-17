@@ -15,4 +15,7 @@ mkdir -p \
 # Remove any stale Rails/Puma pid files from a previous run
 rm -f /usr/src/app/tmp/pids/*.pid
 
+# Ensure the app user can write to runtime directories
+chown -R docker:docker /usr/src/app/tmp /usr/src/app/log 2>/dev/null || true
+
 exec "$@"
