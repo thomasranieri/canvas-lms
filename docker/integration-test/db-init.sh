@@ -72,13 +72,14 @@ log "Migrating canvas_development..."
 RAILS_ENV=development su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:/usr/bin:/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
   export POSTGRES_PASSWORD='${DB_PASS}'
   export ENCRYPTION_KEY='${ENCRYPTION_KEY}'
   export RAILS_ENV='development'
+  export DISABLE_SPRING=1
   cd '${APP_HOME}'
   bundle exec rails db:migrate
 "
@@ -87,13 +88,14 @@ log "Migrating canvas_test..."
 su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:/usr/bin:/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
   export POSTGRES_PASSWORD='${DB_PASS}'
   export ENCRYPTION_KEY='${ENCRYPTION_KEY}'
   export RAILS_ENV='test'
+  export DISABLE_SPRING=1
   cd '${APP_HOME}'
   bundle exec rails db:migrate
 "
@@ -103,13 +105,14 @@ log "Seeding canvas_development..."
 su -s /bin/bash docker -c "
   export HOME='/home/docker'
   export GEM_HOME='${GEM_HOME}'
-  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:\$PATH'
+  export PATH='${APP_HOME}/bin:${GEM_HOME}/bin:/usr/local/bin:/usr/bin:/bin:\$PATH'
   export BUNDLE_APP_CONFIG='${BUNDLE_APP_CONFIG}'
   export CANVAS_DATABASE_HOST='${DB_HOST}'
   export CANVAS_DATABASE_USERNAME='${DB_USER}'
   export POSTGRES_PASSWORD='${DB_PASS}'
   export ENCRYPTION_KEY='${ENCRYPTION_KEY}'
   export RAILS_ENV='development'
+  export DISABLE_SPRING=1
   cd '${APP_HOME}'
   bundle exec rails db:seed
 " || log "db:seed skipped or already seeded (non-fatal)"
