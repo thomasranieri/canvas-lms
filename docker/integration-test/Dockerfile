@@ -5,11 +5,12 @@
 # No docker-compose, no separate service containers needed.
 #
 # Build (from repo root, takes ~30-60 min):
-#   docker build -f docker/integration-test/Dockerfile \
+#   docker build --platform linux/amd64 \
+#     -f docker/integration-test/Dockerfile \
 #     -t canvas-integration .
 #
 # Run:
-#   docker run -p 3000:3000 canvas-integration
+#   docker run -p 8900:8900 canvas-integration
 #
 # Reset DB to post-migration state:
 #   docker exec <container> /usr/local/bin/canvas-reset-db.sh
@@ -21,7 +22,7 @@
 
 ARG RUBY=3.4
 
-FROM instructure/ruby-passenger:$RUBY-jammy
+FROM --platform=linux/amd64 instructure/ruby-passenger:$RUBY-jammy
 LABEL maintainer="Instructure"
 
 ARG RUBY=3.4
@@ -44,7 +45,7 @@ ENV BUNDLE_APP_CONFIG=/home/docker/.bundle
 ENV CANVAS_DATABASE_HOST=localhost
 ENV CANVAS_DATABASE_USERNAME=canvas
 ENV POSTGRES_PASSWORD=canvas
-ENV ENCRYPTION_KEY=integrationtestencryptionkey00000000000000000000000000000000000
+ENV ENCRYPTION_KEY=e2e-encryption-key-32chars-here!!
 
 WORKDIR $APP_HOME
 
@@ -158,10 +159,10 @@ RUN chmod +x /usr/local/bin/canvas-reset-db.sh \
   && mkdir -p /usr/src/app/tmp/pids /usr/src/app/tmp/sockets \
   && chown -R docker:docker /usr/src/app/tmp
 
-EXPOSE 3000 5432 6379
+EXPOSE 8900 5432 6379
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
-  CMD curl -f http://localhost:3000/health_check || exit 1
+  CMD curl -f http://localhost:8900/health_check || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["/usr/bin/supervisord", "-n", "-c", "/etc/supervisor/supervisord.conf"]

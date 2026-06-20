@@ -1,8 +1,11 @@
 production:
-  domain: localhost
+  domain: localhost:8900
+  ssl: false
 
 development:
-  domain: localhost
+  domain: localhost:8900
+  ssl: false
 
 test:
-  domain: localhost
+  domain: localhost:8900
+  ssl: false

@@ -8,7 +8,7 @@ APP_HOME="/usr/src/app"
 DB_HOST="localhost"
 DB_USER="canvas"
 DB_PASS="canvas"
-ENCRYPTION_KEY="integrationtestencryptionkey00000000000000000000000000000000000"
+ENCRYPTION_KEY="e2e-encryption-key-32chars-here!!"
 
 log() { echo "[db-init] $*"; }
 

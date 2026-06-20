@@ -14,7 +14,7 @@ export BUNDLE_APP_CONFIG="/home/docker/.bundle"
 export CANVAS_DATABASE_HOST="localhost"
 export CANVAS_DATABASE_USERNAME="canvas"
 export POSTGRES_PASSWORD="canvas"
-export ENCRYPTION_KEY="integrationtestencryptionkey00000000000000000000000000000000000"
+export ENCRYPTION_KEY="e2e-encryption-key-32chars-here!!"
 export RAILS_ENV="${RAILS_ENV:-development}"
 
 cd "$APP_HOME"
