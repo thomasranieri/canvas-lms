@@ -11,6 +11,19 @@ NODE_VERSION="20.9.0"
 RUBY_VERSION="3.4.9"
 RUBY_TAG="v3_4_9"
 
+# Detect host arch; map to Node's naming convention
+HOST_ARCH="$(uname -m)"
+case "$HOST_ARCH" in
+  x86_64)  NODE_ARCH="x64" ;;
+  aarch64) NODE_ARCH="arm64" ;;
+  arm64)   NODE_ARCH="arm64" ;;
+  *)
+    echo "Unsupported architecture: $HOST_ARCH" >&2
+    exit 1
+    ;;
+esac
+echo "Detected architecture: ${HOST_ARCH} → Node arch: ${NODE_ARCH}"
+
 download() {
   local url="$1"
   local dest="$2"
@@ -23,8 +36,8 @@ download() {
 }
 
 download \
-  "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.xz" \
-  "${DIR}/node-v${NODE_VERSION}-linux-x64.tar.xz"
+  "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz" \
+  "${DIR}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
 
 download \
   "https://github.com/ruby/ruby/archive/refs/tags/${RUBY_TAG}.tar.gz" \
